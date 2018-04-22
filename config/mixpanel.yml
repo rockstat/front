@@ -1,0 +1,6 @@
+---
+writers:
+  mixpanel:
+    enabled: true
+    token: <%= env.MIXPANEL_TOKEN %>
+    uploadInterval: 2

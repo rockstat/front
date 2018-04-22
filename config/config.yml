@@ -1,0 +1,82 @@
+---
+identify: &httpCommon
+  param: uid
+  cookieMaxAge: <%= 3 * 365 * 24 * 60 * 60 %>
+http: &http
+  host: <%= env.HOST || '0.0.0.0' %>
+  port: <%= env.PORT || '9080' %>
+websocket:
+  https:
+    certFile: ./certs/rockstat.test.crt
+    keyFile: ./certs/rockstat.test.key
+    port: <%= env.PORT_WS || '10003' %>
+  path: /wss
+  perMessageDeflate:  # See zlib defaults.
+    zlibDeflateOptions:
+      chunkSize: 1024
+      memLevel: 7
+      level: 3
+    zlibInflateOptions:
+      chunkSize: <%= 10 * 1024 %>
+    # Other options settable:
+    clientNoContextTakeover: true # Defaults to negotiated value.
+    serverNoContextTakeover: true  # Defaults to negotiated value.
+    clientMaxWindowBits: 10       # Defaults to negotiated value.
+    serverMaxWindowBits: 10       # Defaults to negotiated value.
+    # Below options specified as default values.
+    concurrencyLimit: 10          # Limits zlib concurrency for perf.
+    threshold: 1024               # Size (in bytes) below which messages
+    # should not be compressed.
+
+ipc:
+  appspace: tracker.
+  socketRoot: var/
+  id: main
+  networkHost: localhost
+  networkPort: 8000
+  encoding: utf8
+  rawBuffer: false
+  delimiter: "\f"
+  sync: false
+  silent: false
+  logInColor: true
+  logDepth: 2
+  maxConnections: 100
+  retry: 500
+  maxRetries: 5
+  stopRetrying: false
+  unlink: true
+
+services:
+  SypexGeoService:
+    baseUrl: http://<%= env.SXGEO_SERVICE %>
+    prefix: sxg
+    methods:
+      query: query?ip=${ip}
+  MDeviceDetectorService:
+    baseUrl: http://<%= env.DEVICED_SERVICE %>
+    prefix: mdd
+    methods:
+      query: query?ua=${userAgent}
+
+statsd:
+  host: <%= env.STATSD_HOST %>
+  port: 8125
+  debug: false
+
+log:
+  use: pino
+  pino:
+    name: alco
+    safe: true
+    level: <%= env.LOG_LEVEL || 'info' %>
+    prettyPrint: false
+
+client: {} # do not remove. root element should be present
+
+browserLib:
+  prod:
+    file: clientlib/lib.js
+  dev:
+    file: clientlib/lib-dev.js
+

@@ -1,0 +1,178 @@
+import { createServer, Server } from 'https';
+import { IncomingMessage } from 'http';
+import { readFileSync, stat } from 'fs';
+import { Socket } from 'net';
+import { Service, Inject } from 'typedi';
+import * as WebSocket from 'ws';
+import { LogFactory, Logger } from "@app/log";
+import { Configurer, Dispatcher, IdGenShowFlake } from '@app/lib';
+import {
+  HttpsConfig,
+  WsConfig,
+  Dictionary,
+} from '@app/types';
+import {
+  isObject, isString, isEmptyString, epglue, epchild
+} from '@app/helpers';
+import { parse as urlParse } from 'url';
+import {
+  OUT_WEBSOCK,
+  CMD_WEBSOCK_ADD_GROUP,
+  OUT_WEBSOCK_BROADCAST,
+  STRING,
+  CMD_WEBSOCK,
+  IN_WEBSOCK_HELLO,
+  IN_WEBSOCK,
+} from '@app/constants';
+
+interface SockState {
+  uid: string;
+  authorized: boolean;
+  touch: number;
+  groups: Set<string>;
+}
+
+interface SockLookup {
+  socket: WebSocket;
+  state: SockState
+}
+
+@Service()
+export class WebSocketServer {
+
+  server: Server;
+  wss: WebSocket.Server;
+  options: WsConfig;
+  secureOptions: { cert: Buffer, key: Buffer };
+  socksState: WeakMap<WebSocket, SockState> = new WeakMap();
+  log: Logger;
+
+  @Inject()
+  dispatcher: Dispatcher;
+
+  get httpsOptions(): HttpsConfig {
+    return this.options.https;
+  }
+
+  constructor(configurer: Configurer, logFactory: LogFactory) {
+
+    this.options = configurer.webSocketConfig;
+    this.log = logFactory.for(this);
+    this.secureOptions = {
+      cert: readFileSync(this.options.https.certFile),
+      key: readFileSync(this.options.https.keyFile)
+    }
+  }
+
+  async findUidSock(uid: string): Promise<SockLookup | void> {
+    this.log.debug(`searching user ${uid}`);
+    for (const socket of this.wss.clients) {
+      const state = this.socksState.get(socket);
+      if (state && state.uid === uid) {
+        this.log.debug(`success`);
+        return { socket, state };
+      }
+    }
+  }
+
+  async addToGroup({ uid, group }: { uid: string, group: string }): Promise<void> {
+    this.log.info(`addtogroup user ${uid} to ${group}`);
+    const result = await this.findUidSock(uid);
+    if (result) {
+      this.log.info(`adding user ${uid} to ${group}`);
+      const { socket, state } = result;
+      state.groups.add(group);
+    } else {
+      this.log.debug('hmmmm');
+    }
+  }
+
+  async sendBroadcast({name, data, group}: { group?: string, data: object, name: string }, ): Promise<void> {
+    const raw = JSON.stringify({name, data});
+    for (const socket of this.wss.clients) {
+      const state = this.socksState.get(socket);
+      // console.log(state, 'state')
+      if (socket.readyState === WebSocket.OPEN && state && (!group || group && state.groups.has(group))) {
+        this.log.debug(`${group}: socket send`);
+        socket.send(raw);
+      }
+    }
+  }
+
+  register() {
+
+    this.dispatcher.registerListener(OUT_WEBSOCK, async (key: string, data: any) => {
+      switch (key) {
+        case OUT_WEBSOCK_BROADCAST: return await this.sendBroadcast(data);
+      }
+    });
+
+    this.dispatcher.registerListener(CMD_WEBSOCK, async (key: string, data: { [key: string]: any }) => {
+      switch (key) {
+        case CMD_WEBSOCK_ADD_GROUP: return await this.addToGroup(<{ uid: string, group: string }>data);
+      }
+    });
+  }
+
+  start() {
+
+    this.log.info('Starting WS HTTPS transport');
+    this.server = createServer(this.secureOptions);
+    const { host, port } = this.httpsOptions;
+    this.server.listen(port, host)
+
+    this.log.info(`Starting WS server on port ${port}`);
+
+    this.wss = new WebSocket.Server({
+      server: this.server,
+      path: this.options.path,
+      perMessageDeflate: this.options.perMessageDeflate
+    });
+
+    this.wss.on('connection', (socket: WebSocket, req: IncomingMessage) => {
+      this.log.debug('client connected');
+      if (req.url) {
+        const parsedUrl = urlParse(req.url, true);
+        const { uid } = parsedUrl.query;
+        if (uid && typeof uid === 'string' && uid !== '') {
+          this.socksState.set(socket, {
+            uid: uid,
+            authorized: false,
+            touch: new Date().getTime(),
+            groups: new Set()
+          });
+
+          socket.on('close', (code: number, reason: string) => {
+            this.log.debug(`closed ${code} ${reason}`);
+          })
+
+          socket.on('message', (data) => {
+            const state = this.socksState.get(socket);
+            try {
+              const msg = JSON.parse(data.toString());
+              if (state && isObject(msg) && msg.name && typeof msg.name === STRING) {
+                if (msg.name === 'ping') {
+                  state.touch = new Date().getTime();
+                } else {
+                  this.dispatcher.emit(epglue(IN_WEBSOCK, msg.name), msg)
+                }
+                this.log.info(`msg '${msg.name}' received`);
+              }
+            } catch (err) {
+              this.log.warn(err, 'parsing ws message err');
+            }
+          });
+          return;
+        }
+      }
+      this.log.info('closing connection without credentials');
+      socket.close();
+    });
+
+    this.register();
+
+  }
+
+
+
+}

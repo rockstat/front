@@ -1,0 +1,8 @@
+/.vscode
+/node_modules
+/yarn-error.log
+/config/custom
+/deploy
+/certs
+/dist
+/.env
