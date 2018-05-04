@@ -1,26 +1,33 @@
 import { Service, Inject } from 'typedi';
 import * as bb from 'bluebird';
-import * as ipc from 'node-ipc';
 import * as net from 'net';
 import { AppServer } from '@app/AppServer';
 import { LogFactory, Logger } from '@app/log';
-import { BaseIncomingMessage, FlexOutgoingMessage } from '@app/types';
+import { BaseIncomingMessage, FlexOutgoingMessage, IndepIncomingMessage } from '@app/types';
 import { StubStore } from '@app/stores/StubStore';
 import {
   MessageHandler,
   Configurer,
   IdGenShowFlake,
-  PubSub
+  PubSub,
+  KERNEL
 } from '@app/lib'
-import { INCOMING } from '@app/constants';
-import { epchild } from '@app/helpers';
+
+import { INCOMING, IN_INDEP } from '@app/constants';
+import { epchild, epglue } from '@app/helpers';
+import { RPCEnclosure, RPCRequest } from '@app/lib/RpcEnclosure';
+
+interface RPCRegisterStruct {
+  methods?: Array<[string, string, string]>
+}
+interface RPCRegisterHandler {
+  (params: RPCRegisterStruct): any
+}
 
 @Service()
 export class Dispatcher {
 
   log: Logger;
-  socket: net.Socket;
-  sock: string = 'var/alco.sock';
   enrichBus: PubSub = new PubSub();
   listenBus: PubSub = new PubSub();
   handleBus: { [key: string]: MessageHandler } = {};
@@ -31,13 +38,13 @@ export class Dispatcher {
   @Inject()
   stubStore: StubStore;
 
-  constructor(logFactory: LogFactory, confugurer: Configurer) {
+  @Inject()
+  rpc: RPCEnclosure
+  rpcHandlers: { [k: string]: [string, string] } = {};
 
+  constructor(logFactory: LogFactory, confugurer: Configurer) {
     this.log = logFactory.for(this);
     this.log.info('Starting dispatcher');
-
-    Object.assign(ipc.config, confugurer.ipcConfig);
-    ipc.config.logger = this.log.debug.bind(this.log);
   }
 
   setup() {
@@ -46,22 +53,45 @@ export class Dispatcher {
     this.enrichBus.subscribe('*', (key: string, msg: any) => {
       this.stubStore.push(msg);
     });
-  }
 
-  startIPC() {
+    this.rpc.setup();
 
-    this.log.info('Starting IPC');
-    ipc.serve(() => {
-      ipc.server.on('message', (data, socket) => {
-        ipc.log(data, 'got a message');
-      });
+    this.rpc.register('status', async () => {
+      return { 'status': "i'm ok!" };
     });
 
-    ipc.server.start();
+    this.rpc.register<RPCRegisterStruct>('__status_receiver', async (params) => {
+      if (params.methods) {
+        for (const [name, method, role] of params.methods) {
+          const key = epglue(IN_INDEP, name, method)
+          if (role === 'handler') {
+            this.log.info('registering rpc handler');
+            this.rpcHandlers[key] = [name, method];
+          }
+          this.registerHandler(key, this.rpcHandlerGateway)
+        }
+      }
+      return {};
+    });
+
+    setTimeout(() => {
+      this.rpc.request<any>('band', '__status_request', {})
+        .then((_) => { }).catch(err => this.log.error(err))
+    }, 100);
+  }
+
+  rpcHandlerGateway = async (key: string, msg: IndepIncomingMessage): Promise<FlexOutgoingMessage> => {
+    if (msg.service && msg.name && this.rpcHandlers[key]) {
+      return await this.rpc.request<any>(msg.service, msg.name, msg)
+    }
+    return this.defaultHandler(key, msg);
+  }
+
+  defaultHandler(key: string, msg: IndepIncomingMessage): FlexOutgoingMessage {
+    return { key: key, id: msg.id }
   }
 
   start() {
-    // this.startIPC();
     this.log.info('Started');
   }
 
@@ -80,7 +110,7 @@ export class Dispatcher {
     this.handleBus[key] = func;
   }
 
-  async emit(key: string, msg: BaseIncomingMessage | FlexOutgoingMessage): Promise<any> {
+  async emit(key: string, msg: IndepIncomingMessage): Promise<any> {
 
     this.log.debug(` -> ${key}`);
 
@@ -89,15 +119,14 @@ export class Dispatcher {
 
     // ### Phase 1: enriching
     const enrichments = await this.enrichBus.publish(key, msg);
-    if(enrichments.length){
+    if (enrichments.length) {
       msg = Object.assign(msg, ...enrichments);
     }
-
     // ### Phase 2: deliver to listeners
     this.listenBus.publish(key, msg).then(results => { });
 
     // ### Phase 3: handling if configuring
-    return this.handleBus[key] ? await this.handleBus[key](key, msg) : { id: msg.id };
+    return this.handleBus[key] ? await this.handleBus[key](key, msg) : this.defaultHandler(key, msg);
 
   }
 }

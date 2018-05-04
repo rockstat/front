@@ -13,7 +13,7 @@ type QueryFormat = {
   ip: string
 };
 
-export = class RemoteWsRpcService {
+export class RemoteWsRpcService {
 
   options: RemoteHttpServiceConfig;
   prefix: string;

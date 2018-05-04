@@ -10,6 +10,7 @@ import {
   HttpsConfig,
   WsConfig,
   Dictionary,
+  BaseIncomingMessage,
 } from '@app/types';
 import {
   isObject, isString, isEmptyString, epglue, epchild
@@ -23,6 +24,8 @@ import {
   CMD_WEBSOCK,
   IN_WEBSOCK_HELLO,
   IN_WEBSOCK,
+  IN_INDEP,
+  CHANNEL_WEBSOCK,
 } from '@app/constants';
 
 interface SockState {
@@ -35,6 +38,13 @@ interface SockState {
 interface SockLookup {
   socket: WebSocket;
   state: SockState
+}
+
+interface AddToGroupPayload {
+
+  uid: string;
+  group: string;
+
 }
 
 @Service()
@@ -75,7 +85,8 @@ export class WebSocketServer {
     }
   }
 
-  async addToGroup({ uid, group }: { uid: string, group: string }): Promise<void> {
+  async addToGroup({ uid, group }: AddToGroupPayload): Promise<void> {
+
     this.log.info(`addtogroup user ${uid} to ${group}`);
     const result = await this.findUidSock(uid);
     if (result) {
@@ -87,8 +98,8 @@ export class WebSocketServer {
     }
   }
 
-  async sendBroadcast({name, data, group}: { group?: string, data: object, name: string }, ): Promise<void> {
-    const raw = JSON.stringify({name, data});
+  async sendBroadcast({ name, data, group }: { group?: string, data: object, name: string }, ): Promise<void> {
+    const raw = JSON.stringify({ name, data });
     for (const socket of this.wss.clients) {
       const state = this.socksState.get(socket);
       // console.log(state, 'state')
@@ -107,18 +118,17 @@ export class WebSocketServer {
       }
     });
 
-    this.dispatcher.registerListener(CMD_WEBSOCK, async (key: string, data: { [key: string]: any }) => {
+    this.dispatcher.registerListener(CMD_WEBSOCK, async (key: string, msg: { data: AddToGroupPayload }) => {
       switch (key) {
-        case CMD_WEBSOCK_ADD_GROUP: return await this.addToGroup(<{ uid: string, group: string }>data);
+        case CMD_WEBSOCK_ADD_GROUP: return await this.addToGroup(msg.data);
       }
     });
   }
 
   start() {
-
-    this.log.info('Starting WS HTTPS transport');
-    this.server = createServer(this.secureOptions);
     const { host, port } = this.httpsOptions;
+    this.log.info(`Starting WS HTTPS transport on ${host}:${port}`);
+    this.server = createServer(this.secureOptions);
     this.server.listen(port, host)
 
     this.log.info(`Starting WS server on port ${port}`);
@@ -149,12 +159,14 @@ export class WebSocketServer {
           socket.on('message', (data) => {
             const state = this.socksState.get(socket);
             try {
-              const msg = JSON.parse(data.toString());
+              const msg = <BaseIncomingMessage>JSON.parse(data.toString());
+              msg.channel = CHANNEL_WEBSOCK
               if (state && isObject(msg) && msg.name && typeof msg.name === STRING) {
                 if (msg.name === 'ping') {
                   state.touch = new Date().getTime();
                 } else {
-                  this.dispatcher.emit(epglue(IN_WEBSOCK, msg.name), msg)
+
+                  this.dispatcher.emit(epglue(IN_INDEP, msg.name), msg)
                 }
                 this.log.info(`msg '${msg.name}' received`);
               }
@@ -164,9 +176,11 @@ export class WebSocketServer {
           });
           return;
         }
+      } else {
+        this.log.info('closing connection without credentials');
+        socket.close();
       }
-      this.log.info('closing connection without credentials');
-      socket.close();
+
     });
 
     this.register();

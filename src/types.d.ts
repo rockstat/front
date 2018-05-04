@@ -1,4 +1,5 @@
 import { IncomingMessage, ServerResponse } from "http";
+import * as Redis from "redis-fast-driver";
 
 export type anyobj = { [key: string]: any };
 export type MappedType<T> = { [K in keyof T]: T[K] };
@@ -28,12 +29,16 @@ interface MessageKey {
 }
 
 interface FlexOutgoingMessage extends Partial<MessageIdTime> {
-  // data: { [key: string]: any };
   [key: string]: any;
 }
 
+type IndepIncomingMessage = { [key: string]: any } & BaseIncomingMessage;
+
 interface BaseIncomingMessage extends Partial<MessageIdTime> {
   name: string;
+  group?: string;
+  channel?: string;
+  uid?: string;
   data: { [key: string]: any }
 }
 
@@ -153,9 +158,17 @@ export type ClientConfig = {
   wsPort: number
 }
 
-export interface TypeOrmConfig {
-  entities: Array<Object>;
-  [key: string]: any;
+export interface RedisConfig {
+  host: string;
+  port: number;
+  db: number;
+  auth: boolean;
+  maxRetries: number;
+  tryToReconnect: boolean;
+  reconnectTimeout: number;
+  autoConnect: boolean;
+  doNotSetClientName: boolean;
+  doNotRunQuitOnEnd: boolean;
 }
 
 export type RemoteServiceConfig = RemoteHttpServiceConfig;
@@ -167,6 +180,7 @@ export type Config = {
     clickhouse: WriterClickHouseConfig;
   }
   http: HttpConfig;
+  redis: RedisConfig;
   websocket: WsConfig;
   identify: IdentifyConfig;
   log: LoggerConfig;
@@ -175,9 +189,9 @@ export type Config = {
   client: {
     common: ClientConfig;
   }
-  typeorm: TypeOrmConfig;
   fixtures: any;
 }
+
 
 export interface EnrichService {
   enrich: (key: string, msg: { [key: string]: any }) => Promise<string | undefined> | undefined;
@@ -188,8 +202,6 @@ export type RemoteServices = { [key: string]: RemoteService };
 export type RemoteService = EnrichService & {
   register: (dispatcher: Dispatcher) => void
 }
-
-
 
 export type Headers = Array<[string, string | string[]]>;
 

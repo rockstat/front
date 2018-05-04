@@ -4,19 +4,21 @@ import * as FindMyWay from 'find-my-way';
 import { LogFactory, Logger } from '@app/log';
 import { epglue } from '@app/helpers';
 import {
+  CONTENT_TYPE_JSON,
   STATUS_OK,
   STATUS_NOT_FOUND,
   STATUS_TEMP_REDIR,
+  STATUS_OK_NO_CONTENT,
   PATH_HTTP_404,
   PATH_HTTP_LIBJS,
-  IN_REDIR,
+  PATH_HTTP_OPTS,
   IN_WEBHOOK,
+  IN_REDIR,
   IN_PIXEL,
   IN_TRACK,
-  PATH_HTTP_OPTS,
-  STATUS_OK_NO_CONTENT,
-  CONTENT_TYPE_JSON,
-  IN_CUSTOM
+  IN_CUSTOM,
+  IN_INDEP,
+  CHANNEL_WEBHOOK
 } from '@app/constants';
 import {
   QueryParams
@@ -54,11 +56,13 @@ export interface RequestHandlerPayload {
 
 export interface RequestHandlerResult {
   key: string;
+  channel?: string;
   params?: RouteParams;
   status: number;
   location?: string;
   contentType?: string;
 };
+
 
 export type RequestHandler = (payload: RequestHandlerPayload) => RequestHandlerResult;
 
@@ -79,7 +83,7 @@ export class Router {
     this.log = logFactory.for(this);
     this.router = new FindMyWay();
     this.setupRoutes();
-    this.log.info(this.router.prettyPrint());
+    console.log(this.router.prettyPrint());
     /** Default route (404) */
     this.defaultRoute = {
       params: {},
@@ -134,13 +138,6 @@ export class Router {
       };
     };
 
-    const customHandler = function (payload: RequestHandlerPayload): RequestHandlerResult {
-      return {
-        key: epglue(IN_CUSTOM, payload.params.name),
-        status: STATUS_OK
-      };
-    }
-
     const redirHandler = function (payload: RequestHandlerPayload): RequestHandlerResult {
       return {
         params: payload.params,
@@ -151,7 +148,8 @@ export class Router {
     const webhookHandler = function (payload: RequestHandlerPayload): RequestHandlerResult {
       return {
         params: payload.params,
-        key: epglue(IN_WEBHOOK, payload.params.service, payload.params.name),
+        channel: CHANNEL_WEBHOOK,
+        key: epglue(IN_INDEP, payload.params.service, payload.params.name),
         status: STATUS_OK
       };
     };
@@ -167,12 +165,13 @@ export class Router {
     this.router.get('/img', pixelHandler);
     this.router.options('/track', optionsHandler);
     this.router.post('/track', trackHandler);
-    this.router.options('/custom', optionsHandler);
-    this.router.get('/custom/:name', customHandler);
-    this.router.post('/custom/:name', customHandler);
-    this.router.get('/redir/:projectId/:category/:name', redirHandler);
+    this.router.options('/wh', optionsHandler);
+    this.router.options('/webhook', optionsHandler);
+    this.router.get('/wh/:service/:name', webhookHandler);
+    this.router.post('/wh/:service/:name', webhookHandler);
     this.router.get('/webhook/:projectId/:service/:name', webhookHandler);
     this.router.post('/webhook/:projectId/:service/:name', webhookHandler);
+    this.router.get('/redir/:projectId/:category/:name', redirHandler);
   }
 }
 

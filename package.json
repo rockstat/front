@@ -27,7 +27,6 @@
     "@types/glob": "^5.0.35",
     "@types/js-yaml": "^3.10.1",
     "@types/micro": "^7.3.1",
-    "@types/node": "^9.4.7",
     "@types/pino": "^4.7.1",
     "@types/qs": "^6.5.1",
     "@types/require-dir": "^0.3.0",
@@ -44,6 +43,7 @@
     "typescript": "^2.7.2"
   },
   "dependencies": {
+    "@types/node": "9",
     "ajv": "^6.4.0",
     "bluebird": "^3.5.1",
     "cookie": "^0.3.1",
@@ -52,6 +52,7 @@
     "event-pubsub": "^4.3.0",
     "find-my-way": "^1.11.1",
     "flake-idgen": "^1.1.0",
+    "hiredis": "^0.5.0",
     "int64-buffer": "^0.1.10",
     "js-yaml": "^3.11.0",
     "merge-options": "^1.0.0",
@@ -63,13 +64,15 @@
     "pg": "^7.4.1",
     "pino": "^4.14.0",
     "qs": "^6.5.1",
+    "redis-fast-driver": "^2.1.0",
     "reflect-metadata": "^0.1.12",
     "require-dir": "^1.0.0",
     "rpc-websockets": "^4.0.2",
     "typedi": "^0.7.1",
     "typeorm": "^0.1.20",
     "ws": "^5.1.0",
-    "xxhash": "^0.2.4"
+    "xxhash": "^0.2.4",
+    "yoredis": "^0.2.0"
   },
   "_moduleAliases": {
     "@app": "dist"

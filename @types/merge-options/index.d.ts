@@ -6,9 +6,9 @@
 declare module 'merge-options' {
 
   // type anyobj = { [key: string]: string };
-
+  type OptionsType = object
   interface Assign {
-    (...obj: object[]): any;
+    (...obj: OptionsType[]): any;
   }
   const mergeOptions: Assign;
 

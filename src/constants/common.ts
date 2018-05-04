@@ -18,6 +18,7 @@ export const CHANNEL_PIXEL = 'pixel';
 export const CHANNEL_TRACK = 'track';
 export const CHANNEL_REDIR = 'redir';
 export const CHANNEL_CUSTOM = 'custom';
+export const CHANNEL_INDEPENDENT = 'indep';
 
 
 // === CATEGORIES
@@ -38,6 +39,7 @@ export const OUT_WEBSOCK = epglue(OUTGOING, CHANNEL_WEBSOCK);
 export const CMD_WEBSOCK = epglue(COMMAND, CHANNEL_WEBSOCK);
 
 export const IN_CUSTOM = epglue(INCOMING, CHANNEL_CUSTOM);
+export const IN_INDEP = epglue(INCOMING, CHANNEL_INDEPENDENT);
 
 export const IN_WEBHOOK = epglue(INCOMING, CHANNEL_WEBHOOK);
 export const IN_PIXEL = epglue(INCOMING, CHANNEL_PIXEL);

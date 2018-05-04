@@ -1,2 +1,2 @@
-import requireDir = require('require-dir');
-export const services = requireDir('.');
+export * from './RemoteWsRpcService'
+export * from './EchoService'

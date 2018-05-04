@@ -6,5 +6,7 @@ export * from './PubSub';
 export * from './Indentifier';
 export * from './BrowserLib';
 export * from './Dispatcher';
-export * from './TypeOrm';
 export * from './Validator';
+// export * from './RedisClient';
+export * from './RpcEnclosure';
+

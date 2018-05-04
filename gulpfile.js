@@ -26,8 +26,8 @@ gulp.task("nodemon", function(done) {
     this.stdout.pipe(pretty()).pipe(process.stdout)
     this.stderr.pipe(pretty()).pipe(process.stdout)
   })
-  .on('exit',['clean'])
-  .on('crash',['clean']);
+  // .on('crash',['clean']);
+  // .on('exit',['clean'])
 });
 
 gulp.task('clean', function() {

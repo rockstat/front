@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { Container, Service, Inject } from 'typedi';
 import { LogFactory, Logger } from '@app/log';
 import { Indentifier, Configurer, Dispatcher } from '@app/lib';
-import { services } from '@app/services';
+import { } from '@app/services';
 import {
   WebSocketServer,
   HttpServer
@@ -48,22 +48,9 @@ export class AppServer {
   }
 
   /**
-   * Init microservices connectors
+   * Init connectors
    */
-  initServices() {
-    for (const [name, config] of Object.entries(this.configurer.services)) {
-      const log = this.logFactory.child({ name });
-      // const ClassName = config.class;
-      const params = { log, config, container: Container };
-      const Service = services[config.class];
-      if (Service) {
-        const service = new Service(params);
-        if (service.register) {
-          service.register(this.dispatcher);
-        }
-      }
-    }
-  }
+  initServices() { }
 
   startTransport() {
     this.log.info('Starting transports');

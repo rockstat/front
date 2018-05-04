@@ -1,7 +1,7 @@
 import { Container } from 'typedi';
 import { MessageHandler, Dispatcher } from '@app/lib';
 import { Logger } from '@app/log';
-import { ClientHttpMessage, FlexOutgoingMessage, BaseIncomingMessage } from "@app/types";
+import { ClientHttpMessage, BaseIncomingMessage } from "@app/types";
 import {
   INCOMING,
   OUT_WEBSOCK_BROADCAST,
@@ -15,7 +15,7 @@ interface EchoServiceConfig {
   secret?: string
 }
 
-export = class EchoService {
+export class EchoService {
   dispatcher: Dispatcher;
   options: EchoServiceConfig = {};
   log: Logger;
@@ -28,12 +28,24 @@ export = class EchoService {
     this.dispatcher = dispatcher;
 
     this.dispatcher.registerListener(IN_WEBSOCK_HELLO, (key, msg) => {
-      this.dispatcher.emit(CMD_WEBSOCK_ADD_GROUP, { uid: msg.uid, group: KEY_ECHO });
+      const reply: BaseIncomingMessage = {
+        name: KEY_ECHO,
+        data: {
+          uid: msg.uid,
+          group: KEY_ECHO
+        }
+      }
+      this.dispatcher.emit(CMD_WEBSOCK_ADD_GROUP, reply);
     });
 
     this.dispatcher.registerListener(INCOMING, (key: string, msg: BaseIncomingMessage) => {
       console.log(msg);
-      this.dispatcher.emit(epglue(OUT_WEBSOCK_BROADCAST), { name: KEY_ECHO, group: KEY_ECHO, data: msg });
+      const reply: BaseIncomingMessage = {
+        name: KEY_ECHO,
+        group: KEY_ECHO,
+        data: msg
+      }
+      this.dispatcher.emit(epglue(OUT_WEBSOCK_BROADCAST), reply);
     });
   }
 

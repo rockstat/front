@@ -7,8 +7,9 @@ http: &http
   port: <%= env.PORT || '9080' %>
 websocket:
   https:
-    certFile: ./certs/rockstat.test.crt
-    keyFile: ./certs/rockstat.test.key
+    <<: *http
+    certFile: /Users/user/projects/certificates/rockstat.test.crt
+    keyFile: /Users/user/projects/certificates/rockstat.test.key
     port: <%= env.PORT_WS || '10003' %>
   path: /wss
   perMessageDeflate:  # See zlib defaults.
@@ -27,43 +28,13 @@ websocket:
     concurrencyLimit: 10          # Limits zlib concurrency for perf.
     threshold: 1024               # Size (in bytes) below which messages
     # should not be compressed.
-
-ipc:
-  appspace: tracker.
-  socketRoot: var/
-  id: main
-  networkHost: localhost
-  networkPort: 8000
-  encoding: utf8
-  rawBuffer: false
-  delimiter: "\f"
-  sync: false
-  silent: false
-  logInColor: true
-  logDepth: 2
-  maxConnections: 100
-  retry: 500
-  maxRetries: 5
-  stopRetrying: false
-  unlink: true
-
-services:
-  SypexGeoService:
-    baseUrl: http://<%= env.SXGEO_SERVICE %>
-    prefix: sxg
-    methods:
-      query: query?ip=${ip}
-  MDeviceDetectorService:
-    baseUrl: http://<%= env.DEVICED_SERVICE %>
-    prefix: mdd
-    methods:
-      query: query?ua=${userAgent}
-
+redis:
+  url: <%= env.REDIS_URL %>
+  db: 0
 statsd:
   host: <%= env.STATSD_HOST %>
   port: 8125
   debug: false
-
 log:
   use: pino
   pino:

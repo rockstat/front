@@ -254,9 +254,6 @@ export class HttpServer {
         // Running enrichers, subscribers, handler
         let response = await this.dispatcher.emit(handled.key, msg);
 
-
-        console.log('resp: '+response);
-
         // Processing redirect
         if (epchild(CHANNEL_REDIR, handled.key) && handled.location) {
           res.setHeader(HLocation, handled.location);

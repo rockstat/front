@@ -22,10 +22,12 @@ import {
   IdentifyConfig,
   BrowserLibConfig,
   ClientConfig,
-  TypeOrmConfig,
+  RedisConfig,
   RemoteServicesConfig,
+  RemoteServiceConfig
 } from '../types';
-import { TypeOrm } from '@app/lib';
+
+export const KERNEL = 'kernel';
 
 dotenv.config();
 
@@ -35,9 +37,7 @@ export class Configurer {
   configDir: string = './config';
   config: Config;
   env: Envs;
-  ejsConfig:EjsOptions = {
-
-  }
+  ejsConfig: EjsOptions = {}
 
   get identify(): IdentifyConfig { return this.config.identify; }
   get httpConfig(): HttpConfig { return this.config.http; }
@@ -46,8 +46,8 @@ export class Configurer {
   get ipcConfig(): object { return this.config.ipc; }
   get services(): RemoteServicesConfig { return this.config.services; }
   get browserLib(): BrowserLibConfig { return this.config.browserLib[this.env]; }
+  get redis(): RedisConfig { return this.config.redis; }
   get client(): ClientConfig { return this.config.client.common; }
-  get typeorm(): TypeOrmConfig { return this.config.typeorm; }
 
 
   /**
@@ -55,29 +55,28 @@ export class Configurer {
    */
   constructor() {
     const parts = globSync(`${this.configDir}/**/*.yml`, { nosort: true })
-      .map(file => readFileSync(file)
-        .toString());
+      .map(file => readFileSync(file).toString());
 
     const yaml = ejsRender(parts.join('\n'), { env: process.env, ...consts }, this.ejsConfig);
 
-    this.config = mergeOptions({}, ...safeLoadAll(yaml));
+    this.config = mergeOptions({}, ...<object[]>safeLoadAll(yaml).filter(cfg => cfg !== null && cfg !== undefined));
     this.env = this.config.env = Configurer.env;
 
     const { writers } = this.config;
     const { clickhouse } = writers;
 
     if (clickhouse) {
-      writers.clickhouse = this.handleCHExtension(clickhouse);
+      writers.clickhouse = this.handleCHExtend(clickhouse);
     }
 
     this.config.writers = writers;
   }
 
   /**
-   * Handling ClickHouse table extensions via _options: extend: basename
+   * Handling ClickHouse table extendability via _options: extend: basename
    * @param config ClickHouse configuration
    */
-  handleCHExtension(config: WriterClickHouseConfig): WriterClickHouseConfig {
+  handleCHExtend(config: WriterClickHouseConfig): WriterClickHouseConfig {
     const { base, tables, ...rest } = config;
 
     for (const table of Object.keys(tables)) {

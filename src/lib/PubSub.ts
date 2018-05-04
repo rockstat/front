@@ -1,9 +1,13 @@
 
 export type MessageHandler = (key: string, ...args: any[]) => void;
 
+interface RegisterParams {
+
+}
+
 interface LevelChildren {
   handlers: MessageHandler[];
-  children: { [key: string]: LevelChildren};
+  children: { [key: string]: LevelChildren };
 }
 
 export class PubSub {
@@ -13,7 +17,7 @@ export class PubSub {
     children: {}
   };
 
-  subscribe(key: string, handler: MessageHandler) {
+  subscribe(key: string, handler: MessageHandler, params: RegisterParams = {}) {
     if (!handler) {
       throw new ReferenceError('handler not present');
     }
