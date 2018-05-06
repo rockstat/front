@@ -1,66 +1,8 @@
-import { IncomingMessage, ServerResponse } from "http";
-import * as Redis from "redis-fast-driver";
-
-export type anyobj = { [key: string]: any };
-export type MappedType<T> = { [K in keyof T]: T[K] };
 export type Envs = 'dev' | 'prod' | 'stage';
+export type MappedType<T> = { [K in keyof T]: T[K] };
 
+// ##### LOGS #####
 
-type Dictionary<T> = Partial<{ [key: string]: T }>;
-
-
-interface Dispatcher {
-  registerHandler: () => void
-  subscribe: () => void
-  registerEnricher: () => void
-
-}
-
-/**
- * Messages
- */
-interface MessageIdTime {
-  id: string;
-  time: Date;
-}
-
-interface MessageKey {
-  key: string;
-}
-
-interface FlexOutgoingMessage extends Partial<MessageIdTime> {
-  [key: string]: any;
-}
-
-type IndepIncomingMessage = { [key: string]: any } & BaseIncomingMessage;
-
-interface BaseIncomingMessage extends Partial<MessageIdTime> {
-  name: string;
-  group?: string;
-  channel?: string;
-  uid?: string;
-  data: { [key: string]: any }
-}
-
-interface ClientHttpMessage extends BaseIncomingMessage {
-  uid: string;
-  ip: string;
-  userAgent: string;
-}
-
-interface WebHookMessage extends BaseIncomingMessage {
-  service: string;
-  name: string;
-}
-
-interface WebHookMessage extends BaseIncomingMessage {
-  service: string;
-  action: string;
-}
-
-/**
- * Configs
- */
 export interface PinoConfig {
   name?: string;
   safe?: boolean;
@@ -73,6 +15,24 @@ export interface LoggerConfig {
   use: Loggers;
   pino: PinoConfig;
 }
+
+// ##### METRICS #####
+
+export interface StatsDClientConfig {
+  prefix?: string;
+  tcp?: boolean;
+  socketTimeout?: number;
+  tags?: { [k: string]: string | number }
+}
+
+export interface StatsDUDPConfig extends StatsDClientConfig {
+  tcp?: false;
+  host: string;
+  port: number;
+  ipv6?: boolean;
+}
+
+// ##### HTTP #####
 
 export interface IdentifyConfig {
   param: string;
@@ -106,11 +66,15 @@ export interface wsDeflateConfig {
   threshold: number;
 }
 
+// ##### WEBSOCKET #####
+
 export interface WsConfig {
   path: string;
   https: HttpsConfig;
   perMessageDeflate: wsDeflateConfig;
 }
+
+// ##### REMOTE SERVICES #####
 
 export type RemoteHttpServiceConfig = {
   prefix: string;
@@ -121,9 +85,30 @@ export type RemoteHttpServiceConfig = {
   handlers: Array<string>
 }
 
+export type RemoteServiceConfig = RemoteHttpServiceConfig;
+export type RemoteServicesConfig = { [key: string]: RemoteServiceConfig };
+
+
+// ##### TRACKING #####
+
 export type BrowserLibConfig = {
   file: string;
 }
+
+export type ClientConfig = {
+  trackClicks: boolean;
+  trackForms: boolean;
+  trackActivity: boolean
+  cookieDomain: string
+  allowSendBeacon: boolean
+  allowHTTP: boolean
+  allowXHR: boolean
+  activateWs: boolean
+  wsPort: number
+}
+
+
+// ##### CLICKHOUSE #####
 
 type WriterCHTableOptsType = "engine" | "extend";
 type WriterCHTableCols = { [key: string]: any };
@@ -146,17 +131,7 @@ export type WriterClickHouseConfig = {
   tables: WriterCHTables; // tables definition
 };
 
-export type ClientConfig = {
-  trackClicks: boolean;
-  trackForms: boolean;
-  trackActivity: boolean
-  cookieDomain: string
-  allowSendBeacon: boolean
-  allowHTTP: boolean
-  allowXHR: boolean
-  activateWs: boolean
-  wsPort: number
-}
+// ##### REDIS #####
 
 export interface RedisConfig {
   host: string;
@@ -171,8 +146,8 @@ export interface RedisConfig {
   doNotRunQuitOnEnd: boolean;
 }
 
-export type RemoteServiceConfig = RemoteHttpServiceConfig;
-export type RemoteServicesConfig = { [key: string]: RemoteServiceConfig };
+// ##### CONFIG ROOT #####
+
 export type Config = {
   env: Envs;
   services: RemoteServicesConfig;
@@ -190,18 +165,9 @@ export type Config = {
     common: ClientConfig;
   }
   fixtures: any;
+  metrics: {
+    statsd?: StatsDUDPConfig
+  }
 }
 
-
-export interface EnrichService {
-  enrich: (key: string, msg: { [key: string]: any }) => Promise<string | undefined> | undefined;
-}
-
-
-export type RemoteServices = { [key: string]: RemoteService };
-export type RemoteService = EnrichService & {
-  register: (dispatcher: Dispatcher) => void
-}
-
-export type Headers = Array<[string, string | string[]]>;
-
+export type ConfigSection = {}

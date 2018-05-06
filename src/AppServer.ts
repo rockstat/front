@@ -10,6 +10,7 @@ import {
 import {
   RemoteService,
 } from '@app/types';
+import { StatsDMetrics } from '@app/lib/metrics/statsd';
 
 @Service()
 export class AppServer {
@@ -31,6 +32,9 @@ export class AppServer {
 
   @Inject()
   identifier: Indentifier;
+
+  @Inject()
+  metrics: StatsDMetrics
 
   services: Array<RemoteService> = [];
   log: Logger;

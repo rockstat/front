@@ -2,7 +2,7 @@
 import { Service, Inject, Container, Token } from "typedi";
 import { IdGenShowFlake, Configurer } from "@app/lib";
 import { handleSetup } from "@app/helpers/class";
-import { RedisClient } from "@app/lib/RedisClient";
+import { RedisClient } from "@app/lib/redis";
 import { Logger, LogFactory } from "@app/log";
 import { METHODS } from "http";
 import { reject } from "bluebird";

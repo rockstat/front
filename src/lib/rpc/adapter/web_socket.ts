@@ -1,6 +1,6 @@
 import { Service } from 'typedi';
 import * as Ajv from 'ajv';
-import { HttpService, Configurer, CallCache, Dispatcher } from '@app/lib'
+import { Configurer, Dispatcher } from '@app/lib'
 import { LogFactory, Logger } from "@app/log";
 import {
   RemoteHttpServiceConfig,

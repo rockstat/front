@@ -15,7 +15,7 @@ import {
 
 import { INCOMING, IN_INDEP } from '@app/constants';
 import { epchild, epglue } from '@app/helpers';
-import { RPCEnclosure, RPCRequest } from '@app/lib/RpcEnclosure';
+import { RPCEnclosure, RPCRequest } from '@app/lib/rpc/agnostic';
 
 interface RPCRegisterStruct {
   methods?: Array<[string, string, string]>

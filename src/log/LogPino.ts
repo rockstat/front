@@ -18,10 +18,8 @@ export class LogPino implements Logger {
   constructor(options: PinoConfig, instance?: pino.Logger) {
 
     this.logger = instance && instance.child(options) || pino(options);
-    // this.logger.info(options, 'Pino with options');
 
     for (const method of this.methods) {
-      // let key: (keyof LogLevels) = method as LogLevel;
       this[method as LogLevel] = this.logger[method].bind(this.logger);
     }
   }

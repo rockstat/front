@@ -22,7 +22,7 @@ import {
 } from '@app/constants';
 import {
   QueryParams
-} from './HttpServer';
+} from './http_server';
 
 // === Rounting based on
 

@@ -19,7 +19,7 @@ const cacheDefaults = <CacheOpts>{
   useClones: true
 }
 
-export class CallCache {
+export class MemTTLCache {
 
   private cache: NodeCache;
 

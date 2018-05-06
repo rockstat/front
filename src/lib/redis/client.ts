@@ -1,8 +1,9 @@
 import Container, { Service, Inject } from 'typedi';
+import * as Redis from 'redis-fast-driver';
+
 import { Configurer } from '@app/lib';
 import { Logger, LogFactory } from '@app/log';
 import { RedisConfig } from '@app/types';
-import * as Redis from 'redis-fast-driver';
 import { handleSetup } from '@app/helpers/class';
 
 

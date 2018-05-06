@@ -49,7 +49,6 @@ export class Configurer {
   get redis(): RedisConfig { return this.config.redis; }
   get client(): ClientConfig { return this.config.client.common; }
 
-
   /**
    * Reading all accessible configuration files including custom
    */
@@ -70,6 +69,10 @@ export class Configurer {
     }
 
     this.config.writers = writers;
+  }
+
+  get<S extends keyof Config>(section: S): Config[S] {
+    return this.config[section];
   }
 
   /**

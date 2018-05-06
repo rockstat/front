@@ -7,7 +7,7 @@ import * as cookie from 'cookie';
 import * as qs from 'qs';
 import { LogFactory, Logger } from '@app/log';
 import { Indentifier, Configurer, BrowserLib, Dispatcher } from '@app/lib';
-import { Router, RouteOn } from './Router'
+import { Router, RouteOn } from './http_router'
 import {
   CONTENT_TYPE_GIF,
   CONTENT_TYPE_PLAIN,

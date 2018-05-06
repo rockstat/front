@@ -2,12 +2,28 @@ const gulp = require('gulp');
 const ts = require('gulp-typescript');
 const nodemon = require('gulp-nodemon');
 const del = require('del');
-const pretty = require('pino').pretty;
+const pinop = require('pino').pretty;
+const pretty = require('pino-pretty');
+
+
+const prettyConfig = {
+  colorize: false, // --colorize
+  // crlf: false, // --crlf
+  // dateFormat: 'yyyy-mm-dd HH:MM:ss.l o', // --dateFormat
+  // errorLikeObjectKeys: ['err', 'error'], // --errorLikeObjectKeys
+  // errorProps: '', // --errorProps
+  levelFirst: false, // --levelFirst
+  localTime: false, // --localTime
+  // messageKey: 'msg', // --messageKey
+  translateTime: true, // --translateTime
+  outputStream: process.stdout
+}
 
 const tsProject = ts.createProject('tsconfig.json',  { typescript: require('typescript')});
 
 gulp.task("nodemon", function(done) {
-  var options = {
+  const prettyfier = pretty(prettyConfig);
+  const options = {
     watch: [
       "dist/",
       "clientlib/",
@@ -23,8 +39,8 @@ gulp.task("nodemon", function(done) {
   nodemon(options)
   .on("start", done)
   .on('readable', function() {
-    this.stdout.pipe(pretty()).pipe(process.stdout)
-    this.stderr.pipe(pretty()).pipe(process.stdout)
+    this.stdout.pipe(pinop()).pipe(process.stdout)
+    this.stderr.pipe(pinop()).pipe(process.stdout)
   })
   // .on('crash',['clean']);
   // .on('exit',['clean'])

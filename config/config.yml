@@ -31,10 +31,6 @@ websocket:
 redis:
   url: <%= env.REDIS_URL %>
   db: 0
-statsd:
-  host: <%= env.STATSD_HOST %>
-  port: 8125
-  debug: false
 log:
   use: pino
   pino:
