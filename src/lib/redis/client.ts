@@ -4,8 +4,7 @@ import * as Redis from 'redis-fast-driver';
 import { Configurer } from '@app/lib';
 import { Logger, LogFactory } from '@app/log';
 import { RedisConfig } from '@app/types';
-import { handleSetup } from '@app/helpers/class';
-
+import { CoreDeps } from '@app/AppServer';
 
 type Handler = (msg: Array<string>) => void;
 
@@ -20,11 +19,11 @@ export class RedisClient {
   client: Redis;
   started: boolean = false;
 
-  setup(): void {
-    handleSetup(this);
+  constructor() {
 
-    this.log = Container.get<LogFactory>(LogFactory).for(this);
-    this.options = Container.get<Configurer>(Configurer).redis;
+    const deps = Container.get(CoreDeps)
+    this.log = deps.logger.for(this);
+    this.options = deps.config.get('redis');
 
     this.log.info('Starting redis client');
     this.client = new Redis(this.options);
@@ -73,6 +72,7 @@ export class RedisClient {
     this.client.rawCall(['subscribe', channel], (error: Error, msg: Array<string>) => {
       if (error) {
         this.log.error('Redis error', error);
+        return;
       }
       func(msg);
     })

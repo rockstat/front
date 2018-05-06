@@ -28,6 +28,10 @@ websocket:
     concurrencyLimit: 10          # Limits zlib concurrency for perf.
     threshold: 1024               # Size (in bytes) below which messages
     # should not be compressed.
+
+rpc:
+  name: kernel
+
 redis:
   url: <%= env.REDIS_URL %>
   db: 0

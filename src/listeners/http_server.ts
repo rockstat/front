@@ -6,7 +6,7 @@ import * as assert from 'assert';
 import * as cookie from 'cookie';
 import * as qs from 'qs';
 import { LogFactory, Logger } from '@app/log';
-import { Indentifier, Configurer, BrowserLib, Dispatcher } from '@app/lib';
+import { IdService, Configurer, BrowserLib, Dispatcher } from '@app/lib';
 import { Router, RouteOn } from './http_router'
 import {
   CONTENT_TYPE_GIF,
@@ -55,6 +55,7 @@ import {
   ClientHttpMessage,
 } from '@app/types';
 import { epchild } from '@app/helpers';
+import { StatsDMetrics } from '@app/lib/metrics/statsd';
 
 
 const f = (i?: string | string[]) => Array.isArray(i) ? i[0] : i;
@@ -106,10 +107,13 @@ export class HttpServer {
   dispatcher: Dispatcher;
 
   @Inject()
-  identifier: Indentifier;
+  identifier: IdService;
 
   @Inject()
   browserLib: BrowserLib;
+
+  @Inject()
+  metrics: StatsDMetrics;
 
   cookieExpires: Date;
 
@@ -157,7 +161,7 @@ export class HttpServer {
 
     try {
 
-      const startAt = process.hrtime()
+      const requestTime = this.metrics.timenote('http.request')
 
       assert(typeof req.url === 'string', 'Request url required');
       assert(typeof req.method === 'string', 'Request method required');
@@ -247,8 +251,10 @@ export class HttpServer {
           body,
           routeOn.query,
           handled.params,
-          transportData,
-          { key: handled.key }
+          {
+            key: handled.key,
+            proto: transportData
+          }
         );
 
         // Running enrichers, subscribers, handler
@@ -275,9 +281,8 @@ export class HttpServer {
           response = emptyGif;
         }
 
-        const startAtOffset = process.hrtime(startAt)
-        const executionMs = startAtOffset[0] * 1e3 + startAtOffset[1] * 1e-6
-        res.setHeader(HResponseTime, executionMs);
+        const reqTime = requestTime()
+        res.setHeader(HResponseTime, reqTime);
 
         send(res, handled.status, response);
 

@@ -1,12 +1,17 @@
-// import { } from "bluebird";
+import { EventEmitter } from "events";
+
 import { Service, Inject, Container, Token } from "typedi";
-import { IdGenShowFlake, Configurer } from "@app/lib";
+
+import { IdService, Configurer } from "@app/lib";
 import { handleSetup } from "@app/helpers/class";
-import { RedisClient } from "@app/lib/redis";
 import { Logger, LogFactory } from "@app/log";
 import { METHODS } from "http";
-import { reject } from "bluebird";
-import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
+import { reject, method } from "bluebird";
+import { RPCAdapter } from "@app/lib/rpc/adapter/abstract";
+import { RPCConfig, RPCRequest, RPCResponse, RPCResponseError, RPCRequestParams } from "@app/types";
+import { SERVICE_KERNEL } from "@app/constants";
+import { StatsDMetrics } from "@app/lib/metrics";
+
 
 // RPC refs
 // https://github.com/tedeh/jayson/blob/master/lib/utils.js
@@ -14,215 +19,151 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
 // https://github.com/scoin/multichain-node/blob/development/lib/client.js
 // http://www.jsonrpc.org/specification
 
-type RPCParams = { [k: string]: any };
+const RPC20 = '2.0';
+
 type RequestHandler<T> = (params: T) => any;
 
-type RPCId = string
-type RPC20 = '2.0'
-
-export interface RPCRequest {
-  jsonrpc: "2.0";
-  method: string;
-  params: any;
-  id?: RPCId;
-  _from?: string;
-}
-
-export interface RPCResponse {
-  jsonrpc: RPC20;
-  result: any;
-  method?: string;
-  id?: RPCId;
-}
-
-export interface RPCResponseError {
-  jsonrpc: RPC20;
-  id?: RPCId;
-  result?: any;
-  method?: string;
-  error: RPCError;
-}
-
-interface RPCError {
-  message: string;
-  code: number;
-  data?: any;
-}
-
-interface RpcHandlers {
+interface RpcMethods {
   [k: string]: RequestHandler<any>;
 }
-export const redisSub = new Token<RedisClient>();
-export const redisPub = new Token<RedisClient>();
+
+interface RPCWaitingCall {
+  resolve: (value?: any | PromiseLike<any>) => void;
+  reject: (reason?: any) => void;
+  timing: Function;
+  timeout: NodeJS.Timer;
+}
+type RPCWaitingCalls = { [k: string]: RPCWaitingCall | undefined };
 
 
 @Service()
-export class RPCEnclosure {
+export class RPCAgnostic {
 
+  @Inject()
+  ids: IdService;
+
+  @Inject()
+  metrics: StatsDMetrics;
+
+  config: RPCConfig;
   started: boolean = false;
-  name: string = 'kernel';
-  timeout: number = 10000;
-  queue: {
-    [k: string]: {
-      resolve: (value?: any | PromiseLike<any>) => void,
-      reject: (reason?: any) => void,
-      timeout: NodeJS.Timer
-    } | undefined
-  } = {};
-
-  methods: RpcHandlers = {};
+  timeout: number = 3000;
   log: Logger;
+  queue: RPCWaitingCalls = {};
+  methods: RpcMethods = {};
+  adapter: RPCAdapter;
 
-  @Inject()
-  logFactory: LogFactory
+  constructor(config: Configurer, logFactory: LogFactory) {
+    this.config = config.get('rpc');
+    this.log = logFactory.for(this);
+  }
 
-  rsub: RedisClient;
-  rpub: RedisClient;
-
-  @Inject()
-  configurer: Configurer
-
-  @Inject()
-  idGen: IdGenShowFlake;
-
-  setup() {
+  setup(adapter: RPCAdapter) {
     handleSetup(this);
-    this.log = this.logFactory.for(this);
-
-    Container.set(redisSub, new RedisClient())
-    Container.set(redisPub, new RedisClient())
-
-
-    this.rsub = Container.get(redisSub);
-    this.rsub.setup();
-    this.rsub.on('connect', () => {
-      this.rsub.subscribe('kernel', this.redisMsg);
-    })
-
-    this.rpub = Container.get(redisPub);
-    this.rpub.setup();
+    this.adapter = adapter;
+    this.log.info('started');
   }
 
-  private decodeEnvelope(raw: string): any {
-    try {
-      return JSON.parse(raw);
-    } catch (error) {
-      this.log.error('Redis decode payload error', error);
-      return;
+  publish(msg: RPCRequest | RPCResponse | RPCResponseError): void {
+    if ('method' in msg && msg.method !== undefined) {
+      msg.method = `${msg.to}:${msg.method}:${SERVICE_KERNEL}`;
+    }
+    this.adapter.send(msg.to, msg)
+  }
+
+  dispatch = async (msg: RPCResponse | RPCResponseError | RPCRequest): Promise<void> => {
+    if ('method' in msg && msg.method !== undefined) {
+      const names = msg.method.split(':');
+      if (names.length === 3) {
+        msg.from = names[0];
+        msg.method = names[1];
+        msg.to = names[2];
+      }
+    }
+    if ('method' in msg && msg.method !== undefined && msg.to && msg.params !== undefined) {
+      this.dispatchRequest(msg).then(res => {
+        if (res) {
+          this.publish(res);
+        }
+      })
+    }
+    else if ('id' in msg && msg.id !== undefined && ('result' in msg || 'error' in msg)) {
+      this.dispatchResponse(msg)
     }
   }
 
-  private encodeEnvelope(data: any): string | void {
-    try {
-      return JSON.stringify(data);
-    } catch (error) {
-      this.log.error('Redis encode payload error', error);
-      return;
+  async dispatchResponse(msg: RPCResponse | RPCResponseError): Promise<void> {
+    const call = this.queue[msg.id];
+    if (call) {
+      if (call.timeout) {
+        clearTimeout(call.timeout)
+      }
+      if ('result' in msg && call.resolve) {
+        call.timing();
+        call.resolve(msg.result);
+      }
+      if ('error' in msg && call.reject) {
+        this.metrics.tick('rpc.error')
+        call.reject(msg.error);
+      }
+      this.queue[msg.id] = undefined;
     }
   }
 
-  publish(channel: string, msg: RPCRequest | RPCResponse | RPCResponseError): void {
-    this.log.debug('\n <---', msg)
-    this.rpub.publish(channel, this.encodeEnvelope(msg));
-  }
-
-  redisMsg = (redismsg: Array<string>) => {
-
-    if (redismsg[0] === 'message' || redismsg[0] === 'pmessage') {
-
-      const raw = redismsg[redismsg.length - 1];
-      const msg = this.decodeEnvelope(raw);
-
-      this.log.debug('\n --> ', msg);
-
-      if (msg && msg.jsonrpc && msg.method && msg.params !== undefined) {
-
-        const names = msg.method.split(':'); ''
-        if (names.length === 3 && this.methods[names[1]]) {
-          msg._from = names[2];
-          msg.method = names[1]
-          this.dispatchRequest(msg).then(res => {
-            if (res) {
-              this.publish(names[2], res);
-            }
-          })
+  async dispatchRequest(msg: RPCRequest): Promise<RPCResponse | RPCResponseError | undefined> {
+    const { method, from } = msg;
+    try {
+      const result = await this.methods[method](msg.params || {});
+      if ('id' in msg && msg.id !== undefined) {
+        return {
+          jsonrpc: RPC20,
+          id: msg.id,
+          from: SERVICE_KERNEL,
+          to: from,
+          result: result || null
         }
       }
-
-      if (msg && msg.jsonrpc && msg.result !== undefined) {
-        this.dispatchResponse(msg)
-      }
-    } else {
-      this.log.warn('unhandled cmd', redismsg);
-    }
-  }
-
-  async dispatch(envelope: RPCResponse): Promise<void> {
-
-  }
-
-  async dispatchResponse(msg: RPCResponse): Promise<void> {
-    // handling RPC Response object
-    if (msg.id) {
-      const node = this.queue[msg.id];
-      if (node) {
-        if (node.resolve) {
-          node.resolve(msg.result)
-        }
-        if (node.timeout) {
-          clearTimeout(node.timeout)
-        }
-        this.queue[msg.id] = undefined;
-      }
-    }
-  }
-
-
-  async dispatchRequest(envelope: RPCRequest): Promise<RPCResponse | RPCResponseError> {
-    const { method } = envelope;
-    try {
-      const result = await this.methods[method](envelope.params || {});
-      const msg: RPCResponse = {
-        jsonrpc: '2.0',
-        method: method,
-        result: result || null,
-        id: envelope.id
-      }
-      return msg;
     } catch (error) {
-      return this.wrapError(error);
+      return this.wrapError(msg, error);
       this.log.error('handler exec error', error);
     }
   }
 
+  notify(service: string, method: string, params: RPCRequestParams = null): void {
+    const msg: RPCRequest = {
+      jsonrpc: RPC20,
+      from: SERVICE_KERNEL,
+      to: service,
+      method: method,
+      params: params
+    }
+    this.publish(msg)
+  }
 
-  // private wrap(method: string, params?: RPCParams): RPCEnvelope {
-
-  // }
-
-  request<T>(service: string, method: string, params?: { [k: string]: any }): Promise<T> {
+  request<T>(service: string, method: string, params: RPCRequestParams = null): Promise<T> {
     return new Promise<any>((resolve, reject) => {
-
-      const rpcId = this.idGen.take();
-      const envelope: RPCRequest = {
-        jsonrpc: "2.0",
-        id: rpcId,
-        method: `${service}:${method}:${this.name}`,
+      const id = this.ids.rpcId();
+      const msg: RPCRequest = {
+        jsonrpc: RPC20,
+        from: SERVICE_KERNEL,
+        to: service,
+        id: id,
+        method: method,
         params: params || null
       }
-
-      this.queue[rpcId] = {
+      this.queue[id] = {
         resolve,
         reject,
+        timing: this.metrics.timenote('rpc.request', { service, method }),
         timeout: setTimeout(() => {
-          const func = this.queue[rpcId];
-          if (func) {
-            this.queue[rpcId] = undefined;
-            func.reject();
+          const call = this.queue[id];
+          if (call) {
+            this.queue[id] = undefined;
+            call.reject();
           }
         }, this.timeout)
       };
-      this.publish(service, envelope)
+      this.publish(msg)
     })
   }
 
@@ -230,14 +171,18 @@ export class RPCEnclosure {
     this.methods[method] = func;
   }
 
-  wrapError(error: Error, code?: number): RPCResponseError {
-    return {
-      id: "0",
-      jsonrpc: "2.0",
-      error: {
-        code: code || 0,
-        message: error.message,
-        data: error.stack || {}
+  wrapError(msg: RPCRequest, error: Error, code?: number): RPCResponseError | undefined {
+    if ('id' in msg && msg.id !== undefined) {
+      return {
+        id: msg.id,
+        from: SERVICE_KERNEL,
+        to: msg.from,
+        jsonrpc: RPC20,
+        error: {
+          code: code || 0,
+          message: error.message,
+          data: error.stack || {}
+        }
       }
     }
   }

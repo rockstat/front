@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { Container, Service, Inject } from 'typedi';
 import { LogFactory, Logger } from '@app/log';
-import { Indentifier, Configurer, Dispatcher } from '@app/lib';
+import { IdService, Configurer, Dispatcher } from '@app/lib';
 import { } from '@app/services';
 import {
   WebSocketServer,
@@ -13,10 +13,20 @@ import {
 import { StatsDMetrics } from '@app/lib/metrics/statsd';
 
 @Service()
-export class AppServer {
-
+export class CoreDeps {
   @Inject()
-  configurer: Configurer;
+  config: Configurer;
+  @Inject()
+  logger: LogFactory;
+  @Inject()
+  metrics: StatsDMetrics
+  @Inject()
+  identifier: IdService;
+}
+
+
+@Service()
+export class AppServer {
 
   @Inject()
   httpServer: HttpServer;
@@ -30,13 +40,6 @@ export class AppServer {
   @Inject()
   dispatcher: Dispatcher;
 
-  @Inject()
-  identifier: Indentifier;
-
-  @Inject()
-  metrics: StatsDMetrics
-
-  services: Array<RemoteService> = [];
   log: Logger;
 
   initialize() {
@@ -46,15 +49,9 @@ export class AppServer {
   }
 
   start() {
-    this.initServices();
     this.dispatcher.start();
     handlerService.startTransport();
   }
-
-  /**
-   * Init connectors
-   */
-  initServices() { }
 
   startTransport() {
     this.log.info('Starting transports');
@@ -66,3 +63,4 @@ export class AppServer {
 export const handlerService = <AppServer>Container.get(AppServer);
 handlerService.initialize();
 handlerService.start();
+export const deps = <CoreDeps>Container.get(CoreDeps);

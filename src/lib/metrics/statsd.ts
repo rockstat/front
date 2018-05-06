@@ -5,7 +5,7 @@ import { Configurer } from '@app/lib';
 
 interface MetricsCollector {
   tick(metric: string): void;
-  timenote(metric: string): () => void;
+  timenote(metric: string): () => number;
   time(metric: string, time: number): void;
 }
 
@@ -23,21 +23,22 @@ export class StatsDMetrics implements MetricsCollector {
     }
   }
 
-  tick(metric: string) {
-    this.client.increment(metric);
+  tick(metric: string, tags?: { [k: string]: string | number }) {
+    this.client.increment(metric, undefined, tags);
   }
 
-  timenote(metric: string): () => void {
+  timenote(metric: string, tags?: { [k: string]: string | number }): () => number {
     const start = process.hrtime();
     return () => {
       const diff = process.hrtime(start);
       const time = Math.round(diff[0] * 1e3 + diff[1] * 1e-6);
       this.time(metric, time);
+      return time;
     }
   }
 
-  time(metric: string, duration: number): void {
-    this.client.timing(metric, duration);
+  time(metric: string, duration: number, tags?: { [k: string]: string | number }): void {
+    this.client.timing(metric, duration, tags);
   }
 
 }

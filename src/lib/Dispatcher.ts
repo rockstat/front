@@ -3,23 +3,24 @@ import * as bb from 'bluebird';
 import * as net from 'net';
 import { AppServer } from '@app/AppServer';
 import { LogFactory, Logger } from '@app/log';
-import { BaseIncomingMessage, FlexOutgoingMessage, IndepIncomingMessage } from '@app/types';
+import { BaseIncomingMessage, FlexOutgoingMessage, IncMsg, RPCConfig, BusMsgHdr } from '@app/types';
 import { StubStore } from '@app/stores/StubStore';
 import {
-  MessageHandler,
   Configurer,
   IdGenShowFlake,
-  PubSub,
-  KERNEL
+  TreeBus,
+  FlatBus
 } from '@app/lib'
 
-import { INCOMING, IN_INDEP } from '@app/constants';
+import { INCOMING, IN_INDEP, CALL_IAMALIVE, SERVICE_BAND, SERVICE_KERNEL } from '@app/constants';
 import { epchild, epglue } from '@app/helpers';
-import { RPCEnclosure, RPCRequest } from '@app/lib/rpc/agnostic';
+import { RPCAgnostic } from '@app/lib/rpc/agnostic';
+import { RPCAdapterRedis } from '@app/lib/rpc/adapter/redis';
 
 interface RPCRegisterStruct {
   methods?: Array<[string, string, string]>
 }
+
 interface RPCRegisterHandler {
   (params: RPCRegisterStruct): any
 }
@@ -28,9 +29,9 @@ interface RPCRegisterHandler {
 export class Dispatcher {
 
   log: Logger;
-  enrichBus: PubSub = new PubSub();
-  listenBus: PubSub = new PubSub();
-  handleBus: { [key: string]: MessageHandler } = {};
+  enrichBus: TreeBus = new TreeBus();
+  listenBus: TreeBus = new TreeBus();
+  handleBus: FlatBus = new FlatBus();
 
   @Inject()
   idGen: IdGenShowFlake;
@@ -38,56 +39,57 @@ export class Dispatcher {
   @Inject()
   stubStore: StubStore;
 
+  rpcConfig: RPCConfig;
   @Inject()
-  rpc: RPCEnclosure
+  rpcRedis: RPCAdapterRedis;
+  @Inject()
+  rpc: RPCAgnostic;
+
   rpcHandlers: { [k: string]: [string, string] } = {};
 
-  constructor(logFactory: LogFactory, confugurer: Configurer) {
+  constructor(logFactory: LogFactory, config: Configurer) {
     this.log = logFactory.for(this);
-    this.log.info('Starting dispatcher');
+    this.rpcConfig = config.get('rpc');
+    this.log.info('starting');
   }
 
   setup() {
-
-    // Attaching stores
-    this.enrichBus.subscribe('*', (key: string, msg: any) => {
-      this.stubStore.push(msg);
-    });
-
-    this.rpc.setup();
+    this.rpcRedis.setup(this.rpcConfig);
+    this.rpcRedis.setReceiver(this.rpc, 'dispatch');
+    this.rpc.setup(this.rpcRedis);
 
     this.rpc.register('status', async () => {
       return { 'status': "i'm ok!" };
     });
 
-    this.rpc.register<RPCRegisterStruct>('__status_receiver', async (params) => {
-      if (params.methods) {
-        for (const [name, method, role] of params.methods) {
+    this.rpc.register<RPCRegisterStruct>('services', async (data) => {
+      if (data.methods) {
+        const updateHdrs: string[] = [];
+        for (const [name, method, role] of data.methods) {
           const key = epglue(IN_INDEP, name, method)
           if (role === 'handler') {
-            this.log.info('registering rpc handler');
             this.rpcHandlers[key] = [name, method];
           }
-          this.registerHandler(key, this.rpcHandlerGateway)
+          updateHdrs.push(key);
         }
+        this.handleBus.replace(updateHdrs, this.rpcGateway)
       }
-      return {};
+      return { result: true };
     });
-
-    setTimeout(() => {
-      this.rpc.request<any>('band', '__status_request', {})
-        .then((_) => { }).catch(err => this.log.error(err))
-    }, 100);
+    // notify band
+    setImmediate(() => {
+      this.rpc.notify(SERVICE_BAND, CALL_IAMALIVE, { name: SERVICE_KERNEL })
+    })
   }
 
-  rpcHandlerGateway = async (key: string, msg: IndepIncomingMessage): Promise<FlexOutgoingMessage> => {
+  rpcGateway = async (key: string, msg: IncMsg): Promise<FlexOutgoingMessage> => {
     if (msg.service && msg.name && this.rpcHandlers[key]) {
       return await this.rpc.request<any>(msg.service, msg.name, msg)
     }
     return this.defaultHandler(key, msg);
   }
 
-  defaultHandler(key: string, msg: IndepIncomingMessage): FlexOutgoingMessage {
+  defaultHandler: BusMsgHdr = (key, msg): any => {
     return { key: key, id: msg.id }
   }
 
@@ -95,22 +97,21 @@ export class Dispatcher {
     this.log.info('Started');
   }
 
-  registerEnricher(key: string, func: MessageHandler): void {
+  registerEnricher(key: string, func: BusMsgHdr): void {
     this.log.info(`Registering enricher for ${key}`);
     this.enrichBus.subscribe(key, func);
   }
 
-  registerListener(key: string, func: MessageHandler): void {
+  registerListener(key: string, func: BusMsgHdr): void {
     this.log.info(`Registering subscriber for ${key}`);
     this.listenBus.subscribe(key, func);
   }
 
-  registerHandler(key: string, func: MessageHandler): void {
-    this.log.info(`Registering handler for ${key}`);
-    this.handleBus[key] = func;
+  registerHandler(key: string, func: BusMsgHdr): void {
+    this.handleBus.set(key, func);
   }
 
-  async emit(key: string, msg: IndepIncomingMessage): Promise<any> {
+  async emit(key: string, msg: IncMsg): Promise<any> {
 
     this.log.debug(` -> ${key}`);
 
@@ -126,7 +127,6 @@ export class Dispatcher {
     this.listenBus.publish(key, msg).then(results => { });
 
     // ### Phase 3: handling if configuring
-    return this.handleBus[key] ? await this.handleBus[key](key, msg) : this.defaultHandler(key, msg);
-
+    return await this.handleBus.handle(key, msg);
   }
 }

@@ -27,8 +27,6 @@ import {
   RemoteServiceConfig
 } from '../types';
 
-export const KERNEL = 'kernel';
-
 dotenv.config();
 
 @Service({ global: true })

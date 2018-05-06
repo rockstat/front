@@ -146,6 +146,11 @@ export interface RedisConfig {
   doNotRunQuitOnEnd: boolean;
 }
 
+// ##### RPC #####
+export interface RPCConfig {
+  name: string;
+}
+
 // ##### CONFIG ROOT #####
 
 export type Config = {
@@ -166,8 +171,10 @@ export type Config = {
   }
   fixtures: any;
   metrics: {
-    statsd?: StatsDUDPConfig
-  }
+    statsd?: StatsDUDPConfig;
+  };
+  rpc: RPCConfig;
+
 }
 
 export type ConfigSection = {}

@@ -5,6 +5,16 @@ export const ENV_DEV = 'dev';
 export const ENV_PROD = 'prod';
 export const ENV_STAGE = 'stage';
 
+// === RPC services
+
+export const SERVICE_BAND = 'band';
+export const SERVICE_KERNEL = 'kernel';
+
+
+// === RPC methods
+
+export const CALL_IAMALIVE = '__iamalive';
+
 // === TYPES
 
 export const STRING = 'string';

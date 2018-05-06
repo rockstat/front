@@ -1,5 +1,5 @@
 import { Container } from 'typedi';
-import { MessageHandler, Dispatcher } from '@app/lib';
+import { Dispatcher } from '@app/lib';
 import { Logger } from '@app/log';
 import { ClientHttpMessage, BaseIncomingMessage } from "@app/types";
 import {
@@ -27,7 +27,7 @@ export class EchoService {
   register(dispatcher: Dispatcher) {
     this.dispatcher = dispatcher;
 
-    this.dispatcher.registerListener(IN_WEBSOCK_HELLO, (key, msg) => {
+    this.dispatcher.registerListener(IN_WEBSOCK_HELLO, async (key, msg) => {
       const reply: BaseIncomingMessage = {
         name: KEY_ECHO,
         data: {
@@ -38,7 +38,7 @@ export class EchoService {
       this.dispatcher.emit(CMD_WEBSOCK_ADD_GROUP, reply);
     });
 
-    this.dispatcher.registerListener(INCOMING, (key: string, msg: BaseIncomingMessage) => {
+    this.dispatcher.registerListener(INCOMING, async (key: string, msg: BaseIncomingMessage): Promise<void> => {
       console.log(msg);
       const reply: BaseIncomingMessage = {
         name: KEY_ECHO,
