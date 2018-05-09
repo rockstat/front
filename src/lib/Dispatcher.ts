@@ -57,6 +57,7 @@ export class Dispatcher {
     this.rpcRedis.setup(this.rpcConfig);
     this.rpcRedis.setReceiver(this.rpc, 'dispatch');
     this.rpc.setup(this.rpcRedis);
+    this.handleBus.setNoneHdr(this.defaultHandler);
 
     this.rpc.register('status', async () => {
       return { 'status': "i'm ok!" };
@@ -80,6 +81,16 @@ export class Dispatcher {
     setImmediate(() => {
       this.rpc.notify(SERVICE_BAND, CALL_IAMALIVE, { name: SERVICE_KERNEL })
     })
+
+    this.listenBus.subscribe('*', async (key: string, msg: BusMsgHdr) => {
+      try {
+        return await this.rpc.notify('any', 'listener', msg);
+      } catch (error) {
+        this.log.error(`catch! ${error.message}`);
+      }
+
+    })
+
   }
 
   rpcGateway = async (key: string, msg: IncMsg): Promise<FlexOutgoingMessage> => {

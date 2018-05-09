@@ -194,8 +194,8 @@ export class HttpServer {
         uid: uid
       };
 
-      transportData.ip = '82.202.204.194';
-      transportData.userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.162 Safari/537.36'
+      // transportData.ip = '82.202.204.194';
+      // transportData.userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.162 Safari/537.36'
 
       // Data for routing request
       const routeOn: RouteOn = {

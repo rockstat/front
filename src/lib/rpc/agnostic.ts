@@ -47,7 +47,7 @@ export class RPCAgnostic {
 
   config: RPCConfig;
   started: boolean = false;
-  timeout: number = 3000;
+  timeout: number = 2000;
   log: Logger;
   queue: RPCWaitingCalls = {};
   methods: RpcMethods = {};
@@ -159,7 +159,7 @@ export class RPCAgnostic {
           const call = this.queue[id];
           if (call) {
             this.queue[id] = undefined;
-            call.reject();
+            call.reject(new Error('Reuest timeout'));
           }
         }, this.timeout)
       };
