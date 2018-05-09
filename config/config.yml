@@ -4,13 +4,13 @@ identify: &httpCommon
   cookieMaxAge: <%= 3 * 365 * 24 * 60 * 60 %>
 http: &http
   host: <%= env.HOST || '0.0.0.0' %>
-  port: <%= env.PORT || '9080' %>
+  port: <%= env.PORT || '8080' %>
 websocket:
   https:
     <<: *http
     certFile: /Users/user/projects/certificates/rockstat.test.crt
     keyFile: /Users/user/projects/certificates/rockstat.test.key
-    port: <%= env.PORT_WS || '10003' %>
+    port: <%= env.PORT_WSS || '8083' %>
   path: /wss
   perMessageDeflate:  # See zlib defaults.
     zlibDeflateOptions:
@@ -33,7 +33,7 @@ rpc:
   name: kernel
 
 redis:
-  url: <%= env.REDIS_URL %>
+  url: <%= env.REDIS_URL || 'redis://127.0.0.1:6379' %>
   db: 0
 log:
   use: pino

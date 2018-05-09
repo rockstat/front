@@ -1,7 +1,11 @@
 FROM node:9
 
-RUN mkdir -p /usr/src/app
-WORKDIR /usr/src/app
+# Env vars
+ENV TZ UTC
+ENV NODE_ENV production
+
+# RUN mkdir -p /app
+WORKDIR /app
 
 COPY package.json /usr/src/app/
 COPY yarn.lock /usr/src/app/
@@ -9,19 +13,13 @@ COPY yarn.lock /usr/src/app/
 RUN yarn install --production
 RUN yarn global add pino
 
-COPY . /usr/src/app
+COPY . .
 
-# Downloading latest alcojs lib
-ARG ALCOJS_VERSION=master
-ENV ALCOJS_URL https://raw.githubusercontent.com/alcolytics/alcojs/$ALCOJS_VERSION/dist/lib.js
-RUN curl $ALCOJS_URL > alcojs/lib.js
-
-# Env vars
-ENV TZ UTC
-ENV NODE_ENV production
-
-RUN yarn compile
+# Downloading latest JSLib
+ARG JSLIB_VERSION=master
+ENV JSLIB_URL https://raw.githubusercontent.com/rockstat/alcojs/$JSLIB_VERSION/dist/lib.js
+RUN curl $JSLIB_URL > clientlib/lib.js
 
 EXPOSE 8080
 
-CMD [ "node", "." ]
+CMD [ "node", "dist/start.js" ]
