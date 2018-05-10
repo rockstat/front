@@ -73,10 +73,10 @@ export class WebSocketServer {
 
     this.options = configurer.webSocketConfig;
     this.log = logFactory.for(this);
-    this.secureOptions = {
-      cert: readFileSync(this.options.https.certFile),
-      key: readFileSync(this.options.https.keyFile)
-    }
+    // this.secureOptions = {
+      // cert: readFileSync(this.options.https.certFile),
+      // key: readFileSync(this.options.https.keyFile)
+    // }
   }
 
   async findUidSock(uid: string): Promise<SockLookup | void> {
