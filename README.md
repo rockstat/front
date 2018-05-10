@@ -24,13 +24,6 @@ a new server deployment system.
 
     LOG_LEVEL=info
 
-
-## modules resolution
-    "_moduleAliases": {
-      "@app": "src"
-    }
-    https://www.npmjs.com/package/tsconfig-paths
-
 ## License
 
 [LICENSE](LICENSE)

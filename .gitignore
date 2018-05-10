@@ -5,5 +5,5 @@
 /deploy
 /certs
 /clientlib
-/.env
+/.env*
 TextApp*
