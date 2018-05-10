@@ -6,9 +6,9 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "strictNullChecks": true,
-    "sourceMap": true,
+
+    "inlineSourceMap": true,
     "pretty": true,
-    // "noUnusedLocals": true,
     "allowUnreachableCode": true,
     "noFallthroughCasesInSwitch": false,
     "allowSyntheticDefaultImports": true,
@@ -19,10 +19,10 @@
       "node_modules/@types",
       "@types"
     ],
+    "baseUrl": "./",
     "paths": {
       "@app/*": ["src/*"]
-    },
-    "baseUrl": "."
+    }
   },
   "include": [
     "src/**/*"

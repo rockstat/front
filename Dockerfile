@@ -14,6 +14,7 @@ RUN yarn install --production
 RUN yarn global add pino
 
 COPY . .
+RUN ln -s ../dist ./node_modules/@app
 
 # Downloading latest JSLib
 ARG JSLIB_VERSION=master
