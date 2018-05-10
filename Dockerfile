@@ -7,8 +7,8 @@ ENV NODE_ENV production
 # RUN mkdir -p /app
 WORKDIR /app
 
-COPY package.json /usr/src/app/
-COPY yarn.lock /usr/src/app/
+COPY package.json .
+COPY yarn.lock .
 
 RUN yarn install --production
 RUN yarn global add pino
