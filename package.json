@@ -4,7 +4,7 @@
   "description": "Rockstat tracking core component",
   "main": "dist/start.js",
   "scripts": {
-    "start": "gulp watch",
+    "start": "ts-node-dev -r 'tsconfig-paths/register' ./src/start.ts | pino",
     "build": "gulp build",
     "prod": "node dist/start",
     "clean": "gulp clean",

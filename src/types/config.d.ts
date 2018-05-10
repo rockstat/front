@@ -49,6 +49,9 @@ export interface HttpsConfig extends HttpConfig {
   keyFile: string;
 }
 
+// ##### WEBSOCKET #####
+
+
 export interface wsDeflateConfig {
   zlibDeflateOptions: {
     chunkSize: number;
@@ -66,10 +69,9 @@ export interface wsDeflateConfig {
   threshold: number;
 }
 
-// ##### WEBSOCKET #####
-
 export interface WsConfig {
   path: string;
+  http: HttpConfig;
   https: HttpsConfig;
   perMessageDeflate: wsDeflateConfig;
 }

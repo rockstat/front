@@ -11,6 +11,7 @@ import {
   WsConfig,
   Dictionary,
   BaseIncomingMessage,
+  HttpConfig,
 } from '@app/types';
 import {
   isObject, isString, isEmptyString, epglue, epchild
@@ -62,6 +63,10 @@ export class WebSocketServer {
 
   get httpsOptions(): HttpsConfig {
     return this.options.https;
+  }
+
+  get httpOptions(): HttpConfig {
+    return this.options.http;
   }
 
   constructor(configurer: Configurer, logFactory: LogFactory) {
@@ -126,15 +131,16 @@ export class WebSocketServer {
   }
 
   start() {
-    const { host, port } = this.httpsOptions;
-    this.log.info(`Starting WS HTTPS transport on ${host}:${port}`);
-    this.server = createServer(this.secureOptions);
-    this.server.listen(port, host)
+    const { host, port } = this.httpOptions;
+    // this.log.info(`Starting WS HTTPS transport on ${host}:${port}`);
+    // this.server = createServer(this.secureOptions);
+    // this.server.listen(port, host)
 
     this.log.info(`Starting WS server on port ${port}`);
 
     this.wss = new WebSocket.Server({
-      server: this.server,
+      host,
+      port,
       path: this.options.path,
       perMessageDeflate: this.options.perMessageDeflate
     });

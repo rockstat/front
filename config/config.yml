@@ -6,11 +6,14 @@ http: &http
   host: <%= env.HOST || '0.0.0.0' %>
   port: <%= env.PORT || '8080' %>
 websocket:
+  http:
+    host: <%= env.HOST || '0.0.0.0' %>
+    port: <%= env.PORT_WS || '8082' %>
   https:
-    <<: *http
-    certFile: /Users/user/projects/certificates/rockstat.test.crt
-    keyFile: /Users/user/projects/certificates/rockstat.test.key
+    host: <%= env.HOST || '0.0.0.0' %>
     port: <%= env.PORT_WSS || '8083' %>
+    certFile: <%= env.SSL_CERT %>
+    keyFile: <%= env.SSL_KEY %>
   path: /wss
   perMessageDeflate:  # See zlib defaults.
     zlibDeflateOptions:
