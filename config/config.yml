@@ -36,12 +36,13 @@ rpc:
   name: kernel
 
 redis:
-  url: <%= env.REDIS_URL || 'redis://127.0.0.1:6379' %>
-  db: 0
+  host: <%= env.REDIS_HOST || '127.0.0.1' %>
+  port: <%= env.REDIS_PORT || '6379' %>
+  db: <%= env.REDIS_DB || 2 %>
+  url:
 log:
   use: pino
   pino:
-    name: alco
     safe: true
     level: <%= env.LOG_LEVEL || 'info' %>
     prettyPrint: false

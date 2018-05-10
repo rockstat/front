@@ -24,8 +24,9 @@ export class RedisClient {
     const deps = Container.get(CoreDeps)
     this.log = deps.logger.for(this);
     this.options = deps.config.get('redis');
+    const {host, port, db} = this.options;
 
-    this.log.info('Starting redis client');
+    this.log.info('Starting redis client. Server: %s:%s/%d', host, port, db);
     this.client = new Redis(this.options);
 
     //happen only once
