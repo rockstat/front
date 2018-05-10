@@ -14,15 +14,15 @@ a new server deployment system.
 
 ## Envs and defaults
 
-REDIS_URL=redis://127.0.0.1:6379
-STATSD_HOST=127.0.0.1
+    REDIS_URL=redis://127.0.0.1:6379
+    STATSD_HOST=127.0.0.1
 
-HOST=0.0.0.0
-PORT=8080
-PORT_WS=8082
-PORT_WSS=8083
+    HOST=0.0.0.0
+    PORT=8080
+    PORT_WS=8082
+    PORT_WSS=8083
 
-LOG_LEVEL=info
+    LOG_LEVEL=info
 
 ## License
 

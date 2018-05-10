@@ -1,7 +1,7 @@
 ---
 metrics:
   statsd:
-    host: <%= env.STATSD_HOST || 127.0.0.1 %>
+    host: <%= env.STATSD_HOST || '127.0.0.1' %>
     port: 8125
     debug: false
     prefix: krn
