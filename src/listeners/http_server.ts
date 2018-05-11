@@ -144,8 +144,8 @@ export class HttpServer {
    * Start listening
    */
   start() {
-    this.log.info('Starting HTTP transport');
-
+    const {host, port} = this.options;
+    this.log.info('Starting HTTP transport %s:%s', host, port);
     this.httpServer = createServer((req, res) => {
       this.handle(req, res);
     });

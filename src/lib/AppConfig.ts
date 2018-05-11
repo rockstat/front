@@ -28,6 +28,7 @@ import {
 } from '../types';
 
 dotenv.config();
+dotenv.config({path:'.env.local'});
 
 @Service({ global: true })
 export class Configurer {
