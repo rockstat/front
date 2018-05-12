@@ -12,18 +12,6 @@ import {
 } from '@app/types';
 import { StatsDMetrics } from '@app/lib/metrics/statsd';
 
-@Service()
-export class CoreDeps {
-  @Inject()
-  config: Configurer;
-  @Inject()
-  logger: LogFactory;
-  @Inject()
-  metrics: StatsDMetrics
-  @Inject()
-  identifier: IdService;
-}
-
 
 @Service()
 export class AppServer {
@@ -35,14 +23,14 @@ export class AppServer {
   wsServer: WebSocketServer;
 
   @Inject()
-  logFactory: LogFactory;
+  dispatcher: Dispatcher;
 
   @Inject()
-  dispatcher: Dispatcher;
+  logFactory: LogFactory
 
   log: Logger;
 
-  initialize() {
+  setup() {
     this.log = this.logFactory.for(this);
     this.log.info('Starting Handler service');
     this.dispatcher.setup();
@@ -50,17 +38,29 @@ export class AppServer {
 
   start() {
     this.dispatcher.start();
-    handlerService.startTransport();
+    this.startTransport();
   }
 
-  startTransport() {
+  private startTransport() {
     this.log.info('Starting transports');
     this.httpServer.start();
     this.wsServer.start();
   }
+
+  private onStop() {
+    this.log.info('Stopping...');
+  }
+
+  private attachSignals() {
+    // Handles normal process termination.
+    process.on('exit', () => this.onStop());
+    // Handles `Ctrl+C`.
+    process.on('SIGINT', () => process.exit(0));
+    // Handles `kill pid`.
+    process.on('SIGTERM', () => process.exit(0));
+  }
+
 }
 
-export const handlerService = <AppServer>Container.get(AppServer);
-handlerService.initialize();
-handlerService.start();
-export const deps = <CoreDeps>Container.get(CoreDeps);
+export const appServer = <AppServer>Container.get(AppServer);
+appServer.setup()

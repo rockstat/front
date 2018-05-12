@@ -4,7 +4,6 @@ import * as Redis from 'redis-fast-driver';
 import { Configurer } from '@app/lib';
 import { Logger, LogFactory } from '@app/log';
 import { RedisConfig } from '@app/types';
-import { CoreDeps } from '@app/AppServer';
 
 type Handler = (msg: Array<string>) => void;
 
@@ -21,9 +20,9 @@ export class RedisClient {
 
   constructor() {
 
-    const deps = Container.get(CoreDeps)
-    this.log = deps.logger.for(this);
-    this.options = deps.config.get('redis');
+    const deps =
+    this.log = Container.get<LogFactory>(LogFactory).for(this)
+    this.options = Container.get<Configurer>(Configurer).get('redis');
     const {host, port, db} = this.options;
 
     this.log.info('Starting redis client. Server: %s:%s/%d', host, port, db);
