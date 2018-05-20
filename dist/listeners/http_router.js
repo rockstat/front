@@ -73,7 +73,8 @@ let Router = class Router {
         };
         const pixelHandler = function (payload) {
             return {
-                key: helpers_1.epglue(constants_1.IN_INDEP, payload.query.name),
+                key: helpers_1.epglue(constants_1.IN_INDEP, payload.params.name),
+                channel: constants_1.CHANNEL_PIXEL,
                 status: constants_1.STATUS_OK
             };
         };

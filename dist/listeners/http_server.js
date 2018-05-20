@@ -138,7 +138,7 @@ let HttpServer = class HttpServer {
                     res.setHeader(constants_1.HContentType, constants_1.CONTENT_TYPE_JS);
                     response = this.browserLib.prepare(Object.assign({ initialUid: uid }, this.clientopts));
                 }
-                if (helpers_2.epchild(constants_1.IN_PIXEL, handled.key)) {
+                if (handled.channel === constants_1.CHANNEL_PIXEL) {
                     res.setHeader(constants_1.HContentType, constants_1.CONTENT_TYPE_GIF);
                     response = helpers_1.emptyGif;
                 }

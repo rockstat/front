@@ -291,7 +291,7 @@ export class HttpServer {
           );
         }
 
-        if (epchild(IN_PIXEL, handled.key)) {
+        if (handled.channel === CHANNEL_PIXEL) {
           res.setHeader(HContentType, CONTENT_TYPE_GIF);
           response = emptyGif;
         }

@@ -20,7 +20,8 @@ import {
   IN_INDEP,
   CHANNEL_WEBHOOK,
   PATH_HTTP_418,
-  STATUS_TEAPOT
+  STATUS_TEAPOT,
+  CHANNEL_PIXEL
 } from '@app/constants';
 import {
   QueryParams
@@ -142,7 +143,8 @@ export class Router {
 
     const pixelHandler = function (payload: RequestHandlerPayload): RequestHandlerResult {
       return {
-        key: epglue(IN_INDEP, payload.query.name),
+        key: epglue(IN_INDEP, payload.params.name),
+        channel: CHANNEL_PIXEL,
         status: STATUS_OK
       };
     };
