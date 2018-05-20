@@ -1,4 +1,5 @@
 ---
+name: Rockstat kernel v3
 identify: &httpCommon
   param: uid
   cookieMaxAge: <%= 3 * 365 * 24 * 60 * 60 %>

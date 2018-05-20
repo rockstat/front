@@ -32,7 +32,9 @@ import {
   CONTENT_TYPE_JSON,
   CONTENT_TYPE_JS,
   HResponseTime,
-  IN_REDIR
+  IN_REDIR,
+  STATUS_TEAPOT,
+  HMyName
 } from '@app/constants';
 import {
   computeOrigin,
@@ -100,6 +102,7 @@ export class HttpServer {
   identopts: IdentifyConfig;
   clientopts: ClientConfig;
   log: Logger;
+  title: string;
 
   @Inject()
   router: Router;
@@ -120,6 +123,7 @@ export class HttpServer {
 
   constructor(logFactory: LogFactory, configurer: Configurer) {
     this.options = configurer.httpConfig;
+    this.title = configurer.get('name');
     this.identopts = configurer.identify;
     this.clientopts = configurer.client;
     this.log = logFactory.for(this);
@@ -229,6 +233,14 @@ export class HttpServer {
           corsAdditionalHeaders()
         );
         return send(res, status);
+      }
+
+
+      // Handling CORS preflight request
+      if (status === STATUS_TEAPOT) {
+        res.setHeader(HMyName, this.title);
+        res.setHeader(HContentType, CONTENT_TYPE_PLAIN);
+        return send(res, status, "I'm a teapot");
       }
 
 

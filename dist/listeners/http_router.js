@@ -52,6 +52,12 @@ let Router = class Router {
      * Installing defaults routes
      */
     setupRoutes() {
+        const teapotHandler = function (payload) {
+            return {
+                key: constants_1.PATH_HTTP_418,
+                status: constants_1.STATUS_TEAPOT
+            };
+        };
         const optionsHandler = function (payload) {
             return {
                 key: constants_1.PATH_HTTP_OPTS,
@@ -67,7 +73,7 @@ let Router = class Router {
         };
         const pixelHandler = function (payload) {
             return {
-                key: helpers_1.epglue(constants_1.IN_PIXEL, payload.query.name),
+                key: helpers_1.epglue(constants_1.IN_INDEP, payload.query.name),
                 status: constants_1.STATUS_OK
             };
         };
@@ -97,8 +103,8 @@ let Router = class Router {
                 status: constants_1.STATUS_OK
             };
         };
+        this.router.get('/coffee', teapotHandler);
         this.router.get('/lib.js', libjsHandler);
-        this.router.get('/img', pixelHandler);
         this.router.get('/img/:projectId/:service/:name', pixelHandler);
         this.router.get('/redir/:projectId/:category/:name', redirHandler);
         this.router.options('/track', optionsHandler);

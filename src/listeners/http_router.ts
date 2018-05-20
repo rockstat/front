@@ -18,7 +18,9 @@ import {
   IN_TRACK,
   IN_CUSTOM,
   IN_INDEP,
-  CHANNEL_WEBHOOK
+  CHANNEL_WEBHOOK,
+  PATH_HTTP_418,
+  STATUS_TEAPOT
 } from '@app/constants';
 import {
   QueryParams
@@ -116,6 +118,13 @@ export class Router {
    */
   setupRoutes() {
 
+    const teapotHandler = function (payload: RequestHandlerPayload): RequestHandlerResult {
+      return {
+        key: PATH_HTTP_418,
+        status: STATUS_TEAPOT
+      }
+    };
+
     const optionsHandler = function (payload: RequestHandlerPayload): RequestHandlerResult {
       return {
         key: PATH_HTTP_OPTS,
@@ -133,7 +142,7 @@ export class Router {
 
     const pixelHandler = function (payload: RequestHandlerPayload): RequestHandlerResult {
       return {
-        key: epglue(IN_PIXEL, payload.query.name),
+        key: epglue(IN_INDEP, payload.query.name),
         status: STATUS_OK
       };
     };
@@ -166,8 +175,8 @@ export class Router {
       };
     };
 
+    this.router.get('/coffee', teapotHandler);
     this.router.get('/lib.js', libjsHandler);
-    this.router.get('/img', pixelHandler);
     this.router.get('/img/:projectId/:service/:name', pixelHandler);
     this.router.get('/redir/:projectId/:category/:name', redirHandler);
     this.router.options('/track', optionsHandler);

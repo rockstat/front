@@ -43,6 +43,7 @@ exports.IN_PIXEL = helpers_1.epglue(exports.INCOMING, exports.CHANNEL_PIXEL);
 exports.IN_TRACK = helpers_1.epglue(exports.INCOMING, exports.CHANNEL_TRACK);
 exports.IN_REDIR = helpers_1.epglue(exports.INCOMING, exports.CHANNEL_REDIR);
 // base http
+exports.PATH_HTTP_418 = helpers_1.epglue(exports.CHANNEL_HTTP, '418');
 exports.PATH_HTTP_404 = helpers_1.epglue(exports.CHANNEL_HTTP, '404');
 exports.PATH_HTTP_OPTS = helpers_1.epglue(exports.CHANNEL_HTTP, 'options');
 exports.PATH_HTTP_LIBJS = helpers_1.epglue(exports.CHANNEL_HTTP, 'libjs');

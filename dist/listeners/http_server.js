@@ -28,6 +28,7 @@ const parseOpts = { limit: '50kb' };
 let HttpServer = class HttpServer {
     constructor(logFactory, configurer) {
         this.options = configurer.httpConfig;
+        this.title = configurer.get('name');
         this.identopts = configurer.identify;
         this.clientopts = configurer.client;
         this.log = logFactory.for(this);
@@ -105,6 +106,12 @@ let HttpServer = class HttpServer {
                 // additional params for caching responces
                 helpers_1.corsAdditionalHeaders());
                 return micro_1.send(res, status);
+            }
+            // Handling CORS preflight request
+            if (status === constants_1.STATUS_TEAPOT) {
+                res.setHeader(constants_1.HMyName, this.title);
+                res.setHeader(constants_1.HContentType, constants_1.CONTENT_TYPE_PLAIN);
+                return micro_1.send(res, status, "I'm a teapot");
             }
             if (status === constants_1.STATUS_OK || status === constants_1.STATUS_TEMP_REDIR) {
                 // Regular response headers

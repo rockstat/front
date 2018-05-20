@@ -156,6 +156,7 @@ export interface RPCConfig {
 // ##### CONFIG ROOT #####
 
 export type Config = {
+  name: string;
   env: Envs;
   services: RemoteServicesConfig;
   writers: {

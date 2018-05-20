@@ -57,6 +57,7 @@ export const IN_TRACK = epglue(INCOMING, CHANNEL_TRACK);
 export const IN_REDIR = epglue(INCOMING, CHANNEL_REDIR);
 
 // base http
+export const PATH_HTTP_418 = epglue(CHANNEL_HTTP, '418');
 export const PATH_HTTP_404 = epglue(CHANNEL_HTTP, '404');
 export const PATH_HTTP_OPTS = epglue(CHANNEL_HTTP, 'options');
 export const PATH_HTTP_LIBJS = epglue(CHANNEL_HTTP, 'libjs');
