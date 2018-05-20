@@ -138,11 +138,16 @@ export class Router {
       };
     };
 
+    /**
+     * example: http://127.0.0.1:10001/redir/111/a/b?to=https%3A%2F%2Fya.ru
+     * @param payload {routeOn}
+     */
     const redirHandler = function (payload: RequestHandlerPayload): RequestHandlerResult {
       return {
         params: payload.params,
         key: epglue(IN_REDIR, payload.params.category, payload.params.name),
-        status: STATUS_TEMP_REDIR
+        status: STATUS_TEMP_REDIR,
+        location: payload.query.to
       };
     };
     const webhookHandler = function (payload: RequestHandlerPayload): RequestHandlerResult {
@@ -163,6 +168,8 @@ export class Router {
 
     this.router.get('/lib.js', libjsHandler);
     this.router.get('/img', pixelHandler);
+    this.router.get('/img/:projectId/:service/:name', pixelHandler);
+    this.router.get('/redir/:projectId/:category/:name', redirHandler);
     this.router.options('/track', optionsHandler);
     this.router.post('/track', trackHandler);
     this.router.options('/wh', optionsHandler);
@@ -171,7 +178,6 @@ export class Router {
     this.router.post('/wh/:service/:name', webhookHandler);
     this.router.get('/webhook/:projectId/:service/:name', webhookHandler);
     this.router.post('/webhook/:projectId/:service/:name', webhookHandler);
-    this.router.get('/redir/:projectId/:category/:name', redirHandler);
   }
 }
 

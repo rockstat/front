@@ -1,8 +1,6 @@
 import { IncomingMessage, ServerResponse } from "http";
 import * as Redis from "redis-fast-driver";
 
-export type anyobj = { [key: string]: any };
-
 type Dictionary<T> = Partial<{ [key: string]: T }>;
 
 

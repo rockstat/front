@@ -31,7 +31,8 @@ import {
   IN_PIXEL,
   CONTENT_TYPE_JSON,
   CONTENT_TYPE_JS,
-  HResponseTime
+  HResponseTime,
+  IN_REDIR
 } from '@app/constants';
 import {
   computeOrigin,
@@ -261,8 +262,10 @@ export class HttpServer {
         let response = await this.dispatcher.emit(handled.key, msg);
 
         // Processing redirect
-        if (epchild(CHANNEL_REDIR, handled.key) && handled.location) {
+        if (epchild(IN_REDIR, handled.key) && handled.location) {
           res.setHeader(HLocation, handled.location);
+          res.setHeader(HContentType, CONTENT_TYPE_PLAIN);
+          response = 'Redirecting...';
         }
 
         // Processing JS client lib
