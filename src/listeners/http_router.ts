@@ -143,6 +143,7 @@ export class Router {
 
     const pixelHandler = function (payload: RequestHandlerPayload): RequestHandlerResult {
       return {
+        params: payload.params,
         key: epglue(IN_INDEP, payload.params.name),
         channel: CHANNEL_PIXEL,
         status: STATUS_OK
