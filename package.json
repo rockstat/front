@@ -5,7 +5,7 @@
   "main": "dist/start.js",
   "scripts": {
     "start": "ts-node-dev -r 'tsconfig-paths/register' ./src/start.ts | pino",
-    "build": "gulp build",
+    "build": "rimraf dist && tsc -p tsconfig.json",
     "prod": "node dist/start",
     "clean": "gulp clean",
     "lint": "tslint -c tslint.json -t stylish -p ./tsconfig.json",

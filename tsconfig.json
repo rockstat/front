@@ -6,7 +6,6 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "strictNullChecks": true,
-
     "inlineSourceMap": true,
     "pretty": true,
     "allowUnreachableCode": true,

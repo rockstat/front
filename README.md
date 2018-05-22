@@ -24,6 +24,17 @@ a new server deployment system.
 
     LOG_LEVEL=info
 
+
+## Building
+
+Source maps options
+
+    "sourceMap": true,
+
+or
+
+    "inlineSourceMap": true,
+
 ## License
 
 [LICENSE](LICENSE)
