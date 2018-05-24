@@ -2,7 +2,6 @@ import 'reflect-metadata';
 import { Container, Service, Inject } from 'typedi';
 import { LogFactory, Logger } from '@app/log';
 import { IdService, Configurer, Dispatcher } from '@app/lib';
-import { } from '@app/services';
 import {
   WebSocketServer,
   HttpServer

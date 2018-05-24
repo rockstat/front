@@ -25,8 +25,8 @@ import {
   METHOD_GET,
   METHOD_POST,
   METHOD_OPTIONS,
-  CHANNEL_REDIR,
-  CHANNEL_PIXEL,
+  CHANNEL_HTTP_REDIR,
+  CHANNEL_HTTP_PIXEL,
   PATH_HTTP_LIBJS,
   IN_PIXEL,
   CONTENT_TYPE_JSON,
@@ -64,7 +64,7 @@ import { StatsDMetrics } from '@app/lib/metrics/statsd';
 const f = (i?: string | string[]) => Array.isArray(i) ? i[0] : i;
 const parseOpts = { limit: '50kb' };
 
-export type BodyParams = { [key: string]: string }
+export type BodyParams = { [key: string]: any }
 export type QueryParams = { [key: string]: any }
 
 export interface TransportData {
@@ -103,6 +103,7 @@ export class HttpServer {
   clientopts: ClientConfig;
   log: Logger;
   title: string;
+  uidkey: string;
 
   @Inject()
   router: Router;
@@ -111,7 +112,7 @@ export class HttpServer {
   dispatcher: Dispatcher;
 
   @Inject()
-  identifier: IdService;
+  idGen: IdService;
 
   @Inject()
   browserLib: BrowserLib;
@@ -125,6 +126,7 @@ export class HttpServer {
     this.options = configurer.httpConfig;
     this.title = configurer.get('name');
     this.identopts = configurer.identify;
+    this.uidkey = this.identopts.param;
     this.clientopts = configurer.client;
     this.log = logFactory.for(this);
 
@@ -149,7 +151,7 @@ export class HttpServer {
    * Start listening
    */
   start() {
-    const {host, port} = this.options;
+    const { host, port } = this.options;
     this.log.info('Starting HTTP transport %s:%s', host, port);
     this.httpServer = createServer((req, res) => {
       this.handle(req, res);
@@ -183,21 +185,10 @@ export class HttpServer {
 
       // parsing url
       const urlParts = urlParse(req.url || '');
-      const query = urlParts.query ? qs.parse(urlParts.query) : {};
+      const query: Partial<{[k:string]: string}> = urlParts.query ? qs.parse(urlParts.query) : {};
 
       // parse cookie
       const cookies = cookie.parse(f(req.headers.cookie) || '');
-
-      // uid
-      const uid = query[this.identopts.param] || cookies[this.identopts.param] || this.identifier.userId();
-
-      // transport data to store
-      const { remoteAddress } = req.connection;
-      const transportData: TransportData = {
-        ip: f(realIp) || remoteAddress || '127.0.0.1',
-        userAgent: f(userAgent) || 'Unknown',
-        uid: uid
-      };
 
       // transportData.ip = '82.202.204.194';
       // transportData.userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.162 Safari/537.36'
@@ -210,20 +201,13 @@ export class HttpServer {
         path: urlParts.pathname || '/',
         origin: computeOrigin(origin, referer)
       };
-      const userIdCookie = cookie.serialize(
-        this.identopts.param,
-        transportData.uid,
-        {
-          httpOnly: true,
-          expires: this.cookieExpires
-        }
-      )
 
-      // Processing routes
+      // HTTP Routing
+      // ####################################################
       const handled = this.router.route(routeOn);
       const { status } = handled;
 
-      // Handling CORS preflight request
+      // ### CORS preflight // Early Response
       if (status === STATUS_OK_NO_CONTENT && routeOn.method === METHOD_OPTIONS) {
         applyHeaders(
           res,
@@ -235,28 +219,31 @@ export class HttpServer {
         return send(res, status);
       }
 
-
-      // Handling CORS preflight request
+      // ### Teapot // Early Response
       if (status === STATUS_TEAPOT) {
         res.setHeader(HMyName, this.title);
         res.setHeader(HContentType, CONTENT_TYPE_PLAIN);
         return send(res, status, "I'm a teapot");
       }
 
-
       if (status === STATUS_OK || status === STATUS_TEMP_REDIR) {
-        // Regular response headers
-        applyHeaders(
-          res,
-          corsHeaders(routeOn.origin),
-          noCacheHeaders(),
-          cookieHeaders([userIdCookie])
-        );
 
-        // Parse body if needed
+        // Handling POST if routed right way!
         const body = (routeOn.method === METHOD_POST)
           ? await this.parseBody(handled.contentType || routeOn.contentType, req)
-          : undefined;
+          : {};
+
+        // Looking for uid
+        const uid = query[this.uidkey] || body[this.uidkey] || cookies[this.uidkey] || this.idGen.userId();
+
+        // transport data to store
+        const { remoteAddress } = req.connection;
+        const transportData: TransportData = {
+          ip: f(realIp) || remoteAddress || '127.0.0.1',
+          userAgent: f(userAgent) || 'Unknown',
+          uid: uid
+        };
+
 
         // Final final message
         const msg: ClientHttpMessage = Object.assign(
@@ -266,12 +253,38 @@ export class HttpServer {
           handled.params,
           {
             key: handled.key,
+            channel: handled.channel,
             proto: transportData
           }
         );
 
-        // Running enrichers, subscribers, handler
+        // Dispatching: Running enrichers, subscribers, handler
+        // ####################################################
         let response = await this.dispatcher.emit(handled.key, msg);
+
+
+        // Constructing response
+        // ####################################################
+
+
+        const userIdCookie = cookie.serialize(
+          this.identopts.param,
+          transportData.uid,
+          {
+            httpOnly: true,
+            expires: this.cookieExpires
+          }
+        )
+
+        // Regular response headers
+        applyHeaders(
+          res,
+          corsHeaders(routeOn.origin),
+          noCacheHeaders(),
+          cookieHeaders([userIdCookie])
+        );
+
+
 
         // Processing redirect
         if (epchild(IN_REDIR, handled.key) && handled.location) {
@@ -291,7 +304,7 @@ export class HttpServer {
           );
         }
 
-        if (handled.channel === CHANNEL_PIXEL) {
+        if (handled.channel === CHANNEL_HTTP_PIXEL) {
           res.setHeader(HContentType, CONTENT_TYPE_GIF);
           response = emptyGif;
         }

@@ -9,25 +9,28 @@ export const ENV_STAGE = 'stage';
 
 export const SERVICE_BAND = 'band';
 export const SERVICE_KERNEL = 'kernel';
+export const SERVICE_TRACK = 'track';
+
+export const BROADCAST = 'broadcast';
 
 
 // === RPC methods
 
-export const CALL_IAMALIVE = '__iamalive';
+export const RPC_IAMALIVE = '__iamalive';
 
 // === TYPES
 
 export const STRING = 'string';
 
+
 // === Data channels
 export const CHANNEL_NONE = 'none';
 export const CHANNEL_HTTP = 'http';
 export const CHANNEL_WEBSOCK = 'ws';
-export const CHANNEL_WEBHOOK = 'webhook';
-export const CHANNEL_PIXEL = 'pixel';
-export const CHANNEL_TRACK = 'track';
-export const CHANNEL_REDIR = 'redir';
-export const CHANNEL_CUSTOM = 'custom';
+export const CHANNEL_HTTP_WEBHOOK = 'webhook';
+export const CHANNEL_HTTP_PIXEL = 'pixel';
+export const CHANNEL_HTTP_TRACK = 'track';
+export const CHANNEL_HTTP_REDIR = 'redir';
 export const CHANNEL_INDEPENDENT = 'indep';
 
 
@@ -48,13 +51,12 @@ export const IN_WEBSOCK = epglue(INCOMING, CHANNEL_WEBSOCK);
 export const OUT_WEBSOCK = epglue(OUTGOING, CHANNEL_WEBSOCK);
 export const CMD_WEBSOCK = epglue(COMMAND, CHANNEL_WEBSOCK);
 
-export const IN_CUSTOM = epglue(INCOMING, CHANNEL_CUSTOM);
 export const IN_INDEP = epglue(INCOMING, CHANNEL_INDEPENDENT);
 
-export const IN_WEBHOOK = epglue(INCOMING, CHANNEL_WEBHOOK);
-export const IN_PIXEL = epglue(INCOMING, CHANNEL_PIXEL);
-export const IN_TRACK = epglue(INCOMING, CHANNEL_TRACK);
-export const IN_REDIR = epglue(INCOMING, CHANNEL_REDIR);
+export const IN_WEBHOOK = epglue(INCOMING, CHANNEL_HTTP_WEBHOOK);
+export const IN_PIXEL = epglue(INCOMING, CHANNEL_HTTP_PIXEL);
+export const IN_TRACK = epglue(INCOMING, CHANNEL_HTTP_TRACK);
+export const IN_REDIR = epglue(INCOMING, CHANNEL_HTTP_REDIR);
 
 // base http
 export const PATH_HTTP_418 = epglue(CHANNEL_HTTP, '418');

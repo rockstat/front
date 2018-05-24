@@ -16,19 +16,21 @@ import {
   IN_REDIR,
   IN_PIXEL,
   IN_TRACK,
-  IN_CUSTOM,
   IN_INDEP,
-  CHANNEL_WEBHOOK,
+  CHANNEL_HTTP_WEBHOOK,
   PATH_HTTP_418,
   STATUS_TEAPOT,
-  CHANNEL_PIXEL
+  CHANNEL_HTTP_PIXEL,
+  CHANNEL_HTTP_TRACK,
+  SERVICE_TRACK,
+  CHANNEL_HTTP,
+  CHANNEL_HTTP_REDIR
 } from '@app/constants';
 import {
   QueryParams
 } from './http_server';
 
 // === Rounting based on
-
 export interface RouteOn {
   method: string;
   contentType: string;
@@ -59,9 +61,9 @@ export interface RequestHandlerPayload {
 
 export interface RequestHandlerResult {
   key: string;
-  channel?: string;
-  params?: RouteParams;
+  channel: string;
   status: number;
+  params?: RouteParams;
   location?: string;
   contentType?: string;
 };
@@ -93,6 +95,7 @@ export class Router {
       handler: (payload: RequestHandlerPayload) => {
         return <RequestHandlerResult>Object.assign(payload, {
           key: PATH_HTTP_404,
+          channel: CHANNEL_HTTP,
           status: STATUS_NOT_FOUND
         });
       }
@@ -122,6 +125,7 @@ export class Router {
     const teapotHandler = function (payload: RequestHandlerPayload): RequestHandlerResult {
       return {
         key: PATH_HTTP_418,
+        channel: CHANNEL_HTTP,
         status: STATUS_TEAPOT
       }
     };
@@ -129,14 +133,18 @@ export class Router {
     const optionsHandler = function (payload: RequestHandlerPayload): RequestHandlerResult {
       return {
         key: PATH_HTTP_OPTS,
-        status: STATUS_OK_NO_CONTENT
+        channel: CHANNEL_HTTP,
+        status: STATUS_OK_NO_CONTENT,
       }
     };
 
     const trackHandler = function (payload: RequestHandlerPayload): RequestHandlerResult {
       return {
-        key: epglue(IN_TRACK, payload.query.name),
+        params: Object.assign({ service: SERVICE_TRACK }, payload.params),
+        key: epglue(IN_INDEP, payload.params.name),
+        // explicitly set content type because AJAX uses text/plain to avoid options request
         contentType: CONTENT_TYPE_JSON,
+        channel: CHANNEL_HTTP_TRACK,
         status: STATUS_OK
       };
     };
@@ -145,7 +153,7 @@ export class Router {
       return {
         params: payload.params,
         key: epglue(IN_INDEP, payload.params.name),
-        channel: CHANNEL_PIXEL,
+        channel: CHANNEL_HTTP_PIXEL,
         status: STATUS_OK
       };
     };
@@ -157,16 +165,17 @@ export class Router {
     const redirHandler = function (payload: RequestHandlerPayload): RequestHandlerResult {
       return {
         params: payload.params,
-        key: epglue(IN_REDIR, payload.params.category, payload.params.name),
+        key: epglue(IN_REDIR, payload.params.service, payload.params.name),
+        location: payload.query.to,
         status: STATUS_TEMP_REDIR,
-        location: payload.query.to
+        channel: CHANNEL_HTTP_REDIR,
       };
     };
     const webhookHandler = function (payload: RequestHandlerPayload): RequestHandlerResult {
       return {
         params: payload.params,
-        channel: CHANNEL_WEBHOOK,
         key: epglue(IN_INDEP, payload.params.service, payload.params.name),
+        channel: CHANNEL_HTTP_WEBHOOK,
         status: STATUS_OK
       };
     };
@@ -174,22 +183,21 @@ export class Router {
     const libjsHandler = function (payload: RequestHandlerPayload): RequestHandlerResult {
       return {
         key: PATH_HTTP_LIBJS,
+        channel: CHANNEL_HTTP,
         status: STATUS_OK
       };
     };
 
+    this.router.options('/track', optionsHandler);
+    this.router.options('/wh', optionsHandler);
+
     this.router.get('/coffee', teapotHandler);
     this.router.get('/lib.js', libjsHandler);
     this.router.get('/img/:projectId/:service/:name', pixelHandler);
-    this.router.get('/redir/:projectId/:category/:name', redirHandler);
-    this.router.options('/track', optionsHandler);
-    this.router.post('/track', trackHandler);
-    this.router.options('/wh', optionsHandler);
-    this.router.options('/webhook', optionsHandler);
-    this.router.get('/wh/:service/:name', webhookHandler);
-    this.router.post('/wh/:service/:name', webhookHandler);
-    this.router.get('/webhook/:projectId/:service/:name', webhookHandler);
-    this.router.post('/webhook/:projectId/:service/:name', webhookHandler);
+    this.router.get('/redir/:projectId/:service/:name', redirHandler);
+    this.router.get('/wh/:projectId/:service/:name', webhookHandler);
+    this.router.post('/wh/:projectId/:service/:name', webhookHandler);
+    this.router.post('/track/:projectId/:name', trackHandler);
   }
 }
 

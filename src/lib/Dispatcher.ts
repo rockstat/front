@@ -12,7 +12,7 @@ import {
   FlatBus
 } from '@app/lib'
 
-import { INCOMING, IN_INDEP, CALL_IAMALIVE, SERVICE_BAND, SERVICE_KERNEL } from '@app/constants';
+import { INCOMING, IN_INDEP, RPC_IAMALIVE, SERVICE_BAND, SERVICE_KERNEL, BROADCAST } from '@app/constants';
 import { epchild, epglue } from '@app/helpers';
 import { RPCAgnostic } from '@app/lib/rpc/agnostic';
 import { RPCAdapterRedis } from '@app/lib/rpc/adapter/redis';
@@ -79,12 +79,12 @@ export class Dispatcher {
     });
     // notify band
     setImmediate(() => {
-      this.rpc.notify(SERVICE_BAND, CALL_IAMALIVE, { name: SERVICE_KERNEL })
+      this.rpc.notify(SERVICE_BAND, RPC_IAMALIVE, { name: SERVICE_KERNEL })
     })
 
     this.listenBus.subscribe('*', async (key: string, msg: BusMsgHdr) => {
       try {
-        return await this.rpc.notify('any', 'listener', msg);
+        return await this.rpc.notify(BROADCAST, BROADCAST, msg);
       } catch (error) {
         this.log.error(`catch! ${error.message}`);
       }
@@ -127,7 +127,7 @@ export class Dispatcher {
     this.log.debug(` -> ${key}`);
 
     msg.id = this.idGen.take();
-    msg.time = new Date();
+    msg.time = Number(new Date());
 
     // ### Phase 1: enriching
     const enrichments = await this.enrichBus.publish(key, msg);

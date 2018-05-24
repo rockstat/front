@@ -6,8 +6,8 @@
   "scripts": {
     "start": "ts-node-dev -r 'tsconfig-paths/register' ./src/start.ts | pino",
     "build": "rimraf dist && tsc -p tsconfig.json",
-    "prod": "node dist/start",
-    "clean": "gulp clean",
+    "prod": "node -r 'source-map-support/register' dist/start",
+    "clean": "rimraf dist",
     "lint": "tslint -c tslint.json -t stylish -p ./tsconfig.json",
     "security-check": "nsp check",
     "watch": "tsc -w",

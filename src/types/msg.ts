@@ -3,7 +3,7 @@
 
 export interface MessageIdTime {
   id: string;
-  time: Date;
+  time: number;
 }
 
 export interface MessageKey {
@@ -19,7 +19,7 @@ export type IncMsg = { [key: string]: any } & BaseIncomingMessage;
 export interface BaseIncomingMessage extends Partial<MessageIdTime> {
   name: string;
   group?: string;
-  channel?: string;
+  channel: string;
   uid?: string;
   data: { [key: string]: any }
 }
