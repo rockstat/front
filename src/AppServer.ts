@@ -1,38 +1,48 @@
 import 'reflect-metadata';
 import { Container, Service, Inject } from 'typedi';
-import { LogFactory, Logger } from '@app/log';
-import { IdService, Configurer, Dispatcher } from '@app/lib';
+import { Configurer, Dispatcher } from '@app/lib';
+import { TheIds, Meter, Logger, RedisFactory } from 'rockmets';
 import {
   WebSocketServer,
   HttpServer
 } from '@app/listeners';
-import {
-  RemoteService,
-} from '@app/types';
-import { StatsDMetrics } from '@app/lib/metrics/statsd';
 
 
 @Service()
 export class AppServer {
 
   @Inject()
+  appConfig: Configurer;
+
+
   httpServer: HttpServer;
-
-  @Inject()
   wsServer: WebSocketServer;
-
-  @Inject()
   dispatcher: Dispatcher;
-
-  @Inject()
-  logFactory: LogFactory
-
   log: Logger;
+  meter: Meter;
 
   setup() {
-    this.log = this.logFactory.for(this);
-    this.log.info('Starting Handler service');
-    this.dispatcher.setup();
+    Container.set(Logger, new Logger(this.appConfig.log));
+    const log = Container.get(Logger);
+    this.log = log.for(this);
+
+    this.log.info('Starting service');
+
+    Container.set(Meter, new Meter(this.appConfig.meter));
+    Container.set(TheIds, new TheIds());
+
+    const meter = this.meter = Container.get(Meter);
+
+    Container.set(RedisFactory, new RedisFactory({ log, meter, ...this.appConfig.redis }));
+    Container.set(Dispatcher, new Dispatcher());
+    Container.set(HttpServer, new HttpServer());
+    Container.set(WebSocketServer, new WebSocketServer());
+
+    this.httpServer = Container.get(HttpServer);
+    this.wsServer = Container.get(WebSocketServer);
+
+    const dispatcher = this.dispatcher = Container.get(Dispatcher);
+    dispatcher.setup();
   }
 
   start() {

@@ -1,6 +1,6 @@
 import { Container } from 'typedi';
 import { Dispatcher } from '@app/lib';
-import { Logger } from '@app/log';
+import { Logger } from 'rockmets';
 import { ClientHttpMessage, BaseIncomingMessage } from "@app/types";
 import {
   INCOMING,
@@ -20,9 +20,9 @@ export class EchoService {
   options: EchoServiceConfig = {};
   log: Logger;
 
-  constructor({ log, config, container }: { log: Logger, config: EchoServiceConfig, container: Container }) {
-    this.log = log;
-  }
+  // constructor({ log, config, container }: { log: Logger, config: EchoServiceConfig, container: Container }) {
+  //   this.log = log;
+  // }
 
   register(dispatcher: Dispatcher) {
     // this.dispatcher = dispatcher;

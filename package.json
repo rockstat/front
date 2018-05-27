@@ -67,6 +67,7 @@
     "node-cache": "^4.2.0",
     "pino": "^4.14.0",
     "qs": "^6.5.1",
+    "rockmets": "1.0.0",
     "redis-fast-driver": "^2.1.0",
     "reflect-metadata": "^0.1.12",
     "require-dir": "^1.0.0",

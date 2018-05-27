@@ -24,8 +24,10 @@ import {
   ClientConfig,
   RedisConfig,
   RemoteServicesConfig,
-  RemoteServiceConfig
+  RemoteServiceConfig,
+  RPCConfig
 } from '../types';
+import { LoggerConfig, MeterOptions } from 'rockmets';
 
 dotenv.config();
 dotenv.config({path:'.env.local'});
@@ -41,12 +43,14 @@ export class Configurer {
   get identify(): IdentifyConfig { return this.config.identify; }
   get httpConfig(): HttpConfig { return this.config.http; }
   get webSocketConfig(): WsConfig { return this.config.websocket; }
-  get logConfig(): PinoConfig { return this.config.log.pino; }
-  get ipcConfig(): object { return this.config.ipc; }
+  get log(): LoggerConfig { return this.config.log; }
   get services(): RemoteServicesConfig { return this.config.services; }
   get browserLib(): BrowserLibConfig { return this.config.browserLib[this.env]; }
   get redis(): RedisConfig { return this.config.redis; }
   get client(): ClientConfig { return this.config.client.common; }
+  get meter(): MeterOptions { return this.config.metrics; }
+  get rpc(): RPCConfig { return this.config.rpc; }
+
 
   /**
    * Reading all accessible configuration files including custom
@@ -60,14 +64,6 @@ export class Configurer {
     this.config = mergeOptions({}, ...<object[]>safeLoadAll(yaml).filter(cfg => cfg !== null && cfg !== undefined));
     this.env = this.config.env = Configurer.env;
 
-    const { writers } = this.config;
-    const { clickhouse } = writers;
-
-    if (clickhouse) {
-      writers.clickhouse = this.handleCHExtend(clickhouse);
-    }
-
-    this.config.writers = writers;
   }
 
   get<S extends keyof Config>(section: S): Config[S] {
@@ -78,28 +74,6 @@ export class Configurer {
    * Handling ClickHouse table extendability via _options: extend: basename
    * @param config ClickHouse configuration
    */
-  handleCHExtend(config: WriterClickHouseConfig): WriterClickHouseConfig {
-    const { base, tables, ...rest } = config;
-
-    for (const table of Object.keys(tables)) {
-      const definition = tables[table];
-      const { _options, ...cols } = definition;
-      // excluding extend action
-      const { extend, ...options } = _options;
-      // extenxing
-      if (extend && tables[extend]) {
-        // extracting source table schema ans opts
-        const { _options: ioptions, ...icols } = tables[extend];
-        // extending base table
-        Object.assign(options, ioptions);
-        Object.assign(cols, icols);
-      }
-      // Moving back;
-      Object.assign(definition, base, cols, { _options });
-    }
-
-    return { base, tables, ...rest };
-  }
 
   static get env(): Envs {
     switch (process.env.NODE_ENV) {

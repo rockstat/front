@@ -35,6 +35,8 @@ websocket:
 
 rpc:
   name: kernel
+  listen_all: false
+  listen_direct: true
 
 redis:
   host: <%= env.REDIS_HOST || '127.0.0.1' %>

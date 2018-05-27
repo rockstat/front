@@ -1,12 +1,12 @@
 import { IncomingMessage, ServerResponse, createServer, Server } from 'http';
 import { createError, send, sendError, text, json, buffer } from 'micro';
-import { Service, Inject } from 'typedi';
+import { Service, Inject, Container } from 'typedi';
 import { parse as urlParse } from 'url';
 import * as assert from 'assert';
 import * as cookie from 'cookie';
 import * as qs from 'qs';
-import { LogFactory, Logger } from '@app/log';
-import { IdService, Configurer, BrowserLib, Dispatcher } from '@app/lib';
+import { Meter, Logger, TheIds } from 'rockmets';
+import { Configurer, BrowserLib, Dispatcher } from '@app/lib';
 import { Router, RouteOn } from './http_router'
 import {
   CONTENT_TYPE_GIF,
@@ -58,7 +58,6 @@ import {
   ClientHttpMessage,
 } from '@app/types';
 import { epchild } from '@app/helpers';
-import { StatsDMetrics } from '@app/lib/metrics/statsd';
 
 
 const f = (i?: string | string[]) => Array.isArray(i) ? i[0] : i;
@@ -101,34 +100,32 @@ export class HttpServer {
   options: HttpConfig;
   identopts: IdentifyConfig;
   clientopts: ClientConfig;
+  router: Router;
+  dispatcher: Dispatcher;
+  idGen: TheIds;
+  browserLib: BrowserLib;
+  metrics: Meter;
   log: Logger;
   title: string;
   uidkey: string;
 
-  @Inject()
-  router: Router;
-
-  @Inject()
-  dispatcher: Dispatcher;
-
-  @Inject()
-  idGen: IdService;
-
-  @Inject()
-  browserLib: BrowserLib;
-
-  @Inject()
-  metrics: StatsDMetrics;
-
   cookieExpires: Date;
 
-  constructor(logFactory: LogFactory, configurer: Configurer) {
-    this.options = configurer.httpConfig;
-    this.title = configurer.get('name');
-    this.identopts = configurer.identify;
+  constructor() {
+    const config = Container.get(Configurer);
+    const logger = Container.get(Logger);
+    this.metrics = Container.get(Meter);
+    this.idGen = Container.get(TheIds);
+    this.dispatcher = Container.get(Dispatcher);
+    this.router = Container.get(Router);
+    this.browserLib = Container.get(BrowserLib);
+
+    this.options = config.httpConfig;
+    this.title = config.get('name');
+    this.identopts = config.identify;
     this.uidkey = this.identopts.param;
-    this.clientopts = configurer.client;
-    this.log = logFactory.for(this);
+    this.clientopts = config.client;
+    this.log = logger.for(this);
 
     this.cookieExpires = new Date(new Date().getTime() + this.identopts.cookieMaxAge * 1000);
   }
@@ -234,7 +231,7 @@ export class HttpServer {
           : {};
 
         // Looking for uid
-        const uid = query[this.uidkey] || body[this.uidkey] || cookies[this.uidkey] || this.idGen.userId();
+        const uid = query[this.uidkey] || body[this.uidkey] || cookies[this.uidkey] || this.idGen.flake();
 
         // transport data to store
         const { remoteAddress } = req.connection;

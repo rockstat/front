@@ -1,7 +1,7 @@
 import { IncomingMessage, ServerResponse } from 'http';
-import { Service, Inject } from 'typedi';
+import { Service, Inject, Container } from 'typedi';
 import * as FindMyWay from 'find-my-way';
-import { LogFactory, Logger } from '@app/log';
+import { Logger } from 'rockmets';
 import { epglue } from '@app/helpers';
 import {
   CONTENT_TYPE_JSON,
@@ -77,15 +77,14 @@ export interface RouteResult {
 }
 
 
-@Service()
 export class Router {
 
   private log: Logger;
   private router: FindMyWay;
   private defaultRoute: RouteResult;
 
-  constructor(logFactory: LogFactory) {
-    this.log = logFactory.for(this);
+  constructor() {
+    this.log = Container.get(Logger).for(this);
     this.router = new FindMyWay();
     this.setupRoutes();
     console.log(this.router.prettyPrint());

@@ -1,7 +1,7 @@
 import { Promise } from 'bluebird';
 import Container from 'typedi';
 import { BusMsgHdr, BusMsgHdrResult } from '@app/types';
-import { LogFactory, Logger } from '@app/log';
+import { Logger } from 'rockmets';
 
 export class FlatBus {
   map: WeakMap<BusMsgHdr, Array<string>> = new WeakMap();
@@ -10,7 +10,7 @@ export class FlatBus {
   log: Logger;
 
   constructor() {
-    this.log = Container.get<LogFactory>(LogFactory).for(this);
+    this.log = Container.get<Logger>(Logger).for(this);
   }
 
   setNoneHdr(hdr: BusMsgHdr) {

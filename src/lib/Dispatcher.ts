@@ -1,29 +1,41 @@
-import { Service, Inject } from 'typedi';
+import { Service, Inject, Container } from 'typedi';
 import * as bb from 'bluebird';
 import * as net from 'net';
-import { AppServer } from '@app/AppServer';
-import { LogFactory, Logger } from '@app/log';
-import { BaseIncomingMessage, FlexOutgoingMessage, IncMsg, RPCConfig, BusMsgHdr } from '@app/types';
-import { StubStore } from '@app/stores/StubStore';
+import {
+  AppServer
+} from '@app/AppServer';
+import {
+  BaseIncomingMessage,
+  FlexOutgoingMessage,
+  IncMsg,
+  BusMsgHdr
+} from '@app/types';
 import {
   Configurer,
-  IdGenShowFlake,
   TreeBus,
   FlatBus
 } from '@app/lib'
-
-import { INCOMING, IN_INDEP, RPC_IAMALIVE, SERVICE_BAND, SERVICE_KERNEL, BROADCAST } from '@app/constants';
-import { epchild, epglue } from '@app/helpers';
-import { RPCAgnostic } from '@app/lib/rpc/agnostic';
-import { RPCAdapterRedis } from '@app/lib/rpc/adapter/redis';
-
-interface RPCRegisterStruct {
-  methods?: Array<[string, string, string]>
-}
-
-interface RPCRegisterHandler {
-  (params: RPCRegisterStruct): any
-}
+import {
+  INCOMING,
+  IN_INDEP,
+  RPC_IAMALIVE,
+  SERVICE_BAND,
+  SERVICE_KERNEL,
+  BROADCAST
+} from '@app/constants';
+import {
+  epchild,
+  epglue
+} from '@app/helpers';
+import {
+  TheIds,
+  RPCAdapterRedis,
+  RPCAgnostic,
+  Logger,
+  RedisFactory,
+  AgnosticRPCOptions,
+  Meter
+} from 'rockmets';
 
 @Service()
 export class Dispatcher {
@@ -32,38 +44,38 @@ export class Dispatcher {
   enrichBus: TreeBus = new TreeBus();
   listenBus: TreeBus = new TreeBus();
   handleBus: FlatBus = new FlatBus();
-
-  @Inject()
-  idGen: IdGenShowFlake;
-
-  @Inject()
-  stubStore: StubStore;
-
-  rpcConfig: RPCConfig;
-  @Inject()
-  rpcRedis: RPCAdapterRedis;
-  @Inject()
+  appConfig: Configurer;
+  idGen: TheIds;
   rpc: RPCAgnostic;
 
   rpcHandlers: { [k: string]: [string, string] } = {};
 
-  constructor(logFactory: LogFactory, config: Configurer) {
-    this.log = logFactory.for(this);
-    this.rpcConfig = config.get('rpc');
-    this.log.info('starting');
+  constructor() {
+    this.log = Container.get(Logger).for(this);
+    this.log.info('Starting');
+    this.appConfig = Container.get(Configurer);
+    this.idGen = Container.get(TheIds);
   }
 
   setup() {
-    this.rpcRedis.setup(this.rpcConfig);
-    this.rpcRedis.setReceiver(this.rpc, 'dispatch');
-    this.rpc.setup(this.rpcRedis);
     this.handleBus.setNoneHdr(this.defaultHandler);
 
-    this.rpc.register('status', async () => {
+    const redisFactory = Container.get(RedisFactory);
+    const meter = Container.get(Meter);
+    const channels = [this.appConfig.rpc.name];
+
+    // Setup RPC
+    const rpcOptions: AgnosticRPCOptions = { channels, redisFactory, log: this.log, meter, ...this.appConfig.rpc }
+    const rpcAdaptor = new RPCAdapterRedis(rpcOptions);
+
+    this.rpc = new RPCAgnostic(rpcOptions);
+    this.rpc.setup(rpcAdaptor);
+
+    this.rpc.register<{}>('status', async () => {
       return { 'status': "i'm ok!" };
     });
 
-    this.rpc.register<RPCRegisterStruct>('services', async (data) => {
+    this.rpc.register<{ methods?: Array<[string, string, string]> }>('services', async (data) => {
       if (data.methods) {
         const updateHdrs: string[] = [];
         for (const [name, method, role] of data.methods) {
@@ -93,6 +105,10 @@ export class Dispatcher {
 
   }
 
+  start() {
+    this.log.info('Started');
+  }
+
   rpcGateway = async (key: string, msg: IncMsg): Promise<FlexOutgoingMessage> => {
     if (msg.service && msg.name && this.rpcHandlers[key]) {
       return await this.rpc.request<any>(msg.service, msg.name, msg)
@@ -102,10 +118,6 @@ export class Dispatcher {
 
   defaultHandler: BusMsgHdr = (key, msg): any => {
     return { key: key, id: msg.id }
-  }
-
-  start() {
-    this.log.info('Started');
   }
 
   registerEnricher(key: string, func: BusMsgHdr): void {
@@ -126,7 +138,7 @@ export class Dispatcher {
 
     this.log.debug(` -> ${key}`);
 
-    msg.id = this.idGen.take();
+    msg.id = this.idGen.flake();
     msg.time = Number(new Date());
 
     // ### Phase 1: enriching

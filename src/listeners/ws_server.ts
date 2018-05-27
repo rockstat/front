@@ -2,10 +2,10 @@ import { createServer, Server } from 'https';
 import { IncomingMessage } from 'http';
 import { readFileSync, stat } from 'fs';
 import { Socket } from 'net';
-import { Service, Inject } from 'typedi';
+import { Service, Inject, Container } from 'typedi';
 import * as WebSocket from 'ws';
-import { LogFactory, Logger } from "@app/log";
-import { Configurer, Dispatcher, IdGenShowFlake } from '@app/lib';
+import { Logger, TheIds } from "rockmets";
+import { Configurer, Dispatcher } from '@app/lib';
 import {
   HttpsConfig,
   WsConfig,
@@ -48,7 +48,6 @@ interface AddToGroupPayload {
 
 }
 
-@Service()
 export class WebSocketServer {
 
   server: Server;
@@ -57,8 +56,6 @@ export class WebSocketServer {
   secureOptions: { cert: Buffer, key: Buffer };
   socksState: WeakMap<WebSocket, SockState> = new WeakMap();
   log: Logger;
-
-  @Inject()
   dispatcher: Dispatcher;
 
   get httpsOptions(): HttpsConfig {
@@ -69,10 +66,11 @@ export class WebSocketServer {
     return this.options.http;
   }
 
-  constructor(configurer: Configurer, logFactory: LogFactory) {
+  constructor() {
 
-    this.options = configurer.webSocketConfig;
-    this.log = logFactory.for(this);
+    this.options = Container.get(Configurer).webSocketConfig;
+    this.dispatcher = Container.get(Dispatcher);
+    this.log = Container.get(Logger).for(this);
     // this.secureOptions = {
       // cert: readFileSync(this.options.https.certFile),
       // key: readFileSync(this.options.https.keyFile)
