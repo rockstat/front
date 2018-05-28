@@ -1,20 +1,18 @@
 import 'reflect-metadata';
 import { Container, Service, Inject } from 'typedi';
-import { Configurer, Dispatcher } from '@app/lib';
-import { TheIds, Meter, Logger, RedisFactory } from 'rockmets';
+import { Dispatcher } from '@app/lib';
+import { TheIds, Meter, Logger, RedisFactory, AppConfig } from 'rockmets';
 import {
   WebSocketServer,
   HttpServer
 } from '@app/listeners';
+import { KernelConfig } from '@app/types';
 
 
 @Service()
 export class AppServer {
 
-  @Inject()
-  appConfig: Configurer;
-
-
+  appConfig: AppConfig<KernelConfig>;
   httpServer: HttpServer;
   wsServer: WebSocketServer;
   dispatcher: Dispatcher;
@@ -22,6 +20,8 @@ export class AppServer {
   meter: Meter;
 
   setup() {
+    Container.set(AppConfig, new AppConfig<KernelConfig>());
+    this.appConfig = Container.get(AppConfig);
     Container.set(Logger, new Logger(this.appConfig.log));
     const log = Container.get(Logger);
     this.log = log.for(this);

@@ -8,10 +8,10 @@ import {
   BaseIncomingMessage,
   FlexOutgoingMessage,
   IncMsg,
-  BusMsgHdr
+  BusMsgHdr,
+  KernelConfig
 } from '@app/types';
 import {
-  Configurer,
   TreeBus,
   FlatBus
 } from '@app/lib'
@@ -34,7 +34,8 @@ import {
   Logger,
   RedisFactory,
   AgnosticRPCOptions,
-  Meter
+  Meter,
+  AppConfig
 } from 'rockmets';
 
 @Service()
@@ -44,7 +45,7 @@ export class Dispatcher {
   enrichBus: TreeBus = new TreeBus();
   listenBus: TreeBus = new TreeBus();
   handleBus: FlatBus = new FlatBus();
-  appConfig: Configurer;
+  appConfig: AppConfig<KernelConfig>;
   idGen: TheIds;
   rpc: RPCAgnostic;
 
@@ -53,7 +54,7 @@ export class Dispatcher {
   constructor() {
     this.log = Container.get(Logger).for(this);
     this.log.info('Starting');
-    this.appConfig = Container.get(Configurer);
+    this.appConfig = Container.get<AppConfig<KernelConfig>>(AppConfig);
     this.idGen = Container.get(TheIds);
   }
 

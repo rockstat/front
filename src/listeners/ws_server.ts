@@ -4,14 +4,15 @@ import { readFileSync, stat } from 'fs';
 import { Socket } from 'net';
 import { Service, Inject, Container } from 'typedi';
 import * as WebSocket from 'ws';
-import { Logger, TheIds } from "rockmets";
-import { Configurer, Dispatcher } from '@app/lib';
+import { Logger, TheIds, AppConfig } from "rockmets";
+import { Dispatcher } from '@app/lib';
 import {
   HttpsConfig,
   WsConfig,
   Dictionary,
   BaseIncomingMessage,
   HttpConfig,
+  KernelConfig,
 } from '@app/types';
 import {
   isObject, isString, isEmptyString, epglue, epchild
@@ -68,7 +69,7 @@ export class WebSocketServer {
 
   constructor() {
 
-    this.options = Container.get(Configurer).webSocketConfig;
+    this.options = Container.get<AppConfig<KernelConfig>>(AppConfig).ws;
     this.dispatcher = Container.get(Dispatcher);
     this.log = Container.get(Logger).for(this);
     // this.secureOptions = {

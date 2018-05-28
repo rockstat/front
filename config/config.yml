@@ -52,7 +52,7 @@ log:
 
 client: {} # do not remove. root element should be present
 
-browserLib:
+static:
   prod:
     file: clientlib/lib.js
   dev:

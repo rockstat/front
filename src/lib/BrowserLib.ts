@@ -1,16 +1,9 @@
 import { Service, Container } from "typedi";
 import { readFileSync } from 'fs';
-import { Configurer } from "@app/lib";
-import { BrowserLibConfig, Envs } from "@app/types";
+import { BrowserLibConfig, Envs, KernelConfig } from "@app/types";
 import { ENV_DEV } from "@app/constants";
-import { LoggerType, Logger } from 'rockmets';
+import { LoggerType, Logger, AppConfig } from 'rockmets';
 type LibParams = { [key: string]: string };
-
-export class Deps {
-  constructor(appConfig:Configurer){
-
-  }
-}
 
 export class BrowserLib {
 
@@ -22,9 +15,9 @@ export class BrowserLib {
 
   constructor() {
     this.log = Container.get(Logger).for(this);
-    const appConfig = Container.get(Configurer);
+    const appConfig = Container.get<AppConfig<KernelConfig>>(AppConfig);
     this.dev = appConfig.env === ENV_DEV;
-    this.options = appConfig.browserLib;
+    this.options = appConfig.static;
     // warmup lib
     this.lib();
     this.log.info({

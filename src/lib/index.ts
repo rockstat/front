@@ -1,4 +1,3 @@
-export * from './AppConfig';
 export * from './bus/tree';
 export * from './bus/flat';
 export * from './BrowserLib';

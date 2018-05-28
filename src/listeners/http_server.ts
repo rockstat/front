@@ -5,8 +5,8 @@ import { parse as urlParse } from 'url';
 import * as assert from 'assert';
 import * as cookie from 'cookie';
 import * as qs from 'qs';
-import { Meter, Logger, TheIds } from 'rockmets';
-import { Configurer, BrowserLib, Dispatcher } from '@app/lib';
+import { Meter, Logger, TheIds, AppConfig } from 'rockmets';
+import { BrowserLib, Dispatcher } from '@app/lib';
 import { Router, RouteOn } from './http_router'
 import {
   CONTENT_TYPE_GIF,
@@ -56,6 +56,7 @@ import {
   ClientConfig,
   Headers,
   ClientHttpMessage,
+  KernelConfig,
 } from '@app/types';
 import { epchild } from '@app/helpers';
 
@@ -112,7 +113,7 @@ export class HttpServer {
   cookieExpires: Date;
 
   constructor() {
-    const config = Container.get(Configurer);
+    const config = Container.get<AppConfig<KernelConfig>>(AppConfig);
     const logger = Container.get(Logger);
     this.metrics = Container.get(Meter);
     this.idGen = Container.get(TheIds);
@@ -120,11 +121,11 @@ export class HttpServer {
     this.router = Container.get(Router);
     this.browserLib = Container.get(BrowserLib);
 
-    this.options = config.httpConfig;
+    this.options = config.http;
     this.title = config.get('name');
     this.identopts = config.identify;
     this.uidkey = this.identopts.param;
-    this.clientopts = config.client;
+    this.clientopts = config.client.common;
     this.log = logger.for(this);
 
     this.cookieExpires = new Date(new Date().getTime() + this.identopts.cookieMaxAge * 1000);
