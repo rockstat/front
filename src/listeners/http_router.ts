@@ -1,7 +1,7 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { Service, Inject, Container } from 'typedi';
 import * as FindMyWay from 'find-my-way';
-import { Logger } from 'rockmets';
+import { Logger } from 'rock-me-ts';
 import { epglue } from '@app/helpers';
 import {
   CONTENT_TYPE_JSON,

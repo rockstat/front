@@ -36,7 +36,7 @@ import {
   AgnosticRPCOptions,
   Meter,
   AppConfig
-} from 'rockmets';
+} from 'rock-me-ts';
 
 @Service()
 export class Dispatcher {

@@ -5,7 +5,7 @@ import { parse as urlParse } from 'url';
 import * as assert from 'assert';
 import * as cookie from 'cookie';
 import * as qs from 'qs';
-import { Meter, Logger, TheIds, AppConfig } from 'rockmets';
+import { Meter, Logger, TheIds, AppConfig } from 'rock-me-ts';
 import { BrowserLib, Dispatcher } from '@app/lib';
 import { Router, RouteOn } from './http_router'
 import {

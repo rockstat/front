@@ -1,7 +1,7 @@
 import { Promise } from 'bluebird';
 import Container from 'typedi';
 import { BusMsgHdr, BusMsgHdrResult } from '@app/types';
-import { Logger } from 'rockmets';
+import { Logger } from 'rock-me-ts';
 
 export class FlatBus {
   map: WeakMap<BusMsgHdr, Array<string>> = new WeakMap();

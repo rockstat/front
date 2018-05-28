@@ -1,6 +1,6 @@
 import { Container } from 'typedi';
 import { Dispatcher } from '@app/lib';
-import { Logger } from 'rockmets';
+import { Logger } from 'rock-me-ts';
 import { ClientHttpMessage, BaseIncomingMessage } from "@app/types";
 import {
   INCOMING,

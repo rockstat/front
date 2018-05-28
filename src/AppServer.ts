@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { Container, Service, Inject } from 'typedi';
 import { Dispatcher } from '@app/lib';
-import { TheIds, Meter, Logger, RedisFactory, AppConfig } from 'rockmets';
+import { TheIds, Meter, Logger, RedisFactory, AppConfig } from 'rock-me-ts';
 import {
   WebSocketServer,
   HttpServer

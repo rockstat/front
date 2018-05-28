@@ -1,4 +1,4 @@
-import { Envs } from 'rockmets';
+import { Envs } from 'rock-me-ts';
 
 export type MappedType<T> = { [K in keyof T]: T[K] };
 
