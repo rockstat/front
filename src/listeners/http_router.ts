@@ -18,26 +18,18 @@ import {
   IN_TRACK,
   IN_INDEP,
   CHANNEL_HTTP_WEBHOOK,
-  PATH_HTTP_418,
+  PATH_HTTP_TEAPOT,
   STATUS_TEAPOT,
   CHANNEL_HTTP_PIXEL,
   CHANNEL_HTTP_TRACK,
   SERVICE_TRACK,
   CHANNEL_HTTP,
-  CHANNEL_HTTP_REDIR
+  CHANNEL_HTTP_REDIR,
+  OTHER
 } from '@app/constants';
-import {
-  QueryParams
-} from './http_server';
+import { HTTPRouteParams, RouteOn, HTTPRoutingResult, HTTPQueryParams } from '@app/types';
 
-// === Rounting based on
-export interface RouteOn {
-  method: string;
-  contentType: string;
-  query: { [key: string]: any };
-  path: string,
-  origin: string
-}
+
 
 // === Route structs
 export interface RouteParams {
@@ -55,25 +47,20 @@ export interface RouteParamsWebHook extends RouteParams {
 }
 
 export interface RequestHandlerPayload {
-  params: RouteParams;
-  query: QueryParams;
-};
-
-export interface RequestHandlerResult {
-  key: string;
-  channel: string;
-  status: number;
-  params?: RouteParams;
-  location?: string;
-  contentType?: string;
+  params: HTTPRouteParams;
+  query: HTTPQueryParams;
 };
 
 
-export type RequestHandler = (payload: RequestHandlerPayload) => RequestHandlerResult;
+
+
+export type RequestHandler = (payload: RequestHandlerPayload) => HTTPRoutingResult;
 
 export interface RouteResult {
   handler: RequestHandler;
-  params: RouteParams | RouteParamsWebHook | RouteParamsRedir;
+  params: {
+    [key: string]: string;
+  };
 }
 
 
@@ -91,11 +78,11 @@ export class Router {
     /** Default route (404) */
     this.defaultRoute = {
       params: {},
-      handler: (payload: RequestHandlerPayload) => {
-        return <RequestHandlerResult>Object.assign(payload, {
+      handler: (payload: RequestHandlerPayload): HTTPRoutingResult => {
+        return Object.assign(payload, {
+          params: payload.params,
           key: PATH_HTTP_404,
           channel: CHANNEL_HTTP,
-          status: STATUS_NOT_FOUND
         });
       }
     }
@@ -104,13 +91,18 @@ export class Router {
   /**
    * Find match route, execute and return result
    * @param {routeOn} Request params
-   * @returns {RequestHandlerResult}
+   * @returns {HTTPRoutingResult}
    */
-  route(routeOn: RouteOn): RequestHandlerResult {
+  route(routeOn: RouteOn): HTTPRoutingResult {
     const matchedRoute = <RouteResult>this.router.find(routeOn.method, routeOn.path);
     const useRoute = matchedRoute ? matchedRoute : this.defaultRoute;
-    const payload = <RequestHandlerPayload>{
-      params: useRoute.params,
+    const params = {
+      service: useRoute.params.service || OTHER,
+      name: useRoute.params.name || OTHER,
+      projectId: useRoute.params.projectId && Number(useRoute.params.projectId) || 0
+    }
+    const payload: RequestHandlerPayload = {
+      params: params,
       query: routeOn.query
     };
     return useRoute.handler(payload)
@@ -121,74 +113,61 @@ export class Router {
    */
   setupRoutes() {
 
-    const teapotHandler = function (payload: RequestHandlerPayload): RequestHandlerResult {
+    const teapotHandler: RequestHandler = function (payload) {
       return {
-        key: PATH_HTTP_418,
+        params: payload.params,
+        key: PATH_HTTP_TEAPOT,
         channel: CHANNEL_HTTP,
-        status: STATUS_TEAPOT
       }
     };
 
-    const optionsHandler = function (payload: RequestHandlerPayload): RequestHandlerResult {
+    const trackHandler: RequestHandler = function (payload) {
+      payload.params.service = SERVICE_TRACK;
       return {
-        key: PATH_HTTP_OPTS,
-        channel: CHANNEL_HTTP,
-        status: STATUS_OK_NO_CONTENT,
-      }
-    };
-
-    const trackHandler = function (payload: RequestHandlerPayload): RequestHandlerResult {
-      return {
-        params: Object.assign({ service: SERVICE_TRACK }, payload.params),
+        params: payload.params,
         key: epglue(IN_INDEP, payload.params.name),
         // explicitly set content type because AJAX uses text/plain to avoid options request
         contentType: CONTENT_TYPE_JSON,
         channel: CHANNEL_HTTP_TRACK,
-        status: STATUS_OK
       };
     };
 
-    const pixelHandler = function (payload: RequestHandlerPayload): RequestHandlerResult {
+    const pixelHandler: RequestHandler = function (payload) {
       return {
         params: payload.params,
         key: epglue(IN_INDEP, payload.params.name),
         channel: CHANNEL_HTTP_PIXEL,
-        status: STATUS_OK
       };
     };
 
     /**
      * example: http://127.0.0.1:10001/redir/111/a/b?to=https%3A%2F%2Fya.ru
-     * @param payload {routeOn}
      */
-    const redirHandler = function (payload: RequestHandlerPayload): RequestHandlerResult {
+    const redirHandler: RequestHandler = function (payload) {
       return {
         params: payload.params,
         key: epglue(IN_REDIR, payload.params.service, payload.params.name),
-        location: payload.query.to,
-        status: STATUS_TEMP_REDIR,
         channel: CHANNEL_HTTP_REDIR,
       };
     };
-    const webhookHandler = function (payload: RequestHandlerPayload): RequestHandlerResult {
+    const webhookHandler: RequestHandler = function (payload) {
       return {
         params: payload.params,
         key: epglue(IN_INDEP, payload.params.service, payload.params.name),
         channel: CHANNEL_HTTP_WEBHOOK,
-        status: STATUS_OK
       };
     };
 
-    const libjsHandler = function (payload: RequestHandlerPayload): RequestHandlerResult {
+    const libjsHandler = function (payload: RequestHandlerPayload): HTTPRoutingResult {
       return {
+        params: { service: OTHER, name: OTHER, projectId: 0 },
         key: PATH_HTTP_LIBJS,
         channel: CHANNEL_HTTP,
-        status: STATUS_OK
       };
     };
 
-    this.router.options('/track', optionsHandler);
-    this.router.options('/wh', optionsHandler);
+    // this.router.options('/track', optionsHandler);
+    // this.router.options('/wh', optionsHandler);
 
     this.router.get('/coffee', teapotHandler);
     this.router.get('/lib.js', libjsHandler);

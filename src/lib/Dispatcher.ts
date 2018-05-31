@@ -7,9 +7,10 @@ import {
 import {
   BaseIncomingMessage,
   FlexOutgoingMessage,
-  IncMsg,
   BusMsgHdr,
-  KernelConfig
+  FrontierConfig,
+  DispatchResult,
+  Dictionary
 } from '@app/types';
 import {
   TreeBus,
@@ -19,9 +20,14 @@ import {
   INCOMING,
   IN_INDEP,
   RPC_IAMALIVE,
-  SERVICE_BAND,
-  SERVICE_KERNEL,
-  BROADCAST
+  SERVICE_DIRECTOR,
+  SERVICE_FRONTIER,
+  BROADCAST,
+  IN_REDIR,
+  STATUS_OK,
+  STATUS_BAD_REQUEST,
+  STATUS_TEMP_REDIR,
+  STATUS_INT_ERROR,
 } from '@app/constants';
 import {
   epchild,
@@ -37,6 +43,7 @@ import {
   Meter,
   AppConfig
 } from 'rock-me-ts';
+import { baseRedirect } from '@app/lib/handlers/redirect';
 
 @Service()
 export class Dispatcher {
@@ -45,7 +52,7 @@ export class Dispatcher {
   enrichBus: TreeBus = new TreeBus();
   listenBus: TreeBus = new TreeBus();
   handleBus: FlatBus = new FlatBus();
-  appConfig: AppConfig<KernelConfig>;
+  appConfig: AppConfig<FrontierConfig>;
   idGen: TheIds;
   rpc: RPCAgnostic;
 
@@ -54,7 +61,7 @@ export class Dispatcher {
   constructor() {
     this.log = Container.get(Logger).for(this);
     this.log.info('Starting');
-    this.appConfig = Container.get<AppConfig<KernelConfig>>(AppConfig);
+    this.appConfig = Container.get<AppConfig<FrontierConfig>>(AppConfig);
     this.idGen = Container.get(TheIds);
   }
 
@@ -90,9 +97,11 @@ export class Dispatcher {
       }
       return { result: true };
     });
-    // notify band
+
+    this.handleBus.handle(IN_REDIR, baseRedirect);
+    // notify band director
     setImmediate(() => {
-      this.rpc.notify(SERVICE_BAND, RPC_IAMALIVE, { name: SERVICE_KERNEL })
+      this.rpc.notify(SERVICE_DIRECTOR, RPC_IAMALIVE, { name: SERVICE_FRONTIER })
     })
 
     this.listenBus.subscribe('*', async (key: string, msg: BusMsgHdr) => {
@@ -101,24 +110,36 @@ export class Dispatcher {
       } catch (error) {
         this.log.error(`catch! ${error.message}`);
       }
-
     })
-
   }
 
   start() {
     this.log.info('Started');
   }
 
-  rpcGateway = async (key: string, msg: IncMsg): Promise<FlexOutgoingMessage> => {
+  rpcGateway = async (key: string, msg: BaseIncomingMessage): Promise<DispatchResult> => {
     if (msg.service && msg.name && this.rpcHandlers[key]) {
-      return await this.rpc.request<any>(msg.service, msg.name, msg)
+      const res = await this.rpc.request<Dictionary<any>>(msg.service, msg.name, msg);
+      if (res.code && typeof res.code === 'number' && res.result) {
+        return res as DispatchResult;
+      } else {
+        return {
+          result: res,
+          code: STATUS_OK
+        }
+      }
     }
     return this.defaultHandler(key, msg);
   }
 
-  defaultHandler: BusMsgHdr = (key, msg): any => {
-    return { key: key, id: msg.id }
+  defaultHandler: BusMsgHdr = async (key, msg): Promise<DispatchResult> => {
+    return {
+      code: STATUS_OK,
+      result: {
+        key: key,
+        id: msg.id
+      }
+    }
   }
 
   registerEnricher(key: string, func: BusMsgHdr): void {
@@ -135,7 +156,7 @@ export class Dispatcher {
     this.handleBus.set(key, func);
   }
 
-  async emit(key: string, msg: IncMsg): Promise<any> {
+  async emit(key: string, msg: BaseIncomingMessage): Promise<any> {
 
     this.log.debug(` -> ${key}`);
 

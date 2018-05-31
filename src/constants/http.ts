@@ -28,5 +28,7 @@ export const METHOD_OPTIONS = 'OPTIONS';
 export const METHOD_POST = 'POST';
 export const METHOD_GET = 'GET';
 
+export const CONTENT_BAD_REQUEST = '{"error":"Bad request"}';
+
 // For testing purpose
 export const AbsentRedir = 'https://alcolytics.ru?utm_source=AbsenRedir';

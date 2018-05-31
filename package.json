@@ -1,7 +1,7 @@
 {
-  "name": "rst-frontman",
+  "name": "rst-frontier",
   "version": "3.0.5",
-  "description": "Rockstat platform server endpoint component",
+  "description": "Rockstat platform server endpoint frontier",
   "main": "dist/start.js",
   "scripts": {
     "start": "ts-node-dev -r 'tsconfig-paths/register' ./src/start.ts | pino",
@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/rockstat/kernel"
+    "url": "https://github.com/rockstat/frontier"
   },
   "author": "Dmitry Rodin <madiedinro@gmail.com>",
   "homepage": "https://rockstat.ru",

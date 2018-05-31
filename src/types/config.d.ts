@@ -69,7 +69,7 @@ export type ClientConfig = {
 
 // ##### CONFIG ROOT #####
 
-export type KernelConfig = {
+export type FrontierConfig = {
   name: string;
   env: Envs;
   http: HttpConfig;

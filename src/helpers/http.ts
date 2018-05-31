@@ -1,10 +1,10 @@
 import { parse as parseQs } from 'qs';
-import { ServerResponse } from 'http';
+import { ServerResponse, OutgoingHttpHeaders,  } from 'http';
 
 import { parse as parseUrl } from 'url';
 import { listVal } from './common';
 import { CONTENT_TYPE_URLENCODED, CONTENT_TYPE_JSON } from '../constants/http';
-import { Headers } from '../types';
+
 
 /**
  * Transparent 1x1 gif
@@ -44,10 +44,10 @@ const CORS_EXPOSE_HEADERS: string[] = ['Content-Length', 'Content-Type']
  * Cookies
  * @param allowOrigin
  */
-export function cookieHeaders(cookie: Array<string>): Headers {
-  return [
-    ['Set-Cookie', cookie],
-  ];
+export function cookieHeaders(cookie: Array<string>): OutgoingHttpHeaders {
+  return {
+    'Set-Cookie': cookie,
+  };
 }
 
 /**
@@ -55,63 +55,63 @@ export function cookieHeaders(cookie: Array<string>): Headers {
  * @param allowOrigin
  * docs: https://developer.mozilla.org/ru/docs/Web/HTTP/CORS
  */
-export function corsHeaders(allowOrigin: string): Headers {
-  return [
-    ['Access-Control-Allow-Origin', allowOrigin],
-    ['Access-Control-Allow-Credentials', 'true'],
-    ['Access-Control-Expose-Headers', CORS_EXPOSE_HEADERS.join(',')],
-  ];
+export function corsHeaders(allowOrigin: string): OutgoingHttpHeaders {
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Expose-Headers': CORS_EXPOSE_HEADERS.join(','),
+  };
 }
 
-export function corsAnswerHeaders(): Headers {
-  return [
-    ['Access-Control-Allow-Methods', CORS_METHODS.join(',')],
-    ['Access-Control-Allow-Headers', CORS_HEADERS.join(',')],
-    ['Access-Control-Max-Age-Scope', 'domain'],
-    ['Access-Control-Max-Age', CORS_MAX_AGE_SECONDS],
-  ];
+export function corsAnswerHeaders(): OutgoingHttpHeaders {
+  return {
+    'Access-Control-Allow-Methods': CORS_METHODS.join(','),
+    'Access-Control-Allow-Headers': CORS_HEADERS.join(','),
+    'Access-Control-Max-Age-Scope': 'domain',
+    'Access-Control-Max-Age': CORS_MAX_AGE_SECONDS,
+  };
 }
 
 
-export function corsAdditionalHeaders(): Headers {
-  return [
-    ['Content-Length', '0'],
-    ['Cache-Control', 'max-age=3600'],
-    ['Vary', 'Origin']
-  ];
+export function corsAdditionalHeaders(): OutgoingHttpHeaders {
+  return {
+    'Content-Length': '0',
+    'Cache-Control': 'max-age=3600',
+    'Vary': 'Origin'
+  };
 }
 
 
 /**
  * Cache headers
  */
-export function noCacheHeaders(): Headers {
-  return [
-    ['Pragma', 'no-cache'],
-    ['Cache-Control', 'no-cache, no-store, must-revalidate'],
-    ['Expires', 'Mon, 01 Jan 1990 21:00:12 GMT'],
-    ['Last-Modified', 'Sun, 17 May 1998 03:44:30 GMT']
-  ]
+export function noCacheHeaders(): OutgoingHttpHeaders {
+  return {
+    'Pragma': 'no-cache',
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Expires': 'Mon, 01 Jan 1990 21:00:12 GMT',
+    'Last-Modified': 'Sun, 17 May 1998 03:44:30 GMT'
+  }
 }
 
 /**
  * Security headers
  */
-export function secureHeaders(): Headers {
-  return [
-    ['X-Content-Type-Options', 'nosniff'],
-    ['X-Frame-Options', 'SAMEORIGIN'],
-    ['X-XSS-Protection', '1']
-  ];
+export function secureHeaders(): OutgoingHttpHeaders {
+  return {
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'SAMEORIGIN',
+    'X-XSS-Protection': '1'
+  };
 
   // Referrer-Policy
   // See https://www.w3.org/TR/referrer-policy/#referrer-policies
 }
 
 
-export function applyHeaders(res: ServerResponse, arg1: Headers, ...args: Headers[]) {
-  const headers = arg1.concat(...args);
-  for (const [h, v] of headers) {
+export function applyHeaders(res: ServerResponse, arg1:OutgoingHttpHeaders, ...args: OutgoingHttpHeaders[]) {
+  const headers = Object.assign(arg1, ...args);
+  for (const [h, v] of Object.entries<string>(headers)) {
     res.setHeader(h, v);
   }
 }

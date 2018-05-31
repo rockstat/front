@@ -1,6 +1,6 @@
 # About
 
-Kernel of Rockstat
+Front service of Rockstat
 
 ## About Rockstat
 

@@ -12,7 +12,7 @@ import {
   Dictionary,
   BaseIncomingMessage,
   HttpConfig,
-  KernelConfig,
+  FrontierConfig,
 } from '@app/types';
 import {
   isObject, isString, isEmptyString, epglue, epchild
@@ -69,7 +69,7 @@ export class WebSocketServer {
 
   constructor() {
 
-    this.options = Container.get<AppConfig<KernelConfig>>(AppConfig).ws;
+    this.options = Container.get<AppConfig<FrontierConfig>>(AppConfig).ws;
     this.dispatcher = Container.get(Dispatcher);
     this.log = Container.get(Logger).for(this);
     // this.secureOptions = {

@@ -10,7 +10,7 @@ export class FlatBus {
   log: Logger;
 
   constructor() {
-    this.log = Container.get<Logger>(Logger).for(this);
+    this.log = Container.get(Logger).for(this);
   }
 
   setNoneHdr(hdr: BusMsgHdr) {
@@ -29,9 +29,13 @@ export class FlatBus {
   replace(keys: string[], handler: BusMsgHdr): FlatBus {
     const hel = this.handlerEvents(handler);
     const newKeys = keys.filter(k => !hel.includes(k));
-    this.log.debug(`new keys: ${newKeys.join()}`);
+    if (newKeys.length) {
+      this.log.debug(`new keys`, newKeys);
+    }
     const rmKeys = hel.filter(k => !keys.includes(k));
-    this.log.debug(`rm keys: ${rmKeys.join()}`);
+    if (rmKeys.length) {
+      this.log.debug(`rm keys`, rmKeys);
+    }
     for (const key of rmKeys) {
       this.unset(key, handler);
     }

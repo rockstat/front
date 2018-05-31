@@ -7,7 +7,7 @@ import * as cookie from 'cookie';
 import * as qs from 'qs';
 import { Meter, Logger, TheIds, AppConfig } from 'rock-me-ts';
 import { BrowserLib, Dispatcher } from '@app/lib';
-import { Router, RouteOn } from './http_router'
+import { Router } from './http_router'
 import {
   CONTENT_TYPE_GIF,
   CONTENT_TYPE_PLAIN,
@@ -34,7 +34,10 @@ import {
   HResponseTime,
   IN_REDIR,
   STATUS_TEAPOT,
-  HMyName
+  HMyName,
+  CONTENT_BAD_REQUEST,
+  PATH_HTTP_TEAPOT,
+  PATH_HTTP_404
 } from '@app/constants';
 import {
   computeOrigin,
@@ -54,24 +57,19 @@ import {
   HttpConfig,
   IdentifyConfig,
   ClientConfig,
-  Headers,
   ClientHttpMessage,
-  KernelConfig,
+  FrontierConfig,
+  HTTPBodyParams,
+  RouteOn,
+  BaseIncomingMessage,
+  HTTPTransportData,
+  DispatchResult,
 } from '@app/types';
 import { epchild } from '@app/helpers';
 
 
 const f = (i?: string | string[]) => Array.isArray(i) ? i[0] : i;
 const parseOpts = { limit: '50kb' };
-
-export type BodyParams = { [key: string]: any }
-export type QueryParams = { [key: string]: any }
-
-export interface TransportData {
-  ip: string;
-  userAgent: string;
-  uid: string;
-}
 
 
 type msg = {
@@ -113,7 +111,7 @@ export class HttpServer {
   cookieExpires: Date;
 
   constructor() {
-    const config = Container.get<AppConfig<KernelConfig>>(AppConfig);
+    const config = Container.get<AppConfig<FrontierConfig>>(AppConfig);
     const logger = Container.get(Logger);
     this.metrics = Container.get(Meter);
     this.idGen = Container.get(TheIds);
@@ -136,10 +134,10 @@ export class HttpServer {
    * @param routeOn
    * @param req
    */
-  async parseBody(contentType: string, req: IncomingMessage): Promise<BodyParams> {
+  async parseBody(contentType: string, req: IncomingMessage): Promise<HTTPBodyParams> {
 
     if (contentType.indexOf('json') >= 0) {
-      return <{ [key: string]: any }>await json(req, parseOpts);
+      return await json(req, parseOpts);
     }
     const body = await text(req, parseOpts);
     return parseQuery(body);
@@ -164,161 +162,175 @@ export class HttpServer {
    */
   async handle(req: IncomingMessage, res: ServerResponse) {
 
-    try {
 
-      const requestTime = this.metrics.timenote('http.request')
+    const requestTime = this.metrics.timenote('http.request')
 
-      assert(typeof req.url === 'string', 'Request url required');
-      assert(typeof req.method === 'string', 'Request method required');
+    assert(typeof req.url === 'string', 'Request url required');
+    assert(typeof req.method === 'string', 'Request method required');
 
-      // extracting useful headers
-      const {
-        'user-agent': userAgent,
-        'content-type': contentType,
-        'x-real-ip': realIp,
-        'x-forwarded-for': forwardedFor,
-        origin,
-        referer
-      } = req.headers;
+    // extracting useful headers
+    const {
+      'user-agent': userAgent,
+      'content-type': contentType,
+      'x-real-ip': realIp,
+      'x-forwarded-for': forwardedFor,
+      origin,
+      referer
+    } = req.headers;
 
-      // parsing url
-      const urlParts = urlParse(req.url || '');
-      const query: Partial<{[k:string]: string}> = urlParts.query ? qs.parse(urlParts.query) : {};
+    // parsing url
+    const urlParts = urlParse(req.url || '');
+    const query: Partial<{ [k: string]: string }> = urlParts.query ? qs.parse(urlParts.query) : {};
 
-      // parse cookie
-      const cookies = cookie.parse(f(req.headers.cookie) || '');
+    // parse cookie
+    const cookies = cookie.parse(f(req.headers.cookie) || '');
 
-      // transportData.ip = '82.202.204.194';
-      // transportData.userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.162 Safari/537.36'
+    // transportData.ip = '82.202.204.194';
+    // transportData.userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.162 Safari/537.36'
 
-      // Data for routing request
-      const routeOn: RouteOn = {
-        method: req.method || 'unknown',
-        contentType: contentType || CONTENT_TYPE_PLAIN,
-        query: parseQuery(urlParts.query || ''),
-        path: urlParts.pathname || '/',
-        origin: computeOrigin(origin, referer)
-      };
+    // Data for routing request
+    const routeOn: RouteOn = {
+      method: req.method || 'unknown',
+      contentType: contentType || CONTENT_TYPE_PLAIN,
+      query: parseQuery(urlParts.query || ''),
+      path: urlParts.pathname || '/',
+      origin: computeOrigin(origin, referer)
+    };
 
-      // HTTP Routing
-      // ####################################################
-      const handled = this.router.route(routeOn);
-      const { status } = handled;
+    // ### CORS preflight // Early Response
+    if (routeOn.method === METHOD_OPTIONS) {
+      applyHeaders(
+        res,
+        corsHeaders(routeOn.origin),
+        corsAnswerHeaders(),
+        // additional params for caching responces
+        corsAdditionalHeaders()
+      );
+      return send(res, STATUS_OK_NO_CONTENT);
+    }
 
-      // ### CORS preflight // Early Response
-      if (status === STATUS_OK_NO_CONTENT && routeOn.method === METHOD_OPTIONS) {
-        applyHeaders(
-          res,
-          corsHeaders(routeOn.origin),
-          corsAnswerHeaders(),
-          // additional params for caching responces
-          corsAdditionalHeaders()
-        );
-        return send(res, status);
+    // ### Allow only GET and POST
+    if (routeOn.method !== METHOD_GET && routeOn.method !== METHOD_POST) {
+      return send(res, STATUS_BAD_REQUEST, CONTENT_BAD_REQUEST);
+    }
+
+    // HTTP Routing
+    // ####################################################
+
+    const routed = this.router.route(routeOn);
+
+    // ### Teapot // Early Response
+    if (routed.key === PATH_HTTP_TEAPOT) {
+      res.setHeader(HMyName, this.title);
+      res.setHeader(HContentType, CONTENT_TYPE_PLAIN);
+      return send(res, STATUS_TEAPOT, "I'm a teapot");
+    }
+
+    if (routed.key === PATH_HTTP_404) {
+      res.setHeader(HContentType, CONTENT_TYPE_PLAIN);
+      return send(res, STATUS_NOT_FOUND);
+    }
+
+
+
+    // Handling POST if routed right way!
+    const body = (routeOn.method === METHOD_POST)
+      ? await this.parseBody(routed.contentType || routeOn.contentType, req)
+      : {};
+
+    // Looking for uid
+    const uid = query[this.uidkey] || body[this.uidkey] || cookies[this.uidkey] || this.idGen.flake();
+
+    // transport data to store
+    const { remoteAddress } = req.connection;
+    const transportData: HTTPTransportData = {
+      ip: f(realIp) || remoteAddress || '0.0.0.0',
+      userAgent: f(userAgent) || 'Absent',
+    };
+
+    const userIdCookie = cookie.serialize(
+      this.identopts.param,
+      uid,
+      {
+        httpOnly: true,
+        expires: this.cookieExpires
       }
+    )
 
-      // ### Teapot // Early Response
-      if (status === STATUS_TEAPOT) {
-        res.setHeader(HMyName, this.title);
-        res.setHeader(HContentType, CONTENT_TYPE_PLAIN);
-        return send(res, status, "I'm a teapot");
-      }
+    // Regular response headers
+    applyHeaders(
+      res,
+      corsHeaders(routeOn.origin),
+      noCacheHeaders(),
+      cookieHeaders([userIdCookie])
+    );
 
-      if (status === STATUS_OK || status === STATUS_TEMP_REDIR) {
-
-        // Handling POST if routed right way!
-        const body = (routeOn.method === METHOD_POST)
-          ? await this.parseBody(handled.contentType || routeOn.contentType, req)
-          : {};
-
-        // Looking for uid
-        const uid = query[this.uidkey] || body[this.uidkey] || cookies[this.uidkey] || this.idGen.flake();
-
-        // transport data to store
-        const { remoteAddress } = req.connection;
-        const transportData: TransportData = {
-          ip: f(realIp) || remoteAddress || '127.0.0.1',
-          userAgent: f(userAgent) || 'Unknown',
-          uid: uid
-        };
-
-
-        // Final final message
-        const msg: ClientHttpMessage = Object.assign(
-          {},
-          body,
-          routeOn.query,
-          handled.params,
-          {
-            key: handled.key,
-            channel: handled.channel,
-            proto: transportData
-          }
-        );
-
-        // Dispatching: Running enrichers, subscribers, handler
-        // ####################################################
-        let response = await this.dispatcher.emit(handled.key, msg);
-
-
-        // Constructing response
-        // ####################################################
-
-
-        const userIdCookie = cookie.serialize(
-          this.identopts.param,
-          transportData.uid,
-          {
-            httpOnly: true,
-            expires: this.cookieExpires
-          }
+    // Processing JS client lib
+    if (routed.key === PATH_HTTP_LIBJS) {
+      res.setHeader(HContentType, CONTENT_TYPE_JS);
+      const response = this.browserLib.prepare(
+        Object.assign(
+          { initialUid: uid },
+          this.clientopts
         )
-
-        // Regular response headers
-        applyHeaders(
-          res,
-          corsHeaders(routeOn.origin),
-          noCacheHeaders(),
-          cookieHeaders([userIdCookie])
-        );
+      );
+      return send(res, STATUS_OK, response);
+    }
 
 
+    // Final final message
+    const msg: BaseIncomingMessage = {
+      key: routed.key,
+      channel: routed.channel,
+      service: routed.params.service,
+      name: routed.params.name,
+      uid: uid,
+      data: Object.assign(body, routeOn.query)
+    }
 
-        // Processing redirect
-        if (epchild(IN_REDIR, handled.key) && handled.location) {
-          res.setHeader(HLocation, handled.location);
-          res.setHeader(HContentType, CONTENT_TYPE_PLAIN);
-          response = 'Redirecting...';
-        }
+    // Dispatching: Running enrichers, subscribers, handler
+    // ####################################################
+    let dispatched = await this.dispatch(routed.key, msg);
 
-        // Processing JS client lib
-        if (handled.key === PATH_HTTP_LIBJS) {
-          res.setHeader(HContentType, CONTENT_TYPE_JS);
-          response = this.browserLib.prepare(
-            Object.assign(
-              { initialUid: uid },
-              this.clientopts
-            )
-          );
-        }
+    // Constructing response
+    // ####################################################
 
-        if (handled.channel === CHANNEL_HTTP_PIXEL) {
-          res.setHeader(HContentType, CONTENT_TYPE_GIF);
-          response = emptyGif;
-        }
+    let response;
+    switch (dispatched.code) {
+      case STATUS_OK:
+        response = dispatched.result;
+        break;
+      case STATUS_TEMP_REDIR:
+        res.setHeader(HLocation, dispatched.location);
+        response = `Redirecting to ${dispatched.location}...`;
+        break;
+      case STATUS_BAD_REQUEST:
+      case STATUS_INT_ERROR:
+        response = dispatched.error;
+        break;
+    }
 
-        const reqTime = requestTime()
-        res.setHeader(HResponseTime, reqTime);
+    if (routed.channel === CHANNEL_HTTP_PIXEL) {
+      res.setHeader(HContentType, CONTENT_TYPE_GIF);
+      response = emptyGif;
+    }
 
-        send(res, handled.status, response);
+    const reqTime = requestTime()
+    res.setHeader(HResponseTime, reqTime);
 
-      } else {
-        send(res, handled.status || STATUS_BAD_REQUEST, String(handled.status));
-      }
+    send(res, dispatched.code, response);
 
+  }
+
+  private async dispatch(key: string, msg: BaseIncomingMessage): Promise<DispatchResult> {
+    try {
+      return await this.dispatcher.emit(key, msg);
     } catch (error) {
-      this.log.error(error, 'Error during request handling');
-      send(res, STATUS_INT_ERROR, {} || {});
+      this.log.error(error);
+      return {
+        error: 'Internal error. Smth wrong.',
+        code: STATUS_INT_ERROR
+      }
     }
   }
 }
