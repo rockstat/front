@@ -41,7 +41,9 @@ import {
   RedisFactory,
   AgnosticRPCOptions,
   Meter,
-  AppConfig
+  AppConfig,
+  METHOD_STATUS,
+  STATUS_RUNNING
 } from 'rock-me-ts';
 import { baseRedirect } from '@app/lib/handlers/redirect';
 
@@ -79,24 +81,28 @@ export class Dispatcher {
     this.rpc = new RPCAgnostic(rpcOptions);
     this.rpc.setup(rpcAdaptor);
 
-    this.rpc.register<{}>('status', async () => {
-      return { 'status': "i'm ok!" };
-    });
-
-    this.rpc.register<{ methods?: Array<[string, string, string]> }>('services', async (data) => {
+    this.rpc.register<{ methods?: Array<[string, string, string]> }>(METHOD_STATUS, async (data) => {
       if (data.methods) {
         const updateHdrs: string[] = [];
-        for (const [name, method, role] of data.methods) {
+        console.log(typeof data.methods)
+        console.log(Array.isArray(data.methods))
+        console.dir(data.methods)
+        for (const row of data.methods) {
+          const [name, method, role] = row
           const key = epglue(IN_INDEP, name, method)
           if (role === 'handler') {
             this.rpcHandlers[key] = [name, method];
+            updateHdrs.push(key);
           }
-          updateHdrs.push(key);
         }
         this.handleBus.replace(updateHdrs, this.rpcGateway)
       }
-      return { result: true };
+      return { 'status': STATUS_RUNNING };
     });
+
+    // this.rpc.register<{ methods?: Array<[string, string, string]> }>('services', async (data) => {
+    //   return { result: true };
+    // });
 
     this.handleBus.handle(IN_REDIR, baseRedirect);
     // notify band director

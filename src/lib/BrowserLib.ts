@@ -36,7 +36,7 @@ export class BrowserLib {
   }
 
   rtConfig(params: LibParams): string {
-    return `window.alco&&window.alco('configure',${JSON.stringify(params)});`;
+    return `;window["rstat"]&&window["rstat"]('configure',${JSON.stringify(params)});`;
   }
 
   prepare(params: LibParams) {
