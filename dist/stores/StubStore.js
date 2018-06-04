@@ -22,4 +22,4 @@ StubStore = __decorate([
     __metadata("design:paramtypes", [])
 ], StubStore);
 exports.StubStore = StubStore;
-//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiU3R1YlN0b3JlLmpzIiwic291cmNlUm9vdCI6IiIsInNvdXJjZXMiOlsiLi4vLi4vc3JjL3N0b3Jlcy9TdHViU3RvcmUudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7QUFBQSxtQ0FBaUM7QUFLakMsSUFBYSxTQUFTLEdBQXRCO0lBSUU7SUFFQSxDQUFDO0lBRUQsSUFBSSxDQUFDLElBQVM7UUFDWixvQ0FBb0M7SUFDdEMsQ0FBQztDQUNGLENBQUE7QUFYWSxTQUFTO0lBRHJCLGdCQUFPLEVBQUU7O0dBQ0csU0FBUyxDQVdyQjtBQVhZLDhCQUFTIn0=
+//# sourceMappingURL=StubStore.js.map

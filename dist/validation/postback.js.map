@@ -1,0 +1,1 @@
+{"version":3,"file":"postback.js","sourceRoot":"","sources":["../../src/validation/postback.ts"],"names":[],"mappings":";;AAGA,MAAM,MAAM,GAAG;IACb,YAAY,EAAE;QACZ,KAAK,EAAE,EAAE,MAAM,EAAE,OAAO,EAAE,OAAO,EAAE,EAAE,MAAM,EAAE,QAAQ,EAAE,EAAE;QACzD,KAAK,EAAE,EAAE,MAAM,EAAE,SAAS,EAAE;KAC7B;CACF,CAAC"}
