@@ -46,11 +46,19 @@ let HttpServer = class HttpServer {
      * @param req
      */
     async parseBody(contentType, req) {
-        if (contentType.indexOf('json') >= 0) {
-            return await micro_1.json(req, parseOpts);
+        let result;
+        try {
+            if (contentType.indexOf('json') >= 0) {
+                result = await micro_1.json(req, parseOpts);
+            }
+            else {
+                result = helpers_1.parseQuery(await micro_1.text(req, parseOpts));
+            }
+            return [undefined, result];
         }
-        const body = await micro_1.text(req, parseOpts);
-        return helpers_1.parseQuery(body);
+        catch (error) {
+            return [error, undefined];
+        }
     }
     /**
      * Start listening
@@ -114,11 +122,11 @@ let HttpServer = class HttpServer {
             return micro_1.send(res, constants_1.STATUS_NOT_FOUND);
         }
         // Handling POST if routed right way!
-        const body = (routeOn.method === constants_1.METHOD_POST)
+        const [error, body] = (routeOn.method === constants_1.METHOD_POST)
             ? await this.parseBody(routed.contentType || routeOn.contentType, req)
-            : {};
+            : [undefined, {}];
         // Looking for uid
-        const uid = query[this.uidkey] || body[this.uidkey] || cookies[this.uidkey] || this.idGen.flake();
+        const uid = query[this.uidkey] || body && body[this.uidkey] || cookies[this.uidkey] || this.idGen.flake();
         // transport data to store
         const { remoteAddress } = req.connection;
         const transportData = {

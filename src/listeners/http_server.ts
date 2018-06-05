@@ -134,13 +134,18 @@ export class HttpServer {
    * @param routeOn
    * @param req
    */
-  async parseBody(contentType: string, req: IncomingMessage): Promise<HTTPBodyParams> {
-
-    if (contentType.indexOf('json') >= 0) {
-      return await json(req, parseOpts);
+  async parseBody(contentType: string, req: IncomingMessage): Promise<[undefined, HTTPBodyParams] | [Error, undefined]> {
+    let result: HTTPBodyParams;
+    try {
+      if (contentType.indexOf('json') >= 0) {
+        result = await json(req, parseOpts);
+      } else {
+        result = parseQuery(await text(req, parseOpts));
+      }
+      return [undefined, result];
+    } catch (error) {
+      return [error, undefined];
     }
-    const body = await text(req, parseOpts);
-    return parseQuery(body);
   }
 
   /**
@@ -234,12 +239,13 @@ export class HttpServer {
 
 
     // Handling POST if routed right way!
-    const body = (routeOn.method === METHOD_POST)
+    const [error, body] = (routeOn.method === METHOD_POST)
       ? await this.parseBody(routed.contentType || routeOn.contentType, req)
-      : {};
+      : [undefined, {}];
+
 
     // Looking for uid
-    const uid = query[this.uidkey] || body[this.uidkey] || cookies[this.uidkey] || this.idGen.flake();
+    const uid = query[this.uidkey] || body && body[this.uidkey] || cookies[this.uidkey] || this.idGen.flake();
 
     // transport data to store
     const { remoteAddress } = req.connection;

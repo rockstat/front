@@ -10,7 +10,8 @@ import {
   BusMsgHdr,
   FrontierConfig,
   DispatchResult,
-  Dictionary
+  Dictionary,
+  MethodRegistration
 } from '@app/types';
 import {
   TreeBus,
@@ -57,7 +58,6 @@ export class Dispatcher {
   appConfig: AppConfig<FrontierConfig>;
   idGen: TheIds;
   rpc: RPCAgnostic;
-
   rpcHandlers: { [k: string]: [string, string] } = {};
 
   constructor() {
@@ -67,37 +67,45 @@ export class Dispatcher {
     this.idGen = Container.get(TheIds);
   }
 
+  /**
+   * Initial asynchronous setup
+   */
   setup() {
     this.handleBus.setNoneHdr(this.defaultHandler);
 
+    // Core deps
     const redisFactory = Container.get(RedisFactory);
+    // Stat meter
     const meter = Container.get(Meter);
-    const channels = [this.appConfig.rpc.name];
+
 
     // Setup RPC
+    const channels = [this.appConfig.rpc.name];
     const rpcOptions: AgnosticRPCOptions = { channels, redisFactory, log: this.log, meter, ...this.appConfig.rpc }
     const rpcAdaptor = new RPCAdapterRedis(rpcOptions);
 
     this.rpc = new RPCAgnostic(rpcOptions);
     this.rpc.setup(rpcAdaptor);
 
-    this.rpc.register<{ methods?: Array<[string, string, string]> }>(METHOD_STATUS, async (data) => {
-      if (data.methods) {
+    // Registering status handler / payload receiver
+    this.rpc.register<{ register?: Array<MethodRegistration> }>(METHOD_STATUS, async (data) => {
+      if (data.register) {
         const updateHdrs: string[] = [];
-        console.log(typeof data.methods)
-        console.log(Array.isArray(data.methods))
-        console.dir(data.methods)
-        for (const row of data.methods) {
-          const [name, method, role] = row
-          const key = epglue(IN_INDEP, name, method)
-          if (role === 'handler') {
-            this.rpcHandlers[key] = [name, method];
-            updateHdrs.push(key);
+        for (const row of data.register) {
+          const {service, method, options} = row;
+          const route = { service, method };
+          if (options && options.service) {
+            route.service = options.service;
+          }
+          const bindToKey = epglue(IN_INDEP, route.service, route.method)
+          if (row.role === 'handler') {
+            this.rpcHandlers[bindToKey] = [route.service, route.method];
+            updateHdrs.push(bindToKey);
           }
         }
         this.handleBus.replace(updateHdrs, this.rpcGateway)
       }
-      return { 'status': STATUS_RUNNING };
+      return {};
     });
 
     // this.rpc.register<{ methods?: Array<[string, string, string]> }>('services', async (data) => {

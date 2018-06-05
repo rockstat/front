@@ -50,33 +50,40 @@ let Dispatcher = class Dispatcher {
         this.appConfig = typedi_1.Container.get(rock_me_ts_1.AppConfig);
         this.idGen = typedi_1.Container.get(rock_me_ts_1.TheIds);
     }
+    /**
+     * Initial asynchronous setup
+     */
     setup() {
         this.handleBus.setNoneHdr(this.defaultHandler);
+        // Core deps
         const redisFactory = typedi_1.Container.get(rock_me_ts_1.RedisFactory);
+        // Stat meter
         const meter = typedi_1.Container.get(rock_me_ts_1.Meter);
-        const channels = [this.appConfig.rpc.name];
         // Setup RPC
+        const channels = [this.appConfig.rpc.name];
         const rpcOptions = { channels, redisFactory, log: this.log, meter, ...this.appConfig.rpc };
         const rpcAdaptor = new rock_me_ts_1.RPCAdapterRedis(rpcOptions);
         this.rpc = new rock_me_ts_1.RPCAgnostic(rpcOptions);
         this.rpc.setup(rpcAdaptor);
+        // Registering status handler / payload receiver
         this.rpc.register(rock_me_ts_1.METHOD_STATUS, async (data) => {
-            if (data.methods) {
+            if (data.register) {
                 const updateHdrs = [];
-                console.log(typeof data.methods);
-                console.log(Array.isArray(data.methods));
-                console.dir(data.methods);
-                for (const row of data.methods) {
-                    const [name, method, role] = row;
-                    const key = helpers_1.epglue(constants_1.IN_INDEP, name, method);
-                    if (role === 'handler') {
-                        this.rpcHandlers[key] = [name, method];
-                        updateHdrs.push(key);
+                for (const row of data.register) {
+                    const { service, method, options } = row;
+                    const route = { service, method };
+                    if (options && options.service) {
+                        route.service = options.service;
+                    }
+                    const bindToKey = helpers_1.epglue(constants_1.IN_INDEP, route.service, route.method);
+                    if (row.role === 'handler') {
+                        this.rpcHandlers[bindToKey] = [route.service, route.method];
+                        updateHdrs.push(bindToKey);
                     }
                 }
                 this.handleBus.replace(updateHdrs, this.rpcGateway);
             }
-            return { 'status': rock_me_ts_1.STATUS_RUNNING };
+            return {};
         });
         // this.rpc.register<{ methods?: Array<[string, string, string]> }>('services', async (data) => {
         //   return { result: true };
