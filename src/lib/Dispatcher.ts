@@ -99,19 +99,15 @@ export class Dispatcher {
           }
           const bindToKey = epglue(IN_INDEP, route.service, route.method)
           if (row.role === 'handler') {
-            this.rpcHandlers[bindToKey] = [route.service, route.method];
+            this.rpcHandlers[bindToKey] = [service, method];
             updateHdrs.push(bindToKey);
           }
         }
         this.handleBus.replace(updateHdrs, this.rpcGateway)
       }
       return {};
-    });
-
-    // this.rpc.register<{ methods?: Array<[string, string, string]> }>('services', async (data) => {
-    //   return { result: true };
-    // });
-
+    });;
+    // Default redirect handler
     this.handleBus.handle(IN_REDIR, baseRedirect);
     // notify band director
     setImmediate(() => {
@@ -133,7 +129,9 @@ export class Dispatcher {
 
   rpcGateway = async (key: string, msg: BaseIncomingMessage): Promise<DispatchResult> => {
     if (msg.service && msg.name && this.rpcHandlers[key]) {
-      const res = await this.rpc.request<Dictionary<any>>(msg.service, msg.name, msg);
+      // Real destination
+      const [service, method] = this.rpcHandlers[key];
+      const res = await this.rpc.request<Dictionary<any>>(service, method, msg);
       if (res.code && typeof res.code === 'number' && res.result) {
         return res as DispatchResult;
       } else {
@@ -167,6 +165,7 @@ export class Dispatcher {
   }
 
   registerHandler(key: string, func: BusMsgHdr): void {
+    this.log.info(`>>> Registered handler fo route ${key}`);
     this.handleBus.set(key, func);
   }
 

@@ -23,7 +23,9 @@ let Dispatcher = class Dispatcher {
         this.rpcHandlers = {};
         this.rpcGateway = async (key, msg) => {
             if (msg.service && msg.name && this.rpcHandlers[key]) {
-                const res = await this.rpc.request(msg.service, msg.name, msg);
+                // Real destination
+                const [service, method] = this.rpcHandlers[key];
+                const res = await this.rpc.request(service, method, msg);
                 if (res.code && typeof res.code === 'number' && res.result) {
                     return res;
                 }
@@ -77,7 +79,7 @@ let Dispatcher = class Dispatcher {
                     }
                     const bindToKey = helpers_1.epglue(constants_1.IN_INDEP, route.service, route.method);
                     if (row.role === 'handler') {
-                        this.rpcHandlers[bindToKey] = [route.service, route.method];
+                        this.rpcHandlers[bindToKey] = [service, method];
                         updateHdrs.push(bindToKey);
                     }
                 }
@@ -85,9 +87,8 @@ let Dispatcher = class Dispatcher {
             }
             return {};
         });
-        // this.rpc.register<{ methods?: Array<[string, string, string]> }>('services', async (data) => {
-        //   return { result: true };
-        // });
+        ;
+        // Default redirect handler
         this.handleBus.handle(constants_1.IN_REDIR, redirect_1.baseRedirect);
         // notify band director
         setImmediate(() => {
@@ -114,6 +115,7 @@ let Dispatcher = class Dispatcher {
         this.listenBus.subscribe(key, func);
     }
     registerHandler(key, func) {
+        this.log.info(`>>> Registered handler fo route ${key}`);
         this.handleBus.set(key, func);
     }
     async emit(key, msg) {
