@@ -78,7 +78,7 @@ export class WebSocketServer {
    * Transform incoming data to Message struct
    * @param data object with data keys
    */
-  private async handle(raw: WebSocket.Data) {
+  private async handle(raw: WebSocket.Data, state: SockState) {
     let [error, data] = this.parse(raw);
     if (error) {
       this.log.error(error);
@@ -100,7 +100,8 @@ export class WebSocketServer {
       name: name,
       service: service,
       channel: CHANNEL_WEBSOCK,
-      data: data
+      data: data,
+      uid: state.uid
     }
 
     return await this.dispatch(msg.key, msg);
@@ -177,7 +178,7 @@ export class WebSocketServer {
             const state = this.socksState.get(socket);
             if (state) {
               state.touch = new Date().getTime();
-              this.handle(raw).then(msg => {
+              this.handle(raw, state).then(msg => {
                 msg && socket.send(this.encode(msg));
               });
             }

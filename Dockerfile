@@ -17,9 +17,9 @@ COPY . .
 RUN ln -nsf ../dist ./node_modules/@app
 
 # Downloading latest JSLib
-ARG JSLIB_VERSION=master
-ENV JSLIB_URL https://raw.githubusercontent.com/rockstat/alcojs/$JSLIB_VERSION/dist/lib.js
-RUN curl $JSLIB_URL > clientlib/lib.js
+ARG LIB_VERSION=HEAD
+ENV LIB_URL https://raw.githubusercontent.com/rockstat/jslib/$LIB_VERSION/dist/lib.js
+RUN curl $LIB_URL > clientlib/lib.js
 
 EXPOSE 8080
 
