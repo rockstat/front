@@ -74,7 +74,6 @@ export class Router {
     this.log = Container.get(Logger).for(this);
     this.router = new FindMyWay();
     this.setupRoutes();
-    console.log(this.router.prettyPrint());
     /** Default route (404) */
     this.defaultRoute = {
       params: {},
@@ -125,7 +124,7 @@ export class Router {
       payload.params.service = SERVICE_TRACK;
       return {
         params: payload.params,
-        key: epglue(IN_INDEP, payload.params.name),
+        key: epglue(IN_INDEP, SERVICE_TRACK, payload.params.name),
         // explicitly set content type because AJAX uses text/plain to avoid options request
         contentType: CONTENT_TYPE_JSON,
         channel: CHANNEL_HTTP_TRACK,
@@ -135,7 +134,7 @@ export class Router {
     const pixelHandler: RequestHandler = function (payload) {
       return {
         params: payload.params,
-        key: epglue(IN_INDEP, payload.params.name),
+        key: epglue(IN_INDEP, payload.params.service, payload.params.name),
         channel: CHANNEL_HTTP_PIXEL,
       };
     };
@@ -166,16 +165,19 @@ export class Router {
       };
     };
 
-    // this.router.options('/track', optionsHandler);
-    // this.router.options('/wh', optionsHandler);
-
-    this.router.get('/coffee', teapotHandler);
-    this.router.get('/lib.js', libjsHandler);
-    this.router.get('/img/:projectId/:service/:name', pixelHandler);
-    this.router.get('/redir/:projectId/:service/:name', redirHandler);
-    this.router.get('/wh/:projectId/:service/:name', webhookHandler);
-    this.router.post('/wh/:projectId/:service/:name', webhookHandler);
-    this.router.post('/track/:projectId/:name', trackHandler);
+    this.registerRoute('get', '/coffee', teapotHandler);
+    this.registerRoute('get', '/lib.js', libjsHandler);
+    this.registerRoute('get', '/img/:projectId/:service/:name', pixelHandler);
+    this.registerRoute('get', '/redir/:projectId/:service/:name', redirHandler);
+    this.registerRoute('get', '/wh/:projectId/:service/:name', webhookHandler);
+    this.registerRoute('post', '/wh/:projectId/:service/:name', webhookHandler);
+    this.registerRoute('post', '/track/:projectId/:name', trackHandler);
   }
+
+  registerRoute(method: 'post' | 'get', path: string, handler: RequestHandler) {
+    this.log.info(`Registering route: ${path}`);
+    this.router[method](path, handler);
+  }
+
 }
 

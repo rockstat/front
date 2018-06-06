@@ -1,6 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const bluebird_1 = require("bluebird");
+const typedi_1 = require("typedi");
+const rock_me_ts_1 = require("rock-me-ts");
 class TreeBus {
     constructor() {
         this.map = new WeakMap();
@@ -8,6 +10,7 @@ class TreeBus {
             handlers: [],
             children: {}
         };
+        this.log = typedi_1.default.get(rock_me_ts_1.Logger).for(this);
     }
     handlerEvents(handler) {
         let hel = this.map.get(handler);
@@ -20,7 +23,13 @@ class TreeBus {
     replace(keys, handler) {
         const hel = this.handlerEvents(handler);
         const newKeys = keys.filter(k => !hel.includes(k));
+        for (const k of newKeys) {
+            this.log.info(`+ adding handler from ${k}`);
+        }
         const rmKeys = hel.filter(k => !keys.includes(k));
+        for (const k of rmKeys) {
+            this.log.info(`- removing handler from ${k}`);
+        }
         for (const k of rmKeys) {
             this.unSubscribe(k, handler);
         }

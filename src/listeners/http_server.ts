@@ -129,24 +129,6 @@ export class HttpServer {
     this.cookieExpires = new Date(new Date().getTime() + this.identopts.cookieMaxAge * 1000);
   }
 
-  /**
-   * Helper for parse body when not GET request
-   * @param routeOn
-   * @param req
-   */
-  async parseBody(contentType: string, req: IncomingMessage): Promise<[undefined, HTTPBodyParams] | [Error, undefined]> {
-    let result: HTTPBodyParams;
-    try {
-      if (contentType.indexOf('json') >= 0) {
-        result = await json(req, parseOpts);
-      } else {
-        result = parseQuery(await text(req, parseOpts));
-      }
-      return [undefined, result];
-    } catch (error) {
-      return [error, undefined];
-    }
-  }
 
   /**
    * Start listening
@@ -165,9 +147,7 @@ export class HttpServer {
    * @param req
    * @param res
    */
-  async handle(req: IncomingMessage, res: ServerResponse) {
-
-
+  private async handle(req: IncomingMessage, res: ServerResponse) {
     const requestTime = this.metrics.timenote('http.request')
 
     assert(typeof req.url === 'string', 'Request url required');
@@ -236,8 +216,6 @@ export class HttpServer {
       return send(res, STATUS_NOT_FOUND);
     }
 
-
-
     // Handling POST if routed right way!
     const [error, body] = (routeOn.method === METHOD_POST)
       ? await this.parseBody(routed.contentType || routeOn.contentType, req)
@@ -283,7 +261,6 @@ export class HttpServer {
       return send(res, STATUS_OK, response);
     }
 
-
     // Final final message
     const msg: BaseIncomingMessage = {
       key: routed.key,
@@ -301,19 +278,17 @@ export class HttpServer {
     // Constructing response
     // ####################################################
 
+    let statusCode = 200;
     let response;
-    switch (dispatched.code) {
-      case STATUS_OK:
-        response = dispatched.result;
-        break;
-      case STATUS_TEMP_REDIR:
-        res.setHeader(HLocation, dispatched.location);
-        response = `Redirecting to ${dispatched.location}...`;
-        break;
-      case STATUS_BAD_REQUEST:
-      case STATUS_INT_ERROR:
-        response = dispatched.error;
-        break;
+
+    if (dispatched.error) {
+      statusCode = dispatched.errorCode || STATUS_INT_ERROR;
+      response = dispatched.error;
+    } else if (dispatched.location) {
+      statusCode = STATUS_TEMP_REDIR;
+      res.setHeader(HLocation, dispatched.location);
+    } else {
+      response = dispatched;
     }
 
     if (routed.channel === CHANNEL_HTTP_PIXEL) {
@@ -324,7 +299,7 @@ export class HttpServer {
     const reqTime = requestTime()
     res.setHeader(HResponseTime, reqTime);
 
-    send(res, dispatched.code, response);
+    send(res, statusCode, response || '');
 
   }
 
@@ -332,11 +307,31 @@ export class HttpServer {
     try {
       return await this.dispatcher.emit(key, msg);
     } catch (error) {
-      this.log.error(error);
+      this.log.warn(error);
       return {
         error: 'Internal error. Smth wrong.',
-        code: STATUS_INT_ERROR
+        errorCode: STATUS_INT_ERROR
       }
     }
   }
+
+  /**
+   * Helper for parse body when not GET request
+   * @param routeOn
+   * @param req
+   */
+  private async parseBody(contentType: string, req: IncomingMessage): Promise<[undefined, HTTPBodyParams] | [Error, undefined]> {
+    let result: HTTPBodyParams;
+    try {
+      if (contentType.indexOf('json') >= 0) {
+        result = await json(req, parseOpts);
+      } else {
+        result = parseQuery(await text(req, parseOpts));
+      }
+      return [undefined, result];
+    } catch (error) {
+      return [error, undefined];
+    }
+  }
+
 }

@@ -41,26 +41,6 @@ let HttpServer = class HttpServer {
         this.cookieExpires = new Date(new Date().getTime() + this.identopts.cookieMaxAge * 1000);
     }
     /**
-     * Helper for parse body when not GET request
-     * @param routeOn
-     * @param req
-     */
-    async parseBody(contentType, req) {
-        let result;
-        try {
-            if (contentType.indexOf('json') >= 0) {
-                result = await micro_1.json(req, parseOpts);
-            }
-            else {
-                result = helpers_1.parseQuery(await micro_1.text(req, parseOpts));
-            }
-            return [undefined, result];
-        }
-        catch (error) {
-            return [error, undefined];
-        }
-    }
-    /**
      * Start listening
      */
     start() {
@@ -159,19 +139,18 @@ let HttpServer = class HttpServer {
         let dispatched = await this.dispatch(routed.key, msg);
         // Constructing response
         // ####################################################
+        let statusCode = 200;
         let response;
-        switch (dispatched.code) {
-            case constants_1.STATUS_OK:
-                response = dispatched.result;
-                break;
-            case constants_1.STATUS_TEMP_REDIR:
-                res.setHeader(constants_1.HLocation, dispatched.location);
-                response = `Redirecting to ${dispatched.location}...`;
-                break;
-            case constants_1.STATUS_BAD_REQUEST:
-            case constants_1.STATUS_INT_ERROR:
-                response = dispatched.error;
-                break;
+        if (dispatched.error) {
+            statusCode = dispatched.errorCode || constants_1.STATUS_INT_ERROR;
+            response = dispatched.error;
+        }
+        else if (dispatched.location) {
+            statusCode = constants_1.STATUS_TEMP_REDIR;
+            res.setHeader(constants_1.HLocation, dispatched.location);
+        }
+        else {
+            response = dispatched;
         }
         if (routed.channel === constants_1.CHANNEL_HTTP_PIXEL) {
             res.setHeader(constants_1.HContentType, constants_1.CONTENT_TYPE_GIF);
@@ -179,18 +158,38 @@ let HttpServer = class HttpServer {
         }
         const reqTime = requestTime();
         res.setHeader(constants_1.HResponseTime, reqTime);
-        micro_1.send(res, dispatched.code, response);
+        micro_1.send(res, statusCode, response || '');
     }
     async dispatch(key, msg) {
         try {
             return await this.dispatcher.emit(key, msg);
         }
         catch (error) {
-            this.log.error(error);
+            this.log.warn(error);
             return {
                 error: 'Internal error. Smth wrong.',
-                code: constants_1.STATUS_INT_ERROR
+                errorCode: constants_1.STATUS_INT_ERROR
             };
+        }
+    }
+    /**
+     * Helper for parse body when not GET request
+     * @param routeOn
+     * @param req
+     */
+    async parseBody(contentType, req) {
+        let result;
+        try {
+            if (contentType.indexOf('json') >= 0) {
+                result = await micro_1.json(req, parseOpts);
+            }
+            else {
+                result = helpers_1.parseQuery(await micro_1.text(req, parseOpts));
+            }
+            return [undefined, result];
+        }
+        catch (error) {
+            return [error, undefined];
         }
     }
 };

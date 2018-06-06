@@ -1,6 +1,6 @@
 import { STATUS_OK, STATUS_TEMP_REDIR, STATUS_BAD_REQUEST, STATUS_INT_ERROR } from "@app/constants";
 
-// HTTP messages part
+// ###### HTTP messages part
 
 
 export interface HTTPTransportData {
@@ -8,9 +8,7 @@ export interface HTTPTransportData {
   userAgent: string;
 }
 
-// BASE
-
-
+// ###### BASE MESSAGING
 
 export interface MessageKey {
   key: string;
@@ -23,6 +21,10 @@ export interface FlexOutgoingMessage extends Partial<MessageIdTime> {
 export interface MessageIdTime {
   id: string;
   time: number;
+}
+
+export interface IncomingMsgData {
+  [key: string]: any
 }
 
 export interface IncomingMessageProps {
@@ -39,30 +41,19 @@ export interface IncomingMessageProps {
   // user identifier
   uid?: string;
   // message payload
-  data: { [key: string]: any }
+  data: IncomingMsgData
 }
 
 export type BaseIncomingMessage = IncomingMessageProps & Partial<MessageIdTime>;
 export type IncomingMessage = IncomingMessageProps & MessageIdTime;
 
-type DispatchResults = typeof STATUS_OK | typeof STATUS_TEMP_REDIR | typeof STATUS_BAD_REQUEST | typeof STATUS_INT_ERROR;
-
-export interface DispatchOK {
-  code: typeof STATUS_OK;
-  result: any;
+export interface DispatchResultFields {
+  location?: string;
+  error?: string;
+  errorCode?: number;
 }
 
-export interface DispatchRedir {
-  code: typeof STATUS_TEMP_REDIR;
-  location: string;
-}
-
-export interface DispatchError {
-  code: typeof STATUS_INT_ERROR | typeof STATUS_BAD_REQUEST
-  error: string;
-}
-
-export type DispatchResult = { [k: string]: any } & (DispatchOK | DispatchRedir | DispatchError);
+export type DispatchResult = { [k: string]: any } & DispatchResultFields;
 
 export interface ClientHttpMessage extends BaseIncomingMessage {
   uid: string;
@@ -76,14 +67,14 @@ export interface WebHookMessage extends BaseIncomingMessage {
 }
 
 
-// BUS
+// ###### BUS
 
 export type BusMsgHdr = (key: string, msg: any) => Promise<any>;
 export type BusMsgHdrResult = PromiseLike<any>
 export type BusMsgHdrsResult = PromiseLike<any[]>
 
 
-// RPC
+// ###### RPC
 
 export interface RPCBase {
   jsonrpc: '2.0';
@@ -104,7 +95,7 @@ export interface RPCResponse extends RPCBase {
   result: any;
 }
 
-interface RPCErrorDetails {
+export interface RPCErrorDetails {
   message: string;
   code: number;
   data?: any;

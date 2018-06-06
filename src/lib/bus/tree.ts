@@ -1,5 +1,7 @@
 import { Promise } from 'bluebird';
 import { BusMsgHdr, BusMsgHdrResult, BusMsgHdrsResult } from '@app/types';
+import Container from 'typedi';
+import { Logger } from 'rock-me-ts';
 
 interface LevelChildren {
   handlers: BusMsgHdr[];
@@ -8,11 +10,16 @@ interface LevelChildren {
 
 export class TreeBus {
   map: WeakMap<BusMsgHdr, Array<string>> = new WeakMap();
+  log: Logger
 
   private tree: LevelChildren = {
     handlers: [],
     children: {}
   };
+
+  constructor() {
+    this.log = Container.get(Logger).for(this);
+  }
 
   handlerEvents(handler: BusMsgHdr): Array<string> {
     let hel = this.map.get(handler);
@@ -26,7 +33,13 @@ export class TreeBus {
   replace(keys: string[], handler: BusMsgHdr) {
     const hel = this.handlerEvents(handler);
     const newKeys = keys.filter(k => !hel.includes(k));
+    for (const k of newKeys) {
+      this.log.info(`+ adding handler from ${k}`);
+    }
     const rmKeys = hel.filter(k => !keys.includes(k));
+    for (const k of rmKeys) {
+      this.log.info(`- removing handler from ${k}`);
+    }
     for (const k of rmKeys) {
       this.unSubscribe(k, handler);
     }

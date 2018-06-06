@@ -13,50 +13,122 @@ class WebSocketServer {
         this.options = typedi_1.Container.get(rock_me_ts_1.AppConfig).ws;
         this.dispatcher = typedi_1.Container.get(lib_1.Dispatcher);
         this.log = typedi_1.Container.get(rock_me_ts_1.Logger).for(this);
-        // this.secureOptions = {
-        // cert: readFileSync(this.options.https.certFile),
-        // key: readFileSync(this.options.https.keyFile)
-        // }
-    }
-    get httpsOptions() {
-        return this.options.https;
     }
     get httpOptions() {
         return this.options.http;
     }
-    async findUidSock(uid) {
-        this.log.debug(`searching user ${uid}`);
-        for (const socket of this.wss.clients) {
-            const state = this.socksState.get(socket);
-            if (state && state.uid === uid) {
-                this.log.debug(`success`);
-                return { socket, state };
+    /**
+     * Transform incoming data to Message struct
+     * @param data object with data keys
+     */
+    async handle(raw) {
+        let [error, data] = this.parse(raw);
+        if (error) {
+            this.log.error(error);
+            return { error: error.message };
+        }
+        if (!data) {
+            this.log.error(constants_1.ERROR_ABSENT_DATA);
+            return;
+        }
+        if (data.name === 'ping') {
+            return;
+        }
+        const service = data.service && typeof data.service === 'string' ? data.service : 'noservice';
+        const name = data.name && typeof data.name === 'string' ? data.name : 'noname';
+        this.log.debug(`msg '${name}' received`);
+        const msg = {
+            key: helpers_1.epglue(constants_1.IN_INDEP, service, name),
+            name: name,
+            service: service,
+            channel: constants_1.CHANNEL_WEBSOCK,
+            data: data
+        };
+        return await this.dispatch(msg.key, msg);
+    }
+    async dispatch(key, msg) {
+        try {
+            return await this.dispatcher.emit(key, msg);
+        }
+        catch (error) {
+            this.log.warn(error);
+            return {
+                error: 'Internal error. Smth wrong.',
+                errorCode: constants_1.STATUS_INT_ERROR
+            };
+        }
+    }
+    /**
+     * Parse JSON and check is an object
+     * @param raw raw data buffer or similar
+     */
+    parse(raw) {
+        try {
+            const data = JSON.parse(raw.toString());
+            if (!helpers_1.isObject(data)) {
+                throw new Error(constants_1.ERROR_NOT_OBJECT);
             }
+            return [undefined, data];
+        }
+        catch (error) {
+            return [error, undefined];
         }
     }
-    async addToGroup({ uid, group }) {
-        this.log.info(`addtogroup user ${uid} to ${group}`);
-        const result = await this.findUidSock(uid);
-        if (result) {
-            this.log.info(`adding user ${uid} to ${group}`);
-            const { socket, state } = result;
-            state.groups.add(group);
-        }
-        else {
-            this.log.debug('hmmmm');
-        }
+    /**
+     * Encode message before send
+     * @param msg message struct
+     */
+    encode(msg) {
+        return JSON.stringify(msg);
     }
-    async sendBroadcast({ name, data, group }) {
-        const raw = JSON.stringify({ name, data });
-        for (const socket of this.wss.clients) {
-            const state = this.socksState.get(socket);
-            // console.log(state, 'state')
-            if (socket.readyState === WebSocket.OPEN && state && (!group || group && state.groups.has(group))) {
-                this.log.debug(`${group}: socket send`);
-                socket.send(raw);
+    start() {
+        const { host, port } = this.httpOptions;
+        this.log.info(`Starting WS server on port ${host}:${port}`);
+        const { perMessageDeflate, path } = this.options;
+        const wssOptions = { host, port, path, perMessageDeflate };
+        this.wss = new WebSocket.Server(wssOptions);
+        this.setup();
+        this.register();
+    }
+    /**
+     * Setup Websocket common message handling
+     */
+    setup() {
+        this.wss.on('connection', (socket, req) => {
+            this.log.debug('client connected');
+            if (req.url) {
+                const parsedUrl = url_1.parse(req.url, true);
+                const { uid } = parsedUrl.query;
+                // accept connections only users with id
+                if (uid && typeof uid === 'string' && uid.length) {
+                    this.socksState.set(socket, {
+                        uid: uid,
+                        authorized: false,
+                        touch: new Date().getTime(),
+                        groups: new Set()
+                    });
+                    socket.on('close', (code, reason) => {
+                        this.log.debug(`closed ${code} ${reason}`);
+                    });
+                    socket.on('message', (raw) => {
+                        const state = this.socksState.get(socket);
+                        if (state) {
+                            state.touch = new Date().getTime();
+                            this.handle(raw).then(msg => {
+                                msg && socket.send(this.encode(msg));
+                            });
+                        }
+                    });
+                    return;
+                }
             }
-        }
+            this.log.info('Connection without url or credentials');
+            socket.close();
+        });
     }
+    /**
+     * Register in Dispatcher as listener.
+     */
     register() {
         this.dispatcher.registerListener(constants_1.OUT_WEBSOCK, async (key, data) => {
             switch (key) {
@@ -69,61 +141,42 @@ class WebSocketServer {
             }
         });
     }
-    start() {
-        const { host, port } = this.httpOptions;
-        // this.log.info(`Starting WS HTTPS transport on ${host}:${port}`);
-        // this.server = createServer(this.secureOptions);
-        // this.server.listen(port, host)
-        this.log.info(`Starting WS server on port ${port}`);
-        this.wss = new WebSocket.Server({
-            host,
-            port,
-            path: this.options.path,
-            perMessageDeflate: this.options.perMessageDeflate
-        });
-        this.wss.on('connection', (socket, req) => {
-            this.log.debug('client connected');
-            if (req.url) {
-                const parsedUrl = url_1.parse(req.url, true);
-                const { uid } = parsedUrl.query;
-                if (uid && typeof uid === 'string' && uid !== '') {
-                    this.socksState.set(socket, {
-                        uid: uid,
-                        authorized: false,
-                        touch: new Date().getTime(),
-                        groups: new Set()
-                    });
-                    socket.on('close', (code, reason) => {
-                        this.log.debug(`closed ${code} ${reason}`);
-                    });
-                    socket.on('message', (data) => {
-                        const state = this.socksState.get(socket);
-                        try {
-                            const msg = JSON.parse(data.toString());
-                            msg.channel = constants_1.CHANNEL_WEBSOCK;
-                            if (state && helpers_1.isObject(msg) && msg.name && typeof msg.name === constants_1.STRING) {
-                                if (msg.name === 'ping') {
-                                    state.touch = new Date().getTime();
-                                }
-                                else {
-                                    this.dispatcher.emit(helpers_1.epglue(constants_1.IN_INDEP, msg.name), msg);
-                                }
-                                this.log.info(`msg '${msg.name}' received`);
-                            }
-                        }
-                        catch (err) {
-                            this.log.warn(err, 'parsing ws message err');
-                        }
-                    });
-                    return;
-                }
+    /**
+     * Find websocket assoociated with uid
+     * @param uid user id
+     */
+    async findUidSock(uid) {
+        for (const socket of this.wss.clients) {
+            const state = this.socksState.get(socket);
+            if (state && state.uid === uid) {
+                return { socket, state };
             }
-            else {
-                this.log.info('closing connection without credentials');
-                socket.close();
+        }
+    }
+    /**
+     * Add user by uid to the group
+     * @param param0 user and group
+     */
+    async addToGroup({ uid, group }) {
+        this.log.info(`addtogroup user ${uid} to ${group}`);
+        const result = await this.findUidSock(uid);
+        if (result) {
+            const { socket, state } = result;
+            state.groups.add(group);
+        }
+    }
+    /**
+     * Sending broascast message to the group of users
+     * @param param0 message and meta data
+     */
+    async sendBroadcast({ name, data, group }) {
+        const raw = JSON.stringify({ name, data });
+        for (const socket of this.wss.clients) {
+            const state = this.socksState.get(socket);
+            if (socket.readyState === WebSocket.OPEN && state && (!group || group && state.groups.has(group))) {
+                socket.send(raw);
             }
-        });
-        this.register();
+        }
     }
 }
 exports.WebSocketServer = WebSocketServer;

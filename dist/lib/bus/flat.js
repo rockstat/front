@@ -23,12 +23,12 @@ class FlatBus {
     replace(keys, handler) {
         const hel = this.handlerEvents(handler);
         const newKeys = keys.filter(k => !hel.includes(k));
-        if (newKeys.length) {
-            this.log.debug(`new keys`, newKeys);
+        for (const k of newKeys) {
+            this.log.info(`+ registering handler for ${k}`);
         }
         const rmKeys = hel.filter(k => !keys.includes(k));
-        if (rmKeys.length) {
-            this.log.debug(`rm keys`, rmKeys);
+        for (const k of rmKeys) {
+            this.log.info(`- removing handler from ${k}`);
         }
         for (const key of rmKeys) {
             this.unset(key, handler);

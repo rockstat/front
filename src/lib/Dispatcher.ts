@@ -92,7 +92,7 @@ export class Dispatcher {
       if (data.register) {
         const updateHdrs: string[] = [];
         for (const row of data.register) {
-          const {service, method, options} = row;
+          const { service, method, options } = row;
           const route = { service, method };
           if (options && options.service) {
             route.service = options.service;
@@ -131,26 +131,15 @@ export class Dispatcher {
     if (msg.service && msg.name && this.rpcHandlers[key]) {
       // Real destination
       const [service, method] = this.rpcHandlers[key];
-      const res = await this.rpc.request<Dictionary<any>>(service, method, msg);
-      if (res.code && typeof res.code === 'number' && res.result) {
-        return res as DispatchResult;
-      } else {
-        return {
-          result: res,
-          code: STATUS_OK
-        }
-      }
+      return await this.rpc.request<Dictionary<any>>(service, method, msg);
     }
     return this.defaultHandler(key, msg);
   }
 
   defaultHandler: BusMsgHdr = async (key, msg): Promise<DispatchResult> => {
     return {
-      code: STATUS_OK,
-      result: {
-        key: key,
-        id: msg.id
-      }
+      key: key,
+      id: msg.id
     }
   }
 
@@ -167,6 +156,18 @@ export class Dispatcher {
   registerHandler(key: string, func: BusMsgHdr): void {
     this.log.info(`>>> Registered handler fo route ${key}`);
     this.handleBus.set(key, func);
+  }
+
+  async dispatch(key: string, msg: BaseIncomingMessage): Promise<DispatchResult> {
+    try {
+      return await this.emit(key, msg);
+    } catch (error) {
+      this.log.warn(error);
+      return {
+        error: 'Internal error. Smth wrong.',
+        code: STATUS_INT_ERROR
+      }
+    }
   }
 
   async emit(key: string, msg: BaseIncomingMessage): Promise<any> {

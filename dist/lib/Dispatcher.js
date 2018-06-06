@@ -25,26 +25,14 @@ let Dispatcher = class Dispatcher {
             if (msg.service && msg.name && this.rpcHandlers[key]) {
                 // Real destination
                 const [service, method] = this.rpcHandlers[key];
-                const res = await this.rpc.request(service, method, msg);
-                if (res.code && typeof res.code === 'number' && res.result) {
-                    return res;
-                }
-                else {
-                    return {
-                        result: res,
-                        code: constants_1.STATUS_OK
-                    };
-                }
+                return await this.rpc.request(service, method, msg);
             }
             return this.defaultHandler(key, msg);
         };
         this.defaultHandler = async (key, msg) => {
             return {
-                code: constants_1.STATUS_OK,
-                result: {
-                    key: key,
-                    id: msg.id
-                }
+                key: key,
+                id: msg.id
             };
         };
         this.log = typedi_1.Container.get(rock_me_ts_1.Logger).for(this);
@@ -117,6 +105,18 @@ let Dispatcher = class Dispatcher {
     registerHandler(key, func) {
         this.log.info(`>>> Registered handler fo route ${key}`);
         this.handleBus.set(key, func);
+    }
+    async dispatch(key, msg) {
+        try {
+            return await this.emit(key, msg);
+        }
+        catch (error) {
+            this.log.warn(error);
+            return {
+                error: 'Internal error. Smth wrong.',
+                code: constants_1.STATUS_INT_ERROR
+            };
+        }
     }
     async emit(key, msg) {
         this.log.debug(` -> ${key}`);
