@@ -42,14 +42,15 @@ let AppServer = class AppServer {
     }
     onStop() {
         this.log.info('Stopping...');
+        process.exit(0);
     }
     attachSignals() {
         // Handles normal process termination.
         process.on('exit', () => this.onStop());
         // Handles `Ctrl+C`.
-        process.on('SIGINT', () => process.exit(0));
+        process.on('SIGINT', () => this.onStop());
         // Handles `kill pid`.
-        process.on('SIGTERM', () => process.exit(0));
+        process.on('SIGTERM', () => this.onStop());
     }
 };
 AppServer = __decorate([
