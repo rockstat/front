@@ -58,15 +58,16 @@ export class AppServer {
 
   private onStop() {
     this.log.info('Stopping...');
+    process.exit(0);
   }
 
   private attachSignals() {
     // Handles normal process termination.
     process.on('exit', () => this.onStop());
     // Handles `Ctrl+C`.
-    process.on('SIGINT', () => process.exit(0));
+    process.on('SIGINT', () => this.onStop());
     // Handles `kill pid`.
-    process.on('SIGTERM', () => process.exit(0));
+    process.on('SIGTERM', () => this.onStop());
   }
 
 }

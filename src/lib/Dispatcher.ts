@@ -6,7 +6,6 @@ import {
 } from '@app/AppServer';
 import {
   BaseIncomingMessage,
-  FlexOutgoingMessage,
   BusMsgHdr,
   FrontierConfig,
   DispatchResult,

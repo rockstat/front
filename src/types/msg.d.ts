@@ -10,14 +10,6 @@ export interface HTTPTransportData {
 
 // ###### BASE MESSAGING
 
-export interface MessageKey {
-  key: string;
-}
-
-export interface FlexOutgoingMessage extends Partial<MessageIdTime> {
-  [key: string]: any;
-}
-
 export interface MessageIdTime {
   id: string;
   time: number;
