@@ -18,7 +18,8 @@ RUN ln -nsf ../dist ./node_modules/@app
 
 # Downloading latest JSLib
 ARG LIB_VERSION=HEAD
-ENV LIB_URL https://raw.githubusercontent.com/rockstat/jslib/$LIB_VERSION/dist/lib.js
+#ENV LIB_URL https://raw.githubusercontent.com/rockstat/jslib/$LIB_VERSION/dist/lib.js
+ENV LIB_URL https://cdn.rstat.org/dist/dev/lib-latest.js
 RUN curl $LIB_URL > clientlib/lib.js
 
 EXPOSE 8080
