@@ -9,10 +9,10 @@ http:
 websocket:
   http:
     host: <%= env.HOST || '0.0.0.0' %>
-    port: <%= env.PORT_WS || '8082' %>
+    port: <%= env.PORT_WS || env.PORT && Number(env.PORT) + 2 || '8082' %>
   https:
     host: <%= env.HOST || '0.0.0.0' %>
-    port: <%= env.PORT_WSS || '8083' %>
+    port: <%= env.PORT_WSS || env.PORT && Number(env.PORT) + 3 || '8083' %>
     certFile: <%= env.SSL_CERT %>
     keyFile: <%= env.SSL_KEY %>
   path: /wss

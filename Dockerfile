@@ -3,7 +3,8 @@ FROM node:9
 # Env vars
 ENV TZ UTC
 ENV NODE_ENV production
-
+ENV PORT 8080
+ENV LOG_LEVEL warn
 # RUN mkdir -p /app
 WORKDIR /app
 
