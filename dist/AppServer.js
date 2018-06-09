@@ -13,10 +13,10 @@ const rock_me_ts_1 = require("rock-me-ts");
 const listeners_1 = require("@app/listeners");
 let AppServer = class AppServer {
     setup() {
-        typedi_1.Container.set(rock_me_ts_1.AppConfig, new rock_me_ts_1.AppConfig());
-        this.appConfig = typedi_1.Container.get(rock_me_ts_1.AppConfig);
-        typedi_1.Container.set(rock_me_ts_1.Logger, new rock_me_ts_1.Logger(this.appConfig.log));
-        const log = typedi_1.Container.get(rock_me_ts_1.Logger);
+        this.appConfig = new rock_me_ts_1.AppConfig();
+        typedi_1.Container.set(rock_me_ts_1.AppConfig, this.appConfig);
+        const log = new rock_me_ts_1.Logger(this.appConfig.log);
+        typedi_1.Container.set(rock_me_ts_1.Logger, log);
         this.log = log.for(this);
         this.log.info('Starting service');
         typedi_1.Container.set(rock_me_ts_1.Meter, new rock_me_ts_1.Meter(this.appConfig.meter));

@@ -20,10 +20,10 @@ export class AppServer {
   meter: Meter;
 
   setup() {
-    Container.set(AppConfig, new AppConfig<FrontierConfig>());
-    this.appConfig = Container.get(AppConfig);
-    Container.set(Logger, new Logger(this.appConfig.log));
-    const log = Container.get(Logger);
+    this.appConfig = new AppConfig<FrontierConfig>()
+    Container.set(AppConfig, this.appConfig);
+    const log = new Logger(this.appConfig.log)
+    Container.set(Logger, log);
     this.log = log.for(this);
 
     this.log.info('Starting service');

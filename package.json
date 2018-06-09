@@ -27,7 +27,6 @@
     "@types/qs": "^6.5.1",
     "@types/ws": "^5.1.1",
     "localtunnel": "^1.9.0",
-    "micro-dev": "^2.2.2",
     "rimraf": "^2.6.2",
     "ts-node": "^6.0.3",
     "ts-node-dev": "^1.0.0-pre.21",
