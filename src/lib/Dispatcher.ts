@@ -18,7 +18,7 @@ import {
 } from '@app/lib'
 import {
   INCOMING,
-  IN_INDEP,
+  IN_GENERIC,
   RPC_IAMALIVE,
   SERVICE_DIRECTOR,
   SERVICE_FRONTIER,
@@ -96,7 +96,7 @@ export class Dispatcher {
           if (options && options.service) {
             route.service = options.service;
           }
-          const bindToKey = epglue(IN_INDEP, route.service, route.method)
+          const bindToKey = epglue(IN_GENERIC, route.service, route.method)
           if (row.role === 'handler') {
             this.rpcHandlers[bindToKey] = [service, method];
             updateHdrs.push(bindToKey);

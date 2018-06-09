@@ -16,7 +16,7 @@ import {
   IN_REDIR,
   IN_PIXEL,
   IN_TRACK,
-  IN_INDEP,
+  IN_GENERIC,
   CHANNEL_HTTP_WEBHOOK,
   PATH_HTTP_TEAPOT,
   STATUS_TEAPOT,
@@ -124,7 +124,7 @@ export class Router {
       payload.params.service = SERVICE_TRACK;
       return {
         params: payload.params,
-        key: epglue(IN_INDEP, SERVICE_TRACK, payload.params.name),
+        key: epglue(IN_GENERIC, SERVICE_TRACK, payload.params.name),
         // explicitly set content type because AJAX uses text/plain to avoid options request
         contentType: CONTENT_TYPE_JSON,
         channel: CHANNEL_HTTP_TRACK,
@@ -134,7 +134,7 @@ export class Router {
     const pixelHandler: RequestHandler = function (payload) {
       return {
         params: payload.params,
-        key: epglue(IN_INDEP, payload.params.service, payload.params.name),
+        key: epglue(IN_GENERIC, payload.params.service, payload.params.name),
         channel: CHANNEL_HTTP_PIXEL,
       };
     };
@@ -152,7 +152,7 @@ export class Router {
     const webhookHandler: RequestHandler = function (payload) {
       return {
         params: payload.params,
-        key: epglue(IN_INDEP, payload.params.service, payload.params.name),
+        key: epglue(IN_GENERIC, payload.params.service, payload.params.name),
         channel: CHANNEL_HTTP_WEBHOOK,
       };
     };

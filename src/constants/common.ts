@@ -27,13 +27,13 @@ export const STRING = 'string';
 
 // === Data channels
 export const CHANNEL_NONE = 'none';
-export const CHANNEL_HTTP = 'http';
 export const CHANNEL_WEBSOCK = 'ws';
-export const CHANNEL_HTTP_WEBHOOK = 'webhook';
+export const CHANNEL_HTTP = 'http';
+export const CHANNEL_HTTP_WEBHOOK = 'wh';
 export const CHANNEL_HTTP_PIXEL = 'pixel';
 export const CHANNEL_HTTP_TRACK = 'track';
 export const CHANNEL_HTTP_REDIR = 'redir';
-export const CHANNEL_INDEPENDENT = 'indep';
+export const CHANNEL_GENERIC = 'gen';
 
 
 // === CATEGORIES
@@ -53,7 +53,7 @@ export const IN_WEBSOCK = epglue(INCOMING, CHANNEL_WEBSOCK);
 export const OUT_WEBSOCK = epglue(OUTGOING, CHANNEL_WEBSOCK);
 export const CMD_WEBSOCK = epglue(COMMAND, CHANNEL_WEBSOCK);
 
-export const IN_INDEP = epglue(INCOMING, CHANNEL_INDEPENDENT);
+export const IN_GENERIC = epglue(INCOMING, CHANNEL_GENERIC);
 
 export const IN_WEBHOOK = epglue(INCOMING, CHANNEL_HTTP_WEBHOOK);
 export const IN_PIXEL = epglue(INCOMING, CHANNEL_HTTP_PIXEL);

@@ -29,7 +29,7 @@ import {
   CMD_WEBSOCK,
   IN_WEBSOCK_HELLO,
   IN_WEBSOCK,
-  IN_INDEP,
+  IN_GENERIC,
   CHANNEL_WEBSOCK,
   ERROR_NOT_OBJECT,
   STATUS_INT_ERROR,
@@ -96,7 +96,7 @@ export class WebSocketServer {
 
     this.log.debug(`msg '${name}' received`);
     const msg: BaseIncomingMessage = {
-      key: epglue(IN_INDEP, service, name),
+      key: epglue(IN_GENERIC, service, name),
       name: name,
       service: service,
       channel: CHANNEL_WEBSOCK,
