@@ -58,7 +58,7 @@ class Router {
             payload.params.service = constants_1.SERVICE_TRACK;
             return {
                 params: payload.params,
-                key: helpers_1.epglue(constants_1.IN_INDEP, constants_1.SERVICE_TRACK, payload.params.name),
+                key: helpers_1.epglue(constants_1.IN_GENERIC, constants_1.SERVICE_TRACK, payload.params.name),
                 // explicitly set content type because AJAX uses text/plain to avoid options request
                 contentType: constants_1.CONTENT_TYPE_JSON,
                 channel: constants_1.CHANNEL_HTTP_TRACK,
@@ -67,7 +67,7 @@ class Router {
         const pixelHandler = function (payload) {
             return {
                 params: payload.params,
-                key: helpers_1.epglue(constants_1.IN_INDEP, payload.params.service, payload.params.name),
+                key: helpers_1.epglue(constants_1.IN_GENERIC, payload.params.service, payload.params.name),
                 channel: constants_1.CHANNEL_HTTP_PIXEL,
             };
         };
@@ -84,7 +84,7 @@ class Router {
         const webhookHandler = function (payload) {
             return {
                 params: payload.params,
-                key: helpers_1.epglue(constants_1.IN_INDEP, payload.params.service, payload.params.name),
+                key: helpers_1.epglue(constants_1.IN_GENERIC, payload.params.service, payload.params.name),
                 channel: constants_1.CHANNEL_HTTP_WEBHOOK,
             };
         };

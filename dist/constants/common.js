@@ -10,6 +10,7 @@ exports.SERVICE_DIRECTOR = 'director';
 exports.SERVICE_FRONTIER = 'frontier';
 exports.SERVICE_TRACK = 'track';
 exports.BROADCAST = 'broadcast';
+exports.ENRICH = 'enrich';
 exports.OTHER = 'other';
 // === RPC methods
 exports.RPC_IAMALIVE = '__iamalive';
@@ -17,13 +18,13 @@ exports.RPC_IAMALIVE = '__iamalive';
 exports.STRING = 'string';
 // === Data channels
 exports.CHANNEL_NONE = 'none';
-exports.CHANNEL_HTTP = 'http';
 exports.CHANNEL_WEBSOCK = 'ws';
-exports.CHANNEL_HTTP_WEBHOOK = 'webhook';
+exports.CHANNEL_HTTP = 'http';
+exports.CHANNEL_HTTP_WEBHOOK = 'wh';
 exports.CHANNEL_HTTP_PIXEL = 'pixel';
 exports.CHANNEL_HTTP_TRACK = 'track';
 exports.CHANNEL_HTTP_REDIR = 'redir';
-exports.CHANNEL_INDEPENDENT = 'indep';
+exports.CHANNEL_GENERIC = 'gen';
 // === CATEGORIES
 exports.INCOMING = 'in';
 exports.OUTGOING = 'out';
@@ -38,7 +39,7 @@ exports.KEY_ECHO = 'echo';
 exports.IN_WEBSOCK = helpers_1.epglue(exports.INCOMING, exports.CHANNEL_WEBSOCK);
 exports.OUT_WEBSOCK = helpers_1.epglue(exports.OUTGOING, exports.CHANNEL_WEBSOCK);
 exports.CMD_WEBSOCK = helpers_1.epglue(exports.COMMAND, exports.CHANNEL_WEBSOCK);
-exports.IN_INDEP = helpers_1.epglue(exports.INCOMING, exports.CHANNEL_INDEPENDENT);
+exports.IN_GENERIC = helpers_1.epglue(exports.INCOMING, exports.CHANNEL_GENERIC);
 exports.IN_WEBHOOK = helpers_1.epglue(exports.INCOMING, exports.CHANNEL_HTTP_WEBHOOK);
 exports.IN_PIXEL = helpers_1.epglue(exports.INCOMING, exports.CHANNEL_HTTP_PIXEL);
 exports.IN_TRACK = helpers_1.epglue(exports.INCOMING, exports.CHANNEL_HTTP_TRACK);

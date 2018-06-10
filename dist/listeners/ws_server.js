@@ -38,7 +38,7 @@ class WebSocketServer {
         const name = data.name && typeof data.name === 'string' ? data.name : 'noname';
         this.log.debug(`msg '${name}' received`);
         const msg = {
-            key: helpers_1.epglue(constants_1.IN_INDEP, service, name),
+            key: helpers_1.epglue(constants_1.IN_GENERIC, service, name),
             name: name,
             service: service,
             channel: constants_1.CHANNEL_WEBSOCK,

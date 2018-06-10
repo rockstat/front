@@ -13,6 +13,7 @@ export const SERVICE_TRACK = 'track';
 
 
 export const BROADCAST = 'broadcast';
+export const ENRICH = 'enrich';
 export const OTHER = 'other';
 
 

@@ -10,12 +10,15 @@ import {
   FrontierConfig,
   DispatchResult,
   Dictionary,
-  MethodRegistration
+  MethodRegistration,
+  MethodRegRequest,
+  IncomingMessage
 } from '@app/types';
 import {
   TreeBus,
-  FlatBus
-} from '@app/lib'
+  FlatBus,
+  TreeNameBus
+} from './bus';
 import {
   INCOMING,
   IN_GENERIC,
@@ -28,6 +31,7 @@ import {
   STATUS_BAD_REQUEST,
   STATUS_TEMP_REDIR,
   STATUS_INT_ERROR,
+  ENRICH,
 } from '@app/constants';
 import {
   epchild,
@@ -45,19 +49,22 @@ import {
   METHOD_STATUS,
   STATUS_RUNNING
 } from 'rock-me-ts';
-import { baseRedirect } from '@app/lib/handlers/redirect';
+import { baseRedirect } from '@app/lib/handlers';
 
 @Service()
 export class Dispatcher {
 
   log: Logger;
   enrichBus: TreeBus = new TreeBus();
+  remoteEnrichers: TreeNameBus = new TreeNameBus()
   listenBus: TreeBus = new TreeBus();
   handleBus: FlatBus = new FlatBus();
   appConfig: AppConfig<FrontierConfig>;
   idGen: TheIds;
   rpc: RPCAgnostic;
   rpcHandlers: { [k: string]: [string, string] } = {};
+  rpcEnrichers: { [k: string]: Array<string> } = {};
+
 
   constructor() {
     this.log = Container.get(Logger).for(this);
@@ -87,7 +94,7 @@ export class Dispatcher {
     this.rpc.setup(rpcAdaptor);
 
     // Registering status handler / payload receiver
-    this.rpc.register<{ register?: Array<MethodRegistration> }>(METHOD_STATUS, async (data) => {
+    this.rpc.register<MethodRegRequest>(METHOD_STATUS, async (data) => {
       if (data.register) {
         const updateHdrs: string[] = [];
         for (const row of data.register) {
@@ -101,6 +108,10 @@ export class Dispatcher {
             this.rpcHandlers[bindToKey] = [service, method];
             updateHdrs.push(bindToKey);
           }
+          if (row.role === 'enricher' && options && Array.isArray(options.key)) {
+            this.remoteEnrichers.subscribe(options.key, service)
+          }
+
         }
         this.handleBus.replace(updateHdrs, this.rpcGateway)
       }
@@ -112,14 +123,23 @@ export class Dispatcher {
     setImmediate(() => {
       this.rpc.notify(SERVICE_DIRECTOR, RPC_IAMALIVE, { name: SERVICE_FRONTIER })
     })
-
-    this.listenBus.subscribe('*', async (key: string, msg: BusMsgHdr) => {
+    // Registering remote listeners notification
+    this.listenBus.subscribe('*', async (key: string, msg: IncomingMessage) => {
       try {
         return await this.rpc.notify(BROADCAST, BROADCAST, msg);
       } catch (error) {
         this.log.error(`catch! ${error.message}`);
       }
-    })
+    });
+    // Registering remote enrichers notification
+    this.enrichBus.subscribe('*', async (key: string, msg: IncomingMessage) => {
+      try {
+        return await this.rpc.request(ENRICH, ENRICH, msg, this.remoteEnrichers.simulate(key));
+      } catch (error) {
+        this.log.error(`catch! ${error.message}`);
+      }
+    });
+
   }
 
   start() {

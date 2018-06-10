@@ -91,6 +91,9 @@ let HttpServer = class HttpServer {
         // HTTP Routing
         // ####################################################
         const routed = this.router.route(routeOn);
+        if (routed.params.service === constants_1.SERVICE_TRACK) {
+            routed.contentType = constants_1.CONTENT_TYPE_JSON;
+        }
         // ### Teapot // Early Response
         if (routed.key === constants_1.PATH_HTTP_TEAPOT) {
             res.setHeader(constants_1.HMyName, this.title);
@@ -132,6 +135,7 @@ let HttpServer = class HttpServer {
             service: routed.params.service,
             name: routed.params.name,
             uid: uid,
+            td: transportData,
             data: Object.assign(body, routeOn.query)
         };
         // Dispatching: Running enrichers, subscribers, handler

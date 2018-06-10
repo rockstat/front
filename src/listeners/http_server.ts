@@ -37,7 +37,8 @@ import {
   HMyName,
   CONTENT_BAD_REQUEST,
   PATH_HTTP_TEAPOT,
-  PATH_HTTP_404
+  PATH_HTTP_404,
+  SERVICE_TRACK
 } from '@app/constants';
 import {
   computeOrigin,
@@ -203,6 +204,9 @@ export class HttpServer {
     // ####################################################
 
     const routed = this.router.route(routeOn);
+    if (routed.params.service === SERVICE_TRACK){
+      routed.contentType = CONTENT_TYPE_JSON;
+    }
 
     // ### Teapot // Early Response
     if (routed.key === PATH_HTTP_TEAPOT) {
@@ -268,6 +272,7 @@ export class HttpServer {
       service: routed.params.service,
       name: routed.params.name,
       uid: uid,
+      td: transportData,
       data: Object.assign(body, routeOn.query)
     }
 

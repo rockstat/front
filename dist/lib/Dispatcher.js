@@ -10,17 +10,19 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const typedi_1 = require("typedi");
-const lib_1 = require("@app/lib");
+const bus_1 = require("./bus");
 const constants_1 = require("@app/constants");
 const helpers_1 = require("@app/helpers");
 const rock_me_ts_1 = require("rock-me-ts");
-const redirect_1 = require("@app/lib/handlers/redirect");
+const handlers_1 = require("@app/lib/handlers");
 let Dispatcher = class Dispatcher {
     constructor() {
-        this.enrichBus = new lib_1.TreeBus();
-        this.listenBus = new lib_1.TreeBus();
-        this.handleBus = new lib_1.FlatBus();
+        this.enrichBus = new bus_1.TreeBus();
+        this.remoteEnrichers = new bus_1.TreeNameBus();
+        this.listenBus = new bus_1.TreeBus();
+        this.handleBus = new bus_1.FlatBus();
         this.rpcHandlers = {};
+        this.rpcEnrichers = {};
         this.rpcGateway = async (key, msg) => {
             if (msg.service && msg.name && this.rpcHandlers[key]) {
                 // Real destination
@@ -65,10 +67,13 @@ let Dispatcher = class Dispatcher {
                     if (options && options.service) {
                         route.service = options.service;
                     }
-                    const bindToKey = helpers_1.epglue(constants_1.IN_INDEP, route.service, route.method);
+                    const bindToKey = helpers_1.epglue(constants_1.IN_GENERIC, route.service, route.method);
                     if (row.role === 'handler') {
                         this.rpcHandlers[bindToKey] = [service, method];
                         updateHdrs.push(bindToKey);
+                    }
+                    if (row.role === 'enricher' && options && Array.isArray(options.key)) {
+                        this.remoteEnrichers.subscribe(options.key, service);
                     }
                 }
                 this.handleBus.replace(updateHdrs, this.rpcGateway);
@@ -77,14 +82,24 @@ let Dispatcher = class Dispatcher {
         });
         ;
         // Default redirect handler
-        this.handleBus.handle(constants_1.IN_REDIR, redirect_1.baseRedirect);
+        this.handleBus.handle(constants_1.IN_REDIR, handlers_1.baseRedirect);
         // notify band director
         setImmediate(() => {
             this.rpc.notify(constants_1.SERVICE_DIRECTOR, constants_1.RPC_IAMALIVE, { name: constants_1.SERVICE_FRONTIER });
         });
+        // Registering remote listeners notification
         this.listenBus.subscribe('*', async (key, msg) => {
             try {
                 return await this.rpc.notify(constants_1.BROADCAST, constants_1.BROADCAST, msg);
+            }
+            catch (error) {
+                this.log.error(`catch! ${error.message}`);
+            }
+        });
+        // Registering remote enrichers notification
+        this.enrichBus.subscribe('*', async (key, msg) => {
+            try {
+                return await this.rpc.request(constants_1.ENRICH, constants_1.ENRICH, msg, this.remoteEnrichers.simulate(key));
             }
             catch (error) {
                 this.log.error(`catch! ${error.message}`);

@@ -32,8 +32,10 @@ export interface IncomingMessageProps {
   projectId?: number;
   // user identifier
   uid?: string;
+  // Transport-specific data
+  td?: HTTPTransportData;
   // message payload
-  data: IncomingMsgData
+  data: IncomingMsgData;
 }
 
 export type BaseIncomingMessage = IncomingMessageProps & Partial<MessageIdTime>;
