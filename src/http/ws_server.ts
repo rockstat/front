@@ -5,7 +5,7 @@ import { Socket } from 'net';
 import { Service, Inject, Container } from 'typedi';
 import * as WebSocket from 'ws';
 import { Logger, TheIds, AppConfig } from "rock-me-ts";
-import { Dispatcher } from '@app/lib';
+import { Dispatcher } from '@app/';
 import {
   HttpsConfig,
   WsConfig,

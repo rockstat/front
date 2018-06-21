@@ -1,4 +1,4 @@
-import {Validator} from '@app/lib';
+import {Validator} from '@app/';
 
 
 const schema = {

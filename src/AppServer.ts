@@ -1,11 +1,11 @@
 import 'reflect-metadata';
 import { Container, Service, Inject } from 'typedi';
-import { Dispatcher } from '@app/lib';
+import { Dispatcher } from './Dispatcher';
 import { TheIds, Meter, Logger, RedisFactory, AppConfig } from 'rock-me-ts';
 import {
   WebSocketServer,
   HttpServer
-} from '@app/listeners';
+} from '@app/http';
 import { FrontierConfig } from '@app/types';
 
 

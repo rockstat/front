@@ -18,7 +18,7 @@ import {
   TreeBus,
   FlatBus,
   TreeNameBus
-} from './bus';
+} from '@app/bus';
 import {
   INCOMING,
   IN_GENERIC,
@@ -49,7 +49,7 @@ import {
   METHOD_STATUS,
   STATUS_RUNNING
 } from 'rock-me-ts';
-import { baseRedirect } from '@app/lib/handlers';
+import { baseRedirect } from '@app/handlers';
 
 @Service()
 export class Dispatcher {
