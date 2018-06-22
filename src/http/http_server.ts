@@ -6,7 +6,8 @@ import * as assert from 'assert';
 import * as cookie from 'cookie';
 import * as qs from 'qs';
 import { Meter, Logger, TheIds, AppConfig } from 'rock-me-ts';
-import { BrowserLib, Dispatcher } from '@app/';
+import { BrowserLib } from '@app/BrowserLib';
+import { Dispatcher } from '@app/Dispatcher';
 import { Router } from './http_router'
 import {
   CONTENT_TYPE_GIF,
