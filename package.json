@@ -48,7 +48,7 @@
     "rock-me-ts": "git+https://github.com/rockstat/rock-me-ts.git",
     "rpc-websockets": "^4.0.2",
     "source-map-support": "^0.5.5",
-    "typedi": "^0.7.1",
+    "typedi": "^0.8.0",
     "ws": "^5.2.0",
     "xxhash": "^0.2.4"
   }
