@@ -17,3 +17,11 @@ export function dotPropGetter(options: DotPropGetterOptions) {
   const keys = Object.keys(options);
   const props = Object.values(options);
 
+  return (obj: { [k: string]: any }) => {
+    const res: { [k in keyof DotPropGetterOptions]: any } = {};
+    for (const [k, v] of Object.entries(options)) {
+      res[k] = getval(obj, v);
+    }
+    return res;
+  }
+}
