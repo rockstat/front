@@ -5,7 +5,7 @@ import { STATUS_OK, STATUS_TEMP_REDIR, STATUS_BAD_REQUEST, STATUS_INT_ERROR } fr
 
 export interface HTTPTransportData {
   ip: string;
-  userAgent: string;
+  ua: string;
 }
 
 // ###### BASE MESSAGING

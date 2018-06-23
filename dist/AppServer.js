@@ -8,9 +8,9 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 require("reflect-metadata");
 const typedi_1 = require("typedi");
-const lib_1 = require("@app/lib");
+const Dispatcher_1 = require("./Dispatcher");
 const rock_me_ts_1 = require("rock-me-ts");
-const listeners_1 = require("@app/listeners");
+const http_1 = require("@app/http");
 let AppServer = class AppServer {
     setup() {
         this.appConfig = new rock_me_ts_1.AppConfig();
@@ -23,12 +23,12 @@ let AppServer = class AppServer {
         typedi_1.Container.set(rock_me_ts_1.TheIds, new rock_me_ts_1.TheIds());
         const meter = this.meter = typedi_1.Container.get(rock_me_ts_1.Meter);
         typedi_1.Container.set(rock_me_ts_1.RedisFactory, new rock_me_ts_1.RedisFactory({ log, meter, ...this.appConfig.redis }));
-        typedi_1.Container.set(lib_1.Dispatcher, new lib_1.Dispatcher());
-        typedi_1.Container.set(listeners_1.HttpServer, new listeners_1.HttpServer());
-        typedi_1.Container.set(listeners_1.WebSocketServer, new listeners_1.WebSocketServer());
-        this.httpServer = typedi_1.Container.get(listeners_1.HttpServer);
-        this.wsServer = typedi_1.Container.get(listeners_1.WebSocketServer);
-        const dispatcher = this.dispatcher = typedi_1.Container.get(lib_1.Dispatcher);
+        typedi_1.Container.set(Dispatcher_1.Dispatcher, new Dispatcher_1.Dispatcher());
+        typedi_1.Container.set(http_1.HttpServer, new http_1.HttpServer());
+        typedi_1.Container.set(http_1.WebSocketServer, new http_1.WebSocketServer());
+        this.httpServer = typedi_1.Container.get(http_1.HttpServer);
+        this.wsServer = typedi_1.Container.get(http_1.WebSocketServer);
+        const dispatcher = this.dispatcher = typedi_1.Container.get(Dispatcher_1.Dispatcher);
         dispatcher.setup();
     }
     start() {

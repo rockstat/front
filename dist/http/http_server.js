@@ -17,7 +17,8 @@ const assert = require("assert");
 const cookie = require("cookie");
 const qs = require("qs");
 const rock_me_ts_1 = require("rock-me-ts");
-const lib_1 = require("@app/lib");
+const BrowserLib_1 = require("@app/BrowserLib");
+const Dispatcher_1 = require("@app/Dispatcher");
 const http_router_1 = require("./http_router");
 const constants_1 = require("@app/constants");
 const helpers_1 = require("@app/helpers");
@@ -29,9 +30,9 @@ let HttpServer = class HttpServer {
         const logger = typedi_1.Container.get(rock_me_ts_1.Logger);
         this.metrics = typedi_1.Container.get(rock_me_ts_1.Meter);
         this.idGen = typedi_1.Container.get(rock_me_ts_1.TheIds);
-        this.dispatcher = typedi_1.Container.get(lib_1.Dispatcher);
+        this.dispatcher = typedi_1.Container.get(Dispatcher_1.Dispatcher);
         this.router = typedi_1.Container.get(http_router_1.Router);
-        this.browserLib = typedi_1.Container.get(lib_1.BrowserLib);
+        this.browserLib = typedi_1.Container.get(BrowserLib_1.BrowserLib);
         this.options = config.http;
         this.title = config.get('name');
         this.identopts = config.identify;
@@ -114,7 +115,7 @@ let HttpServer = class HttpServer {
         const { remoteAddress } = req.connection;
         const transportData = {
             ip: f(realIp) || remoteAddress || '0.0.0.0',
-            userAgent: f(userAgent) || 'Absent',
+            ua: f(userAgent) || 'Absent',
         };
         const userIdCookie = cookie.serialize(this.identopts.param, uid, {
             httpOnly: true,

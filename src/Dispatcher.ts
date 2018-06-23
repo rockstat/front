@@ -12,7 +12,8 @@ import {
   Dictionary,
   MethodRegistration,
   MethodRegRequest,
-  IncomingMessage
+  IncomingMessage,
+  EnrichersRequirements
 } from '@app/types';
 import {
   TreeBus,
@@ -50,6 +51,7 @@ import {
   STATUS_RUNNING
 } from 'rock-me-ts';
 import { baseRedirect } from '@app/handlers';
+import { dotPropGetter, getvals } from '@app/helpers/getprop';
 
 @Service()
 export class Dispatcher {
@@ -64,6 +66,8 @@ export class Dispatcher {
   rpc: RPCAgnostic;
   rpcHandlers: { [k: string]: [string, string] } = {};
   rpcEnrichers: { [k: string]: Array<string> } = {};
+  propGetters: { [k: string]: (obj: any) => { [k: string]: any } } = {};
+  enrichersRequirements: EnrichersRequirements = [];
 
 
   constructor() {
@@ -97,22 +101,30 @@ export class Dispatcher {
     this.rpc.register<MethodRegRequest>(METHOD_STATUS, async (data) => {
       if (data.register) {
         const updateHdrs: string[] = [];
+        const newReqs: EnrichersRequirements = [];
         for (const row of data.register) {
           const { service, method, options } = row;
           const route = { service, method };
-          if (options && options.service) {
-            route.service = options.service;
+          if (options && options.alias) {
+            route.service = options.alias;
           }
           const bindToKey = epglue(IN_GENERIC, route.service, route.method)
           if (row.role === 'handler') {
             this.rpcHandlers[bindToKey] = [service, method];
             updateHdrs.push(bindToKey);
           }
-          if (row.role === 'enricher' && options && Array.isArray(options.key)) {
-            this.remoteEnrichers.subscribe(options.key, service)
+          if (row.role === 'enricher' && options && Array.isArray(options.keys)) {
+            this.propGetters[service] = dotPropGetter(options.props || {});
+            // Handling enrichments data selection
+            if (options.props) {
+              for (const [k, v] of Object.entries(options.props)) {
+                newReqs.push([k, v]);
+              }
+            }
+            this.remoteEnrichers.subscribe(options.keys, service)
           }
-
         }
+        this.enrichersRequirements = newReqs;
         this.handleBus.replace(updateHdrs, this.rpcGateway)
       }
       return {};
@@ -134,7 +146,8 @@ export class Dispatcher {
     // Registering remote enrichers notification
     this.enrichBus.subscribe('*', async (key: string, msg: IncomingMessage) => {
       try {
-        return await this.rpc.request(ENRICH, ENRICH, msg, this.remoteEnrichers.simulate(key));
+        const smallMsg = getvals(msg, this.enrichersRequirements);
+        return await this.rpc.request(ENRICH, ENRICH, smallMsg, this.remoteEnrichers.simulate(key));
       } catch (error) {
         this.log.error(`catch! ${error.message}`);
       }
@@ -162,19 +175,9 @@ export class Dispatcher {
     }
   }
 
-  registerEnricher(key: string, func: BusMsgHdr): void {
-    this.log.info(`Registering enricher for ${key}`);
-    this.enrichBus.subscribe(key, func);
-  }
-
   registerListener(key: string, func: BusMsgHdr): void {
     this.log.info(`Registering subscriber for ${key}`);
     this.listenBus.subscribe(key, func);
-  }
-
-  registerHandler(key: string, func: BusMsgHdr): void {
-    this.log.info(`>>> Registered handler fo route ${key}`);
-    this.handleBus.set(key, func);
   }
 
   async dispatch(key: string, msg: BaseIncomingMessage): Promise<DispatchResult> {
@@ -198,8 +201,8 @@ export class Dispatcher {
 
     // ### Phase 1: enriching
     const enrichments = await this.enrichBus.publish(key, msg);
-    if (enrichments.length) {
-      msg = Object.assign(msg, ...enrichments);
+    if (enrichments.length && msg.data) {
+      Object.assign(msg.data, ...enrichments);
     }
     // ### Phase 2: deliver to listeners
     this.listenBus.publish(key, msg).then(results => { });

@@ -10,11 +10,12 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const typedi_1 = require("typedi");
-const bus_1 = require("./bus");
+const bus_1 = require("@app/bus");
 const constants_1 = require("@app/constants");
 const helpers_1 = require("@app/helpers");
 const rock_me_ts_1 = require("rock-me-ts");
-const handlers_1 = require("@app/lib/handlers");
+const handlers_1 = require("@app/handlers");
+const getprop_1 = require("@app/helpers/getprop");
 let Dispatcher = class Dispatcher {
     constructor() {
         this.enrichBus = new bus_1.TreeBus();
@@ -23,6 +24,8 @@ let Dispatcher = class Dispatcher {
         this.handleBus = new bus_1.FlatBus();
         this.rpcHandlers = {};
         this.rpcEnrichers = {};
+        this.propGetters = {};
+        this.enrichersRequirements = [];
         this.rpcGateway = async (key, msg) => {
             if (msg.service && msg.name && this.rpcHandlers[key]) {
                 // Real destination
@@ -61,21 +64,30 @@ let Dispatcher = class Dispatcher {
         this.rpc.register(rock_me_ts_1.METHOD_STATUS, async (data) => {
             if (data.register) {
                 const updateHdrs = [];
+                const newReqs = [];
                 for (const row of data.register) {
                     const { service, method, options } = row;
                     const route = { service, method };
-                    if (options && options.service) {
-                        route.service = options.service;
+                    if (options && options.alias) {
+                        route.service = options.alias;
                     }
                     const bindToKey = helpers_1.epglue(constants_1.IN_GENERIC, route.service, route.method);
                     if (row.role === 'handler') {
                         this.rpcHandlers[bindToKey] = [service, method];
                         updateHdrs.push(bindToKey);
                     }
-                    if (row.role === 'enricher' && options && Array.isArray(options.key)) {
-                        this.remoteEnrichers.subscribe(options.key, service);
+                    if (row.role === 'enricher' && options && Array.isArray(options.keys)) {
+                        this.propGetters[service] = getprop_1.dotPropGetter(options.props || {});
+                        // Handling enrichments data selection
+                        if (options.props) {
+                            for (const [k, v] of Object.entries(options.props)) {
+                                newReqs.push([k, v]);
+                            }
+                        }
+                        this.remoteEnrichers.subscribe(options.keys, service);
                     }
                 }
+                this.enrichersRequirements = newReqs;
                 this.handleBus.replace(updateHdrs, this.rpcGateway);
             }
             return {};
@@ -99,7 +111,8 @@ let Dispatcher = class Dispatcher {
         // Registering remote enrichers notification
         this.enrichBus.subscribe('*', async (key, msg) => {
             try {
-                return await this.rpc.request(constants_1.ENRICH, constants_1.ENRICH, msg, this.remoteEnrichers.simulate(key));
+                const smallMsg = getprop_1.getvals(msg, this.enrichersRequirements);
+                return await this.rpc.request(constants_1.ENRICH, constants_1.ENRICH, smallMsg, this.remoteEnrichers.simulate(key));
             }
             catch (error) {
                 this.log.error(`catch! ${error.message}`);
@@ -109,17 +122,9 @@ let Dispatcher = class Dispatcher {
     start() {
         this.log.info('Started');
     }
-    registerEnricher(key, func) {
-        this.log.info(`Registering enricher for ${key}`);
-        this.enrichBus.subscribe(key, func);
-    }
     registerListener(key, func) {
         this.log.info(`Registering subscriber for ${key}`);
         this.listenBus.subscribe(key, func);
-    }
-    registerHandler(key, func) {
-        this.log.info(`>>> Registered handler fo route ${key}`);
-        this.handleBus.set(key, func);
     }
     async dispatch(key, msg) {
         try {
@@ -139,8 +144,8 @@ let Dispatcher = class Dispatcher {
         msg.time = Number(new Date());
         // ### Phase 1: enriching
         const enrichments = await this.enrichBus.publish(key, msg);
-        if (enrichments.length) {
-            msg = Object.assign(msg, ...enrichments);
+        if (enrichments.length && msg.data) {
+            Object.assign(msg.data, ...enrichments);
         }
         // ### Phase 2: deliver to listeners
         this.listenBus.publish(key, msg).then(results => { });

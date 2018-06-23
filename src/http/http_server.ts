@@ -234,7 +234,7 @@ export class HttpServer {
     const { remoteAddress } = req.connection;
     const transportData: HTTPTransportData = {
       ip: f(realIp) || remoteAddress || '0.0.0.0',
-      userAgent: f(userAgent) || 'Absent',
+      ua: f(userAgent) || 'Absent',
     };
 
     const userIdCookie = cookie.serialize(

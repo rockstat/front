@@ -1,8 +1,10 @@
 
+export type EnrichersRequirements = Array<[string, string]>
 
 export interface MethodRegistrationOptions {
-  service?: string;
-  key?: Array<string>
+  alias?: string;
+  props?: { [k: string]: string };
+  keys?: Array<string>
 }
 
 export interface MethodRegRequest {

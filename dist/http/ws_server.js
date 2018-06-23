@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const typedi_1 = require("typedi");
 const WebSocket = require("ws");
 const rock_me_ts_1 = require("rock-me-ts");
-const lib_1 = require("@app/lib");
+const Dispatcher_1 = require("@app/Dispatcher");
 const helpers_1 = require("@app/helpers");
 const url_1 = require("url");
 const constants_1 = require("@app/constants");
@@ -11,7 +11,7 @@ class WebSocketServer {
     constructor() {
         this.socksState = new WeakMap();
         this.options = typedi_1.Container.get(rock_me_ts_1.AppConfig).ws;
-        this.dispatcher = typedi_1.Container.get(lib_1.Dispatcher);
+        this.dispatcher = typedi_1.Container.get(Dispatcher_1.Dispatcher);
         this.log = typedi_1.Container.get(rock_me_ts_1.Logger).for(this);
     }
     get httpOptions() {
