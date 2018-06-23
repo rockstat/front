@@ -59,6 +59,7 @@ let HttpServer = class HttpServer {
      */
     async handle(req, res) {
         const requestTime = this.metrics.timenote('http.request');
+        this.metrics.tick('request');
         assert(typeof req.url === 'string', 'Request url required');
         assert(typeof req.method === 'string', 'Request method required');
         // extracting useful headers

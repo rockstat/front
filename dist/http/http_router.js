@@ -11,6 +11,7 @@ class Router {
     constructor() {
         this.log = typedi_1.Container.get(rock_me_ts_1.Logger).for(this);
         this.router = new FindMyWay();
+        this.metrics = typedi_1.Container.get(rock_me_ts_1.Meter);
         this.setupRoutes();
         /** Default route (404) */
         this.defaultRoute = {
@@ -55,6 +56,7 @@ class Router {
             };
         };
         const trackHandler = function (payload) {
+            this.metrics.tick('request.track');
             payload.params.service = constants_1.SERVICE_TRACK;
             return {
                 params: payload.params,
@@ -65,6 +67,7 @@ class Router {
             };
         };
         const pixelHandler = function (payload) {
+            this.metrics.tick('request.pixel');
             return {
                 params: payload.params,
                 key: helpers_1.epglue(constants_1.IN_GENERIC, payload.params.service, payload.params.name),
@@ -75,6 +78,7 @@ class Router {
          * example: http://127.0.0.1:10001/redir/111/a/b?to=https%3A%2F%2Fya.ru
          */
         const redirHandler = function (payload) {
+            this.metrics.tick('request.redir');
             return {
                 params: payload.params,
                 key: helpers_1.epglue(constants_1.IN_REDIR, payload.params.service, payload.params.name),
@@ -82,6 +86,7 @@ class Router {
             };
         };
         const webhookHandler = function (payload) {
+            this.metrics.tick('request.wh');
             return {
                 params: payload.params,
                 key: helpers_1.epglue(constants_1.IN_GENERIC, payload.params.service, payload.params.name),
@@ -89,6 +94,7 @@ class Router {
             };
         };
         const libjsHandler = function (payload) {
+            this.metrics.tick('request.jslib');
             return {
                 params: { service: constants_1.OTHER, name: constants_1.OTHER, projectId: 0 },
                 key: constants_1.PATH_HTTP_LIBJS,

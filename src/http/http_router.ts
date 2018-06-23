@@ -1,7 +1,7 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { Service, Inject, Container } from 'typedi';
 import * as FindMyWay from 'find-my-way';
-import { Logger } from 'rock-me-ts';
+import { Logger, Meter } from 'rock-me-ts';
 import { epglue } from '@app/helpers';
 import {
   CONTENT_TYPE_JSON,
@@ -69,10 +69,13 @@ export class Router {
   private log: Logger;
   private router: FindMyWay;
   private defaultRoute: RouteResult;
+  private metrics: Meter;
+
 
   constructor() {
     this.log = Container.get(Logger).for(this);
     this.router = new FindMyWay();
+    this.metrics = Container.get(Meter);
     this.setupRoutes();
     /** Default route (404) */
     this.defaultRoute = {
@@ -121,6 +124,7 @@ export class Router {
     };
 
     const trackHandler: RequestHandler = function (payload) {
+      this.metrics.tick('request.track');
       payload.params.service = SERVICE_TRACK;
       return {
         params: payload.params,
@@ -132,6 +136,7 @@ export class Router {
     };
 
     const pixelHandler: RequestHandler = function (payload) {
+      this.metrics.tick('request.pixel');
       return {
         params: payload.params,
         key: epglue(IN_GENERIC, payload.params.service, payload.params.name),
@@ -143,6 +148,7 @@ export class Router {
      * example: http://127.0.0.1:10001/redir/111/a/b?to=https%3A%2F%2Fya.ru
      */
     const redirHandler: RequestHandler = function (payload) {
+      this.metrics.tick('request.redir');
       return {
         params: payload.params,
         key: epglue(IN_REDIR, payload.params.service, payload.params.name),
@@ -150,6 +156,7 @@ export class Router {
       };
     };
     const webhookHandler: RequestHandler = function (payload) {
+      this.metrics.tick('request.wh');
       return {
         params: payload.params,
         key: epglue(IN_GENERIC, payload.params.service, payload.params.name),
@@ -158,6 +165,7 @@ export class Router {
     };
 
     const libjsHandler = function (payload: RequestHandlerPayload): HTTPRoutingResult {
+      this.metrics.tick('request.jslib');
       return {
         params: { service: OTHER, name: OTHER, projectId: 0 },
         key: PATH_HTTP_LIBJS,

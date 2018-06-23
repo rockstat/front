@@ -151,6 +151,7 @@ export class HttpServer {
    */
   private async handle(req: IncomingMessage, res: ServerResponse) {
     const requestTime = this.metrics.timenote('http.request')
+    this.metrics.tick('request')
 
     assert(typeof req.url === 'string', 'Request url required');
     assert(typeof req.method === 'string', 'Request method required');
