@@ -115,7 +115,7 @@ export class Router {
    */
   setupRoutes() {
 
-    const teapotHandler: RequestHandler = function (payload) {
+    const teapotHandler: RequestHandler = (payload) => {
       return {
         params: payload.params,
         key: PATH_HTTP_TEAPOT,
@@ -123,7 +123,7 @@ export class Router {
       }
     };
 
-    const trackHandler: RequestHandler = function (payload) {
+    const trackHandler: RequestHandler = (payload) =>  {
       this.metrics.tick('request.track');
       payload.params.service = SERVICE_TRACK;
       return {
@@ -135,7 +135,7 @@ export class Router {
       };
     };
 
-    const pixelHandler: RequestHandler = function (payload) {
+    const pixelHandler: RequestHandler = (payload) =>  {
       this.metrics.tick('request.pixel');
       return {
         params: payload.params,
@@ -147,7 +147,7 @@ export class Router {
     /**
      * example: http://127.0.0.1:10001/redir/111/a/b?to=https%3A%2F%2Fya.ru
      */
-    const redirHandler: RequestHandler = function (payload) {
+    const redirHandler: RequestHandler = (payload) =>  {
       this.metrics.tick('request.redir');
       return {
         params: payload.params,
@@ -155,7 +155,7 @@ export class Router {
         channel: CHANNEL_HTTP_REDIR,
       };
     };
-    const webhookHandler: RequestHandler = function (payload) {
+    const webhookHandler: RequestHandler = (payload) =>  {
       this.metrics.tick('request.wh');
       return {
         params: payload.params,
@@ -164,7 +164,7 @@ export class Router {
       };
     };
 
-    const libjsHandler = function (payload: RequestHandlerPayload): HTTPRoutingResult {
+    const libjsHandler: RequestHandler = (payload) => {
       this.metrics.tick('request.jslib');
       return {
         params: { service: OTHER, name: OTHER, projectId: 0 },
