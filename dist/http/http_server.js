@@ -107,11 +107,18 @@ let HttpServer = class HttpServer {
             return micro_1.send(res, constants_1.STATUS_NOT_FOUND);
         }
         // Handling POST if routed right way!
-        const [error, body] = (routeOn.method === constants_1.METHOD_POST)
+        let [error, body] = (routeOn.method === constants_1.METHOD_POST)
             ? await this.parseBody(routed.contentType || routeOn.contentType, req)
             : [undefined, {}];
+        // Bad body
+        if (error) {
+            this.log.error(error);
+            res.setHeader(constants_1.HContentType, constants_1.CONTENT_TYPE_PLAIN);
+            return micro_1.send(res, constants_1.STATUS_INT_ERROR);
+        }
+        const validBody = body;
         // Looking for uid
-        const uid = query[this.uidkey] || body && body[this.uidkey] || cookies[this.uidkey] || this.idGen.flake();
+        const uid = query[this.uidkey] || body && validBody && body[this.uidkey] || cookies[this.uidkey] || this.idGen.flake();
         // transport data to store
         const { remoteAddress } = req.connection;
         const transportData = {
@@ -166,6 +173,11 @@ let HttpServer = class HttpServer {
         res.setHeader(constants_1.HResponseTime, reqTime);
         micro_1.send(res, statusCode, response || '');
     }
+    /**
+     * Start message handling
+     * @param key internal routing key
+     * @param msg message object
+     */
     async dispatch(key, msg) {
         try {
             return await this.dispatcher.emit(key, msg);
@@ -192,7 +204,7 @@ let HttpServer = class HttpServer {
             else {
                 result = helpers_1.parseQuery(await micro_1.text(req, parseOpts));
             }
-            return [undefined, result];
+            return [undefined, helpers_1.isObject(result) ? result : {}];
         }
         catch (error) {
             return [error, undefined];

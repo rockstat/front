@@ -54,6 +54,7 @@ import {
   cookieHeaders,
   applyHeaders,
   corsAdditionalHeaders,
+  isObject,
 } from '@app/helpers';
 import {
   HttpConfig,
@@ -72,27 +73,6 @@ import { epchild } from '@app/helpers';
 
 const f = (i?: string | string[]) => Array.isArray(i) ? i[0] : i;
 const parseOpts = { limit: '50kb' };
-
-
-type msg = {
-  id: string;
-  key: string;
-  time: Date;
-  channel: string;
-  projectId: string;
-  name: string
-  data: object;
-  // redir
-  group: string;
-  // online + redir
-  userAgent: string;
-  uid: string;
-  ip: string;
-  // webhooks
-  service: string;
-  action: string;
-  remote_ip: string;
-}
 
 @Service()
 export class HttpServer {
@@ -206,7 +186,7 @@ export class HttpServer {
     // ####################################################
 
     const routed = this.router.route(routeOn);
-    if (routed.params.service === SERVICE_TRACK){
+    if (routed.params.service === SERVICE_TRACK) {
       routed.contentType = CONTENT_TYPE_JSON;
     }
 
@@ -223,13 +203,19 @@ export class HttpServer {
     }
 
     // Handling POST if routed right way!
-    const [error, body] = (routeOn.method === METHOD_POST)
+    let [error, body] = (routeOn.method === METHOD_POST)
       ? await this.parseBody(routed.contentType || routeOn.contentType, req)
       : [undefined, {}];
+    // Bad body
+    if (error) {
+      this.log.error(error);
+      res.setHeader(HContentType, CONTENT_TYPE_PLAIN);
+      return send(res, STATUS_INT_ERROR);
+    }
 
-
+    const validBody = body;
     // Looking for uid
-    const uid = query[this.uidkey] || body && body[this.uidkey] || cookies[this.uidkey] || this.idGen.flake();
+    const uid = query[this.uidkey] || body && validBody && body[this.uidkey] || cookies[this.uidkey] || this.idGen.flake();
 
     // transport data to store
     const { remoteAddress } = req.connection;
@@ -310,6 +296,11 @@ export class HttpServer {
 
   }
 
+  /**
+   * Start message handling
+   * @param key internal routing key
+   * @param msg message object
+   */
   private async dispatch(key: string, msg: BaseIncomingMessage): Promise<DispatchResult> {
     try {
       return await this.dispatcher.emit(key, msg);
@@ -335,7 +326,7 @@ export class HttpServer {
       } else {
         result = parseQuery(await text(req, parseOpts));
       }
-      return [undefined, result];
+      return [undefined, isObject(result) ? result : {}];
     } catch (error) {
       return [error, undefined];
     }
