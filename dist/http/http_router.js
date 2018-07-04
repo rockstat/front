@@ -55,17 +55,6 @@ class Router {
                 channel: constants_1.CHANNEL_HTTP,
             };
         };
-        const trackHandler = (payload) => {
-            this.metrics.tick('request.track');
-            payload.params.service = constants_1.SERVICE_TRACK;
-            return {
-                params: payload.params,
-                key: helpers_1.epglue(constants_1.IN_GENERIC, constants_1.SERVICE_TRACK, payload.params.name),
-                // explicitly set content type because AJAX uses text/plain to avoid options request
-                contentType: constants_1.CONTENT_TYPE_JSON,
-                channel: constants_1.CHANNEL_HTTP_TRACK,
-            };
-        };
         const pixelHandler = (payload) => {
             this.metrics.tick('request.pixel');
             return {
@@ -107,7 +96,6 @@ class Router {
         this.registerRoute('get', '/redir/:projectId/:service/:name', redirHandler);
         this.registerRoute('get', '/wh/:projectId/:service/:name', webhookHandler);
         this.registerRoute('post', '/wh/:projectId/:service/:name', webhookHandler);
-        this.registerRoute('post', '/track/:projectId/:name', trackHandler);
     }
     registerRoute(method, path, handler) {
         this.log.info(`Registering route: ${path}`);

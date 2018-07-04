@@ -123,19 +123,7 @@ export class Router {
       }
     };
 
-    const trackHandler: RequestHandler = (payload) =>  {
-      this.metrics.tick('request.track');
-      payload.params.service = SERVICE_TRACK;
-      return {
-        params: payload.params,
-        key: epglue(IN_GENERIC, SERVICE_TRACK, payload.params.name),
-        // explicitly set content type because AJAX uses text/plain to avoid options request
-        contentType: CONTENT_TYPE_JSON,
-        channel: CHANNEL_HTTP_TRACK,
-      };
-    };
-
-    const pixelHandler: RequestHandler = (payload) =>  {
+    const pixelHandler: RequestHandler = (payload) => {
       this.metrics.tick('request.pixel');
       return {
         params: payload.params,
@@ -147,7 +135,7 @@ export class Router {
     /**
      * example: http://127.0.0.1:10001/redir/111/a/b?to=https%3A%2F%2Fya.ru
      */
-    const redirHandler: RequestHandler = (payload) =>  {
+    const redirHandler: RequestHandler = (payload) => {
       this.metrics.tick('request.redir');
       return {
         params: payload.params,
@@ -155,7 +143,7 @@ export class Router {
         channel: CHANNEL_HTTP_REDIR,
       };
     };
-    const webhookHandler: RequestHandler = (payload) =>  {
+    const webhookHandler: RequestHandler = (payload) => {
       this.metrics.tick('request.wh');
       return {
         params: payload.params,
@@ -179,7 +167,6 @@ export class Router {
     this.registerRoute('get', '/redir/:projectId/:service/:name', redirHandler);
     this.registerRoute('get', '/wh/:projectId/:service/:name', webhookHandler);
     this.registerRoute('post', '/wh/:projectId/:service/:name', webhookHandler);
-    this.registerRoute('post', '/track/:projectId/:name', trackHandler);
   }
 
   registerRoute(method: 'post' | 'get', path: string, handler: RequestHandler) {
