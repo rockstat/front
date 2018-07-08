@@ -54,7 +54,7 @@ client: {} # do not remove. root element should be present
 
 static:
   prod:
-    file: clientlib/lib.js
+    file: web-sdk-dist/lib.js
   dev:
-    file: clientlib/lib-dev.js
+    file: web-sdk-dist/lib-dev.js
 

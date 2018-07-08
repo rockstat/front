@@ -14,6 +14,7 @@ export interface IdentifyConfig {
 export interface HttpConfig {
   host: string;
   port: number;
+  prefix?: string;
 }
 
 export interface HttpsConfig extends HttpConfig {

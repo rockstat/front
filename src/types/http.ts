@@ -1,7 +1,6 @@
 export type HTTPBodyParams = { [key: string]: any }
 export type HTTPQueryParams = { [key: string]: any }
 
-
 export interface HTTPRouteParams {
   service: string;
   name: string;
@@ -17,7 +16,6 @@ export interface RouteOn {
   path: string,
   origin: string
 }
-
 
 
 export interface HTTPRoutingResult {

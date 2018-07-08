@@ -98,7 +98,6 @@ export class HttpServer {
     this.metrics = Container.get(Meter);
     this.idGen = Container.get(TheIds);
     this.dispatcher = Container.get(Dispatcher);
-    this.router = Container.get(Router);
     this.browserLib = Container.get(BrowserLib);
 
     this.options = config.http;
@@ -107,6 +106,8 @@ export class HttpServer {
     this.uidkey = this.identopts.param;
     this.clientopts = config.client.common;
     this.log = logger.for(this);
+
+    this.router = new Router(this.options);
 
     this.cookieExpires = new Date(new Date().getTime() + this.identopts.cookieMaxAge * 1000);
   }

@@ -4,6 +4,6 @@
 /config/custom
 /deploy
 /certs
-/clientlib
+/web-sdk-dist
 /.env*
 TextApp*
