@@ -8,12 +8,13 @@ const constants_1 = require("@app/constants");
 ;
 ;
 class Router {
-    constructor() {
-        this.log = typedi_1.Container.get(rock_me_ts_1.Logger).for(this);
+    constructor(options) {
+        this.prefix = options.prefix || '';
         this.router = new FindMyWay();
+        this.log = typedi_1.Container.get(rock_me_ts_1.Logger).for(this);
         this.metrics = typedi_1.Container.get(rock_me_ts_1.Meter);
         this.setupRoutes();
-        /** Default route (404) */
+        // Default route (404)
         this.defaultRoute = {
             params: {},
             handler: (payload) => {
@@ -90,12 +91,12 @@ class Router {
                 channel: constants_1.CHANNEL_HTTP,
             };
         };
-        this.registerRoute('get', '/coffee', teapotHandler);
-        this.registerRoute('get', '/lib.js', libjsHandler);
-        this.registerRoute('get', '/img/:projectId/:service/:name', pixelHandler);
-        this.registerRoute('get', '/redir/:projectId/:service/:name', redirHandler);
-        this.registerRoute('get', '/wh/:projectId/:service/:name', webhookHandler);
-        this.registerRoute('post', '/wh/:projectId/:service/:name', webhookHandler);
+        this.registerRoute('get', `${this.prefix}/coffee`, teapotHandler);
+        this.registerRoute('get', `${this.prefix}/lib.js`, libjsHandler);
+        this.registerRoute('get', `${this.prefix}/img/:projectId/:service/:name`, pixelHandler);
+        this.registerRoute('get', `${this.prefix}/redir/:projectId/:service/:name`, redirHandler);
+        this.registerRoute('get', `${this.prefix}/wh/:projectId/:service/:name`, webhookHandler);
+        this.registerRoute('post', `${this.prefix}/wh/:projectId/:service/:name`, webhookHandler);
     }
     registerRoute(method, path, handler) {
         this.log.info(`Registering route: ${path}`);

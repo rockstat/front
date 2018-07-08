@@ -32,10 +32,8 @@ let AppServer = class AppServer {
         dispatcher.setup();
     }
     start() {
+        this.attachSignals();
         this.dispatcher.start();
-        this.startTransport();
-    }
-    startTransport() {
         this.log.info('Starting transports');
         this.httpServer.start();
         this.wsServer.start();

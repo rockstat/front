@@ -31,7 +31,6 @@ let HttpServer = class HttpServer {
         this.metrics = typedi_1.Container.get(rock_me_ts_1.Meter);
         this.idGen = typedi_1.Container.get(rock_me_ts_1.TheIds);
         this.dispatcher = typedi_1.Container.get(Dispatcher_1.Dispatcher);
-        this.router = typedi_1.Container.get(http_router_1.Router);
         this.browserLib = typedi_1.Container.get(BrowserLib_1.BrowserLib);
         this.options = config.http;
         this.title = config.get('name');
@@ -39,6 +38,7 @@ let HttpServer = class HttpServer {
         this.uidkey = this.identopts.param;
         this.clientopts = config.client.common;
         this.log = logger.for(this);
+        this.router = new http_router_1.Router(this.options);
         this.cookieExpires = new Date(new Date().getTime() + this.identopts.cookieMaxAge * 1000);
     }
     /**

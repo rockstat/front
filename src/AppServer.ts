@@ -46,11 +46,8 @@ export class AppServer {
   }
 
   start() {
+    this.attachSignals();
     this.dispatcher.start();
-    this.startTransport();
-  }
-
-  private startTransport() {
     this.log.info('Starting transports');
     this.httpServer.start();
     this.wsServer.start();
