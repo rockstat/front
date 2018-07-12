@@ -1,4 +1,3 @@
-import { Promise } from 'bluebird';
 import { BusMsgHdr, BusMsgHdrResult, BusMsgHdrsResult } from '@app/types';
 import Container from 'typedi';
 import { Logger } from 'rock-me-ts';
@@ -53,7 +52,6 @@ export class TreeBus {
       throw new ReferenceError('handler not present');
     }
     if (Array.isArray(key)) {
-
       for (const k of key) {
         this.subscribe(k, handler);
       }
@@ -101,7 +99,7 @@ export class TreeBus {
     return this;
   }
 
-  publish(key: string, msg: any): BusMsgHdrsResult {
+  publish(key: string, msg: any): Array<PromiseLike<any>> {
     const path = key.split('.').concat(['']);
     let node = this.tree;
     const handlers: BusMsgHdrResult[] = [];
@@ -114,6 +112,6 @@ export class TreeBus {
       }
       node = node.children[name];
     }
-    return Promise.all(handlers);
+    return handlers;
   }
 }

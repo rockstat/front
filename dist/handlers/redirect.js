@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const constants_1 = require("@app/constants");
-exports.baseRedirect = (msg) => {
+exports.baseRedirect = async (key, msg) => {
     if (msg.data.to) {
         return { location: msg.data.to };
     }

@@ -10,6 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const typedi_1 = require("typedi");
+const BBPromise = require("bluebird");
 const bus_1 = require("@app/bus");
 const constants_1 = require("@app/constants");
 const helpers_1 = require("@app/helpers");
@@ -21,7 +22,7 @@ let Dispatcher = class Dispatcher {
         this.enrichBus = new bus_1.TreeBus();
         this.remoteEnrichers = new bus_1.TreeNameBus();
         this.listenBus = new bus_1.TreeBus();
-        this.handleBus = new bus_1.FlatBus();
+        this.handleBus = new bus_1.TreeBus();
         this.rpcHandlers = {};
         this.rpcEnrichers = {};
         this.propGetters = {};
@@ -49,7 +50,7 @@ let Dispatcher = class Dispatcher {
      * Initial asynchronous setup
      */
     setup() {
-        this.handleBus.setNoneHdr(this.defaultHandler);
+        this.handleBus.subscribe('*', this.defaultHandler);
         // Core deps
         const redisFactory = typedi_1.Container.get(rock_me_ts_1.RedisFactory);
         // Stat meter
@@ -94,7 +95,8 @@ let Dispatcher = class Dispatcher {
         });
         ;
         // Default redirect handler
-        this.handleBus.handle(constants_1.IN_REDIR, handlers_1.baseRedirect);
+        this.log.info('register handler here');
+        this.handleBus.subscribe(constants_1.IN_REDIR, handlers_1.baseRedirect);
         // notify band director
         setImmediate(() => {
             this.rpc.notify(constants_1.SERVICE_DIRECTOR, constants_1.RPC_IAMALIVE, { name: constants_1.SERVICE_FRONTIER });
@@ -148,9 +150,10 @@ let Dispatcher = class Dispatcher {
             Object.assign(msg.data, ...enrichments);
         }
         // ### Phase 2: deliver to listeners
-        this.listenBus.publish(key, msg).then(results => { });
+        BBPromise.all(this.listenBus.publish(key, msg)).then(results => { });
         // ### Phase 3: handling if configuring
-        return await this.handleBus.handle(key, msg);
+        const handlers = this.handleBus.publish(key, msg);
+        return await handlers[handlers.length - 1];
     }
 };
 Dispatcher = __decorate([

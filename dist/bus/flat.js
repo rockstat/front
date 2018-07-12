@@ -23,13 +23,7 @@ class FlatBus {
     replace(keys, handler) {
         const hel = this.handlerEvents(handler);
         const newKeys = keys.filter(k => !hel.includes(k));
-        for (const k of newKeys) {
-            this.log.info(`+ registering handler for ${k}`);
-        }
         const rmKeys = hel.filter(k => !keys.includes(k));
-        for (const k of rmKeys) {
-            this.log.info(`- removing handler from ${k}`);
-        }
         for (const key of rmKeys) {
             this.unset(key, handler);
         }
@@ -48,6 +42,7 @@ class FlatBus {
             }
             return this;
         }
+        this.log.info(`+ registering handler for ${key}`);
         if (this.handlers[key] !== handler) {
             this.handlers[key] = handler;
             this.handlerEvents(handler).push(key);
@@ -56,6 +51,7 @@ class FlatBus {
     }
     unset(key, handler) {
         if (this.handlers[key] === handler) {
+            this.log.info(`- removing handler from ${key}`);
             this.handlers[key] = this.noneHdr;
             // removing method keys list
             const hel = this.handlerEvents(handler);

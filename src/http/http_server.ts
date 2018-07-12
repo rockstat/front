@@ -60,7 +60,6 @@ import {
   HttpConfig,
   IdentifyConfig,
   ClientConfig,
-  ClientHttpMessage,
   FrontierConfig,
   HTTPBodyParams,
   RouteOn,
@@ -186,6 +185,7 @@ export class HttpServer {
     // HTTP Routing
     // ####################################################
 
+    // track json content hack (request dont containt info about content type to prevent options request)
     const routed = this.router.route(routeOn);
     if (routed.params.service === SERVICE_TRACK) {
       routed.contentType = CONTENT_TYPE_JSON;
@@ -260,6 +260,7 @@ export class HttpServer {
       channel: routed.channel,
       service: routed.params.service,
       name: routed.params.name,
+      projectId: routed.params.projectId,
       uid: uid,
       td: transportData,
       data: Object.assign(body, routeOn.query)

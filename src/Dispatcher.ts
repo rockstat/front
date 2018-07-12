@@ -1,5 +1,5 @@
 import { Service, Inject, Container } from 'typedi';
-import * as bb from 'bluebird';
+import * as BBPromise from 'bluebird';
 import * as net from 'net';
 import {
   AppServer
@@ -53,7 +53,7 @@ export class Dispatcher {
   enrichBus: TreeBus = new TreeBus();
   remoteEnrichers: TreeNameBus = new TreeNameBus()
   listenBus: TreeBus = new TreeBus();
-  handleBus: FlatBus = new FlatBus();
+  handleBus: TreeBus = new TreeBus();
   appConfig: AppConfig<FrontierConfig>;
   idGen: TheIds;
   rpc: RPCAgnostic;
@@ -74,7 +74,7 @@ export class Dispatcher {
    * Initial asynchronous setup
    */
   setup() {
-    this.handleBus.setNoneHdr(this.defaultHandler);
+    this.handleBus.subscribe('*', this.defaultHandler);
 
     // Core deps
     const redisFactory = Container.get(RedisFactory);
@@ -123,7 +123,8 @@ export class Dispatcher {
       return {};
     });;
     // Default redirect handler
-    this.handleBus.handle(IN_REDIR, baseRedirect);
+    this.log.info('register handler here');
+    this.handleBus.subscribe(IN_REDIR, baseRedirect);
     // notify band director
     setImmediate(() => {
       this.rpc.notify(SERVICE_DIRECTOR, RPC_IAMALIVE, { name: SERVICE_FRONTIER })
@@ -198,9 +199,10 @@ export class Dispatcher {
       Object.assign(msg.data, ...enrichments);
     }
     // ### Phase 2: deliver to listeners
-    this.listenBus.publish(key, msg).then(results => { });
+    BBPromise.all(this.listenBus.publish(key, msg)).then(results => { });
 
     // ### Phase 3: handling if configuring
-    return await this.handleBus.handle(key, msg);
+    const handlers = this.handleBus.publish(key, msg);
+    return await handlers[handlers.length - 1];
   }
 }

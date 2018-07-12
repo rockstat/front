@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const bluebird_1 = require("bluebird");
 const typedi_1 = require("typedi");
 const rock_me_ts_1 = require("rock-me-ts");
 class TreeBus {
@@ -99,7 +98,7 @@ class TreeBus {
             }
             node = node.children[name];
         }
-        return bluebird_1.Promise.all(handlers);
+        return handlers;
     }
 }
 exports.TreeBus = TreeBus;

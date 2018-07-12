@@ -4,25 +4,13 @@ import * as FindMyWay from 'find-my-way';
 import { Logger, Meter } from 'rock-me-ts';
 import { epglue } from '@app/helpers';
 import {
-  CONTENT_TYPE_JSON,
-  STATUS_OK,
-  STATUS_NOT_FOUND,
-  STATUS_TEMP_REDIR,
-  STATUS_OK_NO_CONTENT,
   PATH_HTTP_404,
   PATH_HTTP_LIBJS,
-  PATH_HTTP_OPTS,
-  IN_WEBHOOK,
   IN_REDIR,
-  IN_PIXEL,
-  IN_TRACK,
   IN_GENERIC,
   CHANNEL_HTTP_WEBHOOK,
   PATH_HTTP_TEAPOT,
-  STATUS_TEAPOT,
   CHANNEL_HTTP_PIXEL,
-  CHANNEL_HTTP_TRACK,
-  SERVICE_TRACK,
   CHANNEL_HTTP,
   CHANNEL_HTTP_REDIR,
   OTHER
