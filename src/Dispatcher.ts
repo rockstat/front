@@ -10,7 +10,6 @@ import {
   FrontierConfig,
   DispatchResult,
   Dictionary,
-  MethodRegistration,
   MethodRegRequest,
   IncomingMessage,
   EnrichersRequirements
@@ -21,21 +20,16 @@ import {
   TreeNameBus
 } from '@app/bus';
 import {
-  INCOMING,
   IN_GENERIC,
   RPC_IAMALIVE,
   SERVICE_DIRECTOR,
   SERVICE_FRONTIER,
   BROADCAST,
   IN_REDIR,
-  STATUS_OK,
-  STATUS_BAD_REQUEST,
-  STATUS_TEMP_REDIR,
   STATUS_INT_ERROR,
   ENRICH,
 } from '@app/constants';
 import {
-  epchild,
   epglue
 } from '@app/helpers';
 import {
@@ -47,8 +41,7 @@ import {
   AgnosticRPCOptions,
   Meter,
   AppConfig,
-  METHOD_STATUS,
-  STATUS_RUNNING
+  METHOD_STATUS
 } from 'rock-me-ts';
 import { baseRedirect } from '@app/handlers';
 import { dotPropGetter, getvals } from '@app/helpers/getprop';
