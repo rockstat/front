@@ -6,6 +6,8 @@ import { STATUS_OK, STATUS_TEMP_REDIR, STATUS_BAD_REQUEST, STATUS_INT_ERROR } fr
 export interface HTTPTransportData {
   ip: string;
   ua: string;
+  // Fingerprint based on ip address and browser user-agent
+  fpid?: string;
 }
 
 // ###### BASE MESSAGING

@@ -14,9 +14,6 @@ import {
   CONTENT_TYPE_PLAIN,
   HContentType,
   HLocation,
-  ResponseGif,
-  ResponseRedir,
-  AbsentRedir,
   STATUS_OK,
   STATUS_NOT_FOUND,
   STATUS_BAD_REQUEST,
@@ -26,14 +23,11 @@ import {
   METHOD_GET,
   METHOD_POST,
   METHOD_OPTIONS,
-  CHANNEL_HTTP_REDIR,
   CHANNEL_HTTP_PIXEL,
   PATH_HTTP_LIBJS,
-  IN_PIXEL,
   CONTENT_TYPE_JSON,
   CONTENT_TYPE_JS,
   HResponseTime,
-  IN_REDIR,
   STATUS_TEAPOT,
   HMyName,
   CONTENT_BAD_REQUEST,
@@ -49,8 +43,6 @@ import {
   noCacheHeaders,
   parseQuery,
   emptyGif,
-  isCTypeJson,
-  isCTypeUrlEnc,
   cookieHeaders,
   applyHeaders,
   corsAdditionalHeaders,
@@ -67,7 +59,6 @@ import {
   HTTPTransportData,
   DispatchResult,
 } from '@app/types';
-import { epchild } from '@app/helpers';
 
 
 const f = (i?: string | string[]) => Array.isArray(i) ? i[0] : i;
@@ -88,7 +79,6 @@ export class HttpServer {
   log: Logger;
   title: string;
   uidkey: string;
-
   cookieExpires: Date;
 
   constructor() {
@@ -98,19 +88,15 @@ export class HttpServer {
     this.idGen = Container.get(TheIds);
     this.dispatcher = Container.get(Dispatcher);
     this.browserLib = Container.get(BrowserLib);
-
     this.options = config.http;
     this.title = config.get('name');
     this.identopts = config.identify;
     this.uidkey = this.identopts.param;
     this.clientopts = config.client.common;
     this.log = logger.for(this);
-
     this.router = new Router(this.options);
-
     this.cookieExpires = new Date(new Date().getTime() + this.identopts.cookieMaxAge * 1000);
   }
-
 
   /**
    * Start listening
@@ -153,7 +139,7 @@ export class HttpServer {
     // parse cookie
     const cookies = cookie.parse(f(req.headers.cookie) || '');
 
-    // transportData.ip = '82.202.204.194';
+    // transportData.ip = '82.66.204.194';
     // transportData.userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.162 Safari/537.36'
 
     // Data for routing request
@@ -224,7 +210,9 @@ export class HttpServer {
       ip: f(realIp) || remoteAddress || '0.0.0.0',
       ua: f(userAgent) || 'Absent',
     };
-
+    // Generating fingerprint
+    transportData.fpid = this.idGen.xxhash(`${transportData.ip}:${transportData.ua}`);
+    // Preparing UID cookie
     const userIdCookie = cookie.serialize(
       this.identopts.param,
       uid,
@@ -233,7 +221,6 @@ export class HttpServer {
         expires: this.cookieExpires
       }
     )
-
     // Regular response headers
     applyHeaders(
       res,

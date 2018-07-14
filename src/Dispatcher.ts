@@ -10,9 +10,7 @@ import {
   FrontierConfig,
   DispatchResult,
   Dictionary,
-  MethodRegRequest,
   IncomingMessage,
-  EnrichersRequirements
 } from '@app/types';
 import {
   TreeBus,
@@ -37,11 +35,14 @@ import {
   RPCAdapterRedis,
   RPCAgnostic,
   Logger,
+  AppStatus,
   RedisFactory,
   AgnosticRPCOptions,
   Meter,
   AppConfig,
-  METHOD_STATUS
+  METHOD_STATUS,
+  MethodRegRequest,
+  EnrichersRequirements,
 } from 'rock-me-ts';
 import { baseRedirect } from '@app/handlers';
 import { dotPropGetter, getvals } from '@app/helpers/getprop';
@@ -56,6 +57,7 @@ export class Dispatcher {
   handleBus: TreeBus = new TreeBus();
   appConfig: AppConfig<FrontierConfig>;
   idGen: TheIds;
+  status: AppStatus;
   rpc: RPCAgnostic;
   rpcHandlers: { [k: string]: [string, string] } = {};
   rpcEnrichers: { [k: string]: Array<string> } = {};
@@ -65,6 +67,7 @@ export class Dispatcher {
 
   constructor() {
     this.log = Container.get(Logger).for(this);
+    this.status = new AppStatus();
     this.log.info('Starting');
     this.appConfig = Container.get<AppConfig<FrontierConfig>>(AppConfig);
     this.idGen = Container.get(TheIds);
@@ -120,15 +123,15 @@ export class Dispatcher {
         this.enrichersRequirements = newReqs;
         this.handleBus.replace(updateHdrs, this.rpcGateway)
       }
-      return {};
+      return this.status.get({});
     });;
     // Default redirect handler
     this.log.info('register handler here');
     this.handleBus.subscribe(IN_REDIR, baseRedirect);
     // notify band director
-    setImmediate(() => {
+    setInterval(() => {
       this.rpc.notify(SERVICE_DIRECTOR, RPC_IAMALIVE, { name: SERVICE_FRONTIER })
-    })
+    }, 5*1000)
     // Registering remote listeners notification
     this.listenBus.subscribe('*', async (key: string, msg: IncomingMessage) => {
       try {
@@ -146,7 +149,6 @@ export class Dispatcher {
         this.log.error(`catch! ${error.message}`);
       }
     });
-
   }
 
   start() {

@@ -69,7 +69,7 @@ let HttpServer = class HttpServer {
         const query = urlParts.query ? qs.parse(urlParts.query) : {};
         // parse cookie
         const cookies = cookie.parse(f(req.headers.cookie) || '');
-        // transportData.ip = '82.202.204.194';
+        // transportData.ip = '82.66.204.194';
         // transportData.userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.162 Safari/537.36'
         // Data for routing request
         const routeOn = {
@@ -126,6 +126,9 @@ let HttpServer = class HttpServer {
             ip: f(realIp) || remoteAddress || '0.0.0.0',
             ua: f(userAgent) || 'Absent',
         };
+        // Generating fingerprint
+        transportData.fpid = this.idGen.xxhash(`${transportData.ip}:${transportData.ua}`);
+        // Preparing UID cookie
         const userIdCookie = cookie.serialize(this.identopts.param, uid, {
             httpOnly: true,
             expires: this.cookieExpires

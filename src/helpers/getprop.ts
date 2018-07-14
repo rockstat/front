@@ -1,5 +1,5 @@
 import * as getval from 'get-value';
-import { EnrichersRequirements } from '@app/types';
+import { EnrichersRequirements } from 'rock-me-ts';
 
 export interface DotPropGetterOptions {
   [k: string]: string;

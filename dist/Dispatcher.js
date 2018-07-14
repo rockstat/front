@@ -42,6 +42,7 @@ let Dispatcher = class Dispatcher {
             };
         };
         this.log = typedi_1.Container.get(rock_me_ts_1.Logger).for(this);
+        this.status = new rock_me_ts_1.AppStatus();
         this.log.info('Starting');
         this.appConfig = typedi_1.Container.get(rock_me_ts_1.AppConfig);
         this.idGen = typedi_1.Container.get(rock_me_ts_1.TheIds);
@@ -91,16 +92,16 @@ let Dispatcher = class Dispatcher {
                 this.enrichersRequirements = newReqs;
                 this.handleBus.replace(updateHdrs, this.rpcGateway);
             }
-            return {};
+            return this.status.get({});
         });
         ;
         // Default redirect handler
         this.log.info('register handler here');
         this.handleBus.subscribe(constants_1.IN_REDIR, handlers_1.baseRedirect);
         // notify band director
-        setImmediate(() => {
+        setInterval(() => {
             this.rpc.notify(constants_1.SERVICE_DIRECTOR, constants_1.RPC_IAMALIVE, { name: constants_1.SERVICE_FRONTIER });
-        });
+        }, 5 * 1000);
         // Registering remote listeners notification
         this.listenBus.subscribe('*', async (key, msg) => {
             try {
