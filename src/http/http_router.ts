@@ -20,8 +20,11 @@ import {
   RouteOn,
   HTTPRoutingResult,
   HTTPQueryParams,
-  HttpConfig
+  HttpConfig,
+  HTTPServiceMapParams,
+  LegacyRoutesConfig
 } from '@app/types';
+import { throws } from 'assert';
 
 
 // === Route structs
@@ -65,10 +68,13 @@ export class Router {
   private defaultRoute: RouteResult;
   private metrics: Meter;
   private prefix: string;
+  private customRoutes?: LegacyRoutesConfig;
+  private serviceMap: HTTPServiceMapParams
 
   constructor(options: HttpConfig) {
-    this.prefix = options.prefix || '';
     this.router = new FindMyWay();
+    this.serviceMap = options.channels;
+    this.customRoutes = options.routes;
     this.log = Container.get(Logger).for(this);
     this.metrics = Container.get(Meter);
     this.setupRoutes();
@@ -118,34 +124,36 @@ export class Router {
       }
     };
 
-    const pixelHandler: RequestHandler = (payload) => {
-      this.metrics.tick('request.pixel');
-      return {
-        params: payload.params,
-        key: epglue(IN_GENERIC, payload.params.service, payload.params.name),
-        channel: CHANNEL_HTTP_PIXEL,
-      };
-    };
+    // const pixelHandler: RequestHandler = (payload) => {
+    //   this.metrics.tick('request.pixel');
+    //   return {
+    //     params: payload.params,
+    //     key: epglue(IN_GENERIC, payload.params.service, payload.params.name),
+    //     channel: CHANNEL_HTTP_PIXEL,
+    //   };
+    // };
 
-    /**
-     * example: http://127.0.0.1:10001/redir/111/a/b?to=https%3A%2F%2Fya.ru
-     */
-    const redirHandler: RequestHandler = (payload) => {
-      this.metrics.tick('request.redir');
-      return {
-        params: payload.params,
-        key: epglue(IN_REDIR, payload.params.service, payload.params.name),
-        channel: CHANNEL_HTTP_REDIR,
-      };
-    };
-    const webhookHandler: RequestHandler = (payload) => {
-      this.metrics.tick('request.wh');
-      return {
-        params: payload.params,
-        key: epglue(IN_GENERIC, payload.params.service, payload.params.name),
-        channel: CHANNEL_HTTP_WEBHOOK,
-      };
-    };
+    // /**
+    //  * example: http://127.0.0.1:10001/redir/111/a/b?to=https%3A%2F%2Fya.ru
+    //  */
+    // const redirHandler: RequestHandler = (payload) => {
+    //   this.metrics.tick('request.redir');
+    //   return {
+    //     params: payload.params,
+    //     key: epglue(IN_REDIR, payload.params.service, payload.params.name),
+    //     channel: CHANNEL_HTTP_REDIR,
+    //   };
+    // };
+
+    // const webhookHandler: RequestHandler = (payload) => {
+    //   this.metrics.tick('request.wh');
+    //   return {
+    //     params: payload.params,
+    //     key: epglue(IN_GENERIC, payload.params.service, payload.params.name),
+    //     channel: CHANNEL_HTTP_WEBHOOK,
+    //   };
+    // };
+
 
     const libjsHandler: RequestHandler = (payload) => {
       this.metrics.tick('request.jslib');
@@ -156,12 +164,32 @@ export class Router {
       };
     };
 
-    this.registerRoute('get', `${this.prefix}/coffee`, teapotHandler);
-    this.registerRoute('get', `${this.prefix}/lib.js`, libjsHandler);
-    this.registerRoute('get', `${this.prefix}/img/:projectId/:service/:name`, pixelHandler);
-    this.registerRoute('get', `${this.prefix}/redir/:projectId/:service/:name`, redirHandler);
-    this.registerRoute('get', `${this.prefix}/wh/:projectId/:service/:name`, webhookHandler);
-    this.registerRoute('post', `${this.prefix}/wh/:projectId/:service/:name`, webhookHandler);
+    const genericHandler: RequestHandler = (payload) => {
+      this.metrics.tick('request.generic');
+      const { service, name } = payload.params;
+      const channel = this.serviceMap[service] !== undefined
+        ? this.serviceMap[service]
+        : CHANNEL_HTTP
+      return {
+        params: payload.params,
+        key: epglue(IN_GENERIC, service, name),
+        channel: channel,
+      };
+    };
+
+    this.registerRoute('get', `/coffee`, teapotHandler);
+    this.registerRoute('get', `/lib.js`, libjsHandler);
+
+    this.registerRoute('get', `/:service/:name`, genericHandler);
+    this.registerRoute('get', `/:service/:name/:projectId`, genericHandler);
+    this.registerRoute('post', `/:service/:name`, genericHandler);
+    this.registerRoute('post', `/:service/:name/:projectId`, genericHandler);
+
+    if (this.customRoutes) {
+      for (const [method, path] of this.customRoutes) {
+        this.registerRoute(method, path, genericHandler);
+      }
+    }
   }
 
   registerRoute(method: 'post' | 'get', path: string, handler: RequestHandler) {

@@ -11,15 +11,17 @@ export interface IdentifyConfig {
   cookieMaxAge: number;
 }
 
+export interface HTTPServiceMapParams {
+  [k: string]: string
+}
+
+export type LegacyRoutesConfig = Array<['post' | 'get', string]>;
+
 export interface HttpConfig {
   host: string;
   port: number;
-  prefix?: string;
-}
-
-export interface HttpsConfig extends HttpConfig {
-  certFile: string;
-  keyFile: string;
+  channels: HTTPServiceMapParams
+  routes?: LegacyRoutesConfig
 }
 
 // ##### WEBSOCKET #####
@@ -42,10 +44,14 @@ export interface wsDeflateConfig {
   threshold: number;
 }
 
+export interface WsHTTPParams {
+  host: string;
+  port: number;
+}
+
 export interface WsConfig {
   path: string;
-  http: HttpConfig;
-  https: HttpsConfig;
+  http: WsHTTPParams;
   perMessageDeflate: wsDeflateConfig;
 }
 

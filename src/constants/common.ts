@@ -26,15 +26,18 @@ export const RPC_IAMALIVE = '__iamalive';
 export const STRING = 'string';
 
 
-// === Data channels
-export const CHANNEL_NONE = 'none';
+// === INPUT CHANNELS
 export const CHANNEL_WEBSOCK = 'ws';
 export const CHANNEL_HTTP = 'http';
 export const CHANNEL_HTTP_WEBHOOK = 'wh';
 export const CHANNEL_HTTP_PIXEL = 'pixel';
-export const CHANNEL_HTTP_TRACK = 'track';
 export const CHANNEL_HTTP_REDIR = 'redir';
+// unknown
+export const CHANNEL_NONE = 'none';
+// common
 export const CHANNEL_GENERIC = 'gen';
+// channel for web-sdk
+export const CHANNEL_HTTP_TRACK = 'track';
 
 
 // === CATEGORIES

@@ -7,7 +7,6 @@ import * as WebSocket from 'ws';
 import { Logger, TheIds, AppConfig } from "rock-me-ts";
 import { Dispatcher } from '@app/Dispatcher';
 import {
-  HttpsConfig,
   WsConfig,
   Dictionary,
   BaseIncomingMessage,
@@ -16,6 +15,7 @@ import {
   IncomingMsgData,
   AnyStruct,
   DispatchResult,
+  WsHTTPParams,
 } from '@app/types';
 import {
   isObject, isString, isEmptyString, epglue, epchild
@@ -64,7 +64,7 @@ export class WebSocketServer {
   log: Logger;
   dispatcher: Dispatcher;
 
-  get httpOptions(): HttpConfig {
+  get httpOptions(): WsHTTPParams {
     return this.options.http;
   }
 

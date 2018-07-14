@@ -33,7 +33,8 @@ import {
   CONTENT_BAD_REQUEST,
   PATH_HTTP_TEAPOT,
   PATH_HTTP_404,
-  SERVICE_TRACK
+  SERVICE_TRACK,
+  CHANNEL_HTTP_WEBHOOK
 } from '@app/constants';
 import {
   computeOrigin,
@@ -171,10 +172,21 @@ export class HttpServer {
     // HTTP Routing
     // ####################################################
 
-    // track json content hack (request dont containt info about content type to prevent options request)
     const routed = this.router.route(routeOn);
+
+    // Processing route redsults
+    // ####################################################
+    // specific tracking logick for web-sdk
     if (routed.params.service === SERVICE_TRACK) {
-      routed.contentType = CONTENT_TYPE_JSON;
+      // override channel for track requests via image
+      if (routeOn.query.channel && routeOn.query.channel == 'pixel') {
+        routed.channel = CHANNEL_HTTP_PIXEL;
+      }
+      // track json content hack (request dont containt info about content type to prevent options request)
+      else {
+        routed.channel = CHANNEL_HTTP_WEBHOOK;
+        routed.contentType = CONTENT_TYPE_JSON;
+      }
     }
 
     // ### Teapot // Early Response
@@ -272,6 +284,7 @@ export class HttpServer {
     } else {
       response = dispatched;
     }
+
 
     if (routed.channel === CHANNEL_HTTP_PIXEL) {
       res.setHeader(HContentType, CONTENT_TYPE_GIF);

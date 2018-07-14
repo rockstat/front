@@ -6,15 +6,29 @@ identify: &httpCommon
 http:
   host: <%= env.HOST || '0.0.0.0' %>
   port: <%= env.PORT || '8080' %>
+  channels:
+    # service: channel
+    # channels details look at src/constants/common.ts
+    wh: wh
+    webhook: wh
+    redir: redir
+    redirect: redir
+    pixel: pixel
+    gif: pixel
+    img: pixel
+    #pseudo-services for web-sdk
+    track: track
+  routes:
+    # Можно добавалять свои кастомные роуты
+    - ["get", "/wh/:projectId/:service/:name"]
+    - ["post", "/wh/:projectId/:service/:name"]
+    - ["get", "/redir/:projectId/:service/:name"]
+    - ["get", "/img/:projectId/:service/:name"]
+
 websocket:
   http:
     host: <%= env.HOST || '0.0.0.0' %>
     port: <%= env.PORT_WS || env.PORT && Number(env.PORT) + 2 || '8082' %>
-  https:
-    host: <%= env.HOST || '0.0.0.0' %>
-    port: <%= env.PORT_WSS || env.PORT && Number(env.PORT) + 3 || '8083' %>
-    certFile: <%= env.SSL_CERT %>
-    keyFile: <%= env.SSL_KEY %>
   path: /wss
   perMessageDeflate:  # See zlib defaults.
     zlibDeflateOptions:

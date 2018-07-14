@@ -16,15 +16,18 @@ exports.OTHER = 'other';
 exports.RPC_IAMALIVE = '__iamalive';
 // === TYPES
 exports.STRING = 'string';
-// === Data channels
-exports.CHANNEL_NONE = 'none';
+// === INPUT CHANNELS
 exports.CHANNEL_WEBSOCK = 'ws';
 exports.CHANNEL_HTTP = 'http';
 exports.CHANNEL_HTTP_WEBHOOK = 'wh';
 exports.CHANNEL_HTTP_PIXEL = 'pixel';
-exports.CHANNEL_HTTP_TRACK = 'track';
 exports.CHANNEL_HTTP_REDIR = 'redir';
+// unknown
+exports.CHANNEL_NONE = 'none';
+// common
 exports.CHANNEL_GENERIC = 'gen';
+// channel for web-sdk
+exports.CHANNEL_HTTP_TRACK = 'track';
 // === CATEGORIES
 exports.INCOMING = 'in';
 exports.OUTGOING = 'out';

@@ -92,10 +92,20 @@ let HttpServer = class HttpServer {
         }
         // HTTP Routing
         // ####################################################
-        // track json content hack (request dont containt info about content type to prevent options request)
         const routed = this.router.route(routeOn);
+        // Processing route redsults
+        // ####################################################
+        // specific tracking logick for web-sdk
         if (routed.params.service === constants_1.SERVICE_TRACK) {
-            routed.contentType = constants_1.CONTENT_TYPE_JSON;
+            // override channel for track requests via image
+            if (routeOn.query.channel && routeOn.query.channel == 'pixel') {
+                routed.channel = constants_1.CHANNEL_HTTP_PIXEL;
+            }
+            // track json content hack (request dont containt info about content type to prevent options request)
+            else {
+                routed.channel = constants_1.CHANNEL_HTTP_WEBHOOK;
+                routed.contentType = constants_1.CONTENT_TYPE_JSON;
+            }
         }
         // ### Teapot // Early Response
         if (routed.key === constants_1.PATH_HTTP_TEAPOT) {
