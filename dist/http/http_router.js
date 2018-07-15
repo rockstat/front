@@ -95,15 +95,16 @@ class Router {
         const genericHandler = (payload) => {
             this.metrics.tick('request.generic');
             const { service, name } = payload.params;
-            const channel = this.serviceMap[service] !== undefined
+            const msgChannel = this.serviceMap[service] !== undefined
                 ? this.serviceMap[service]
                 : constants_1.CHANNEL_HTTP;
+            const routeChannel = msgChannel === constants_1.CHANNEL_HTTP_REDIR
+                ? constants_1.IN_REDIR
+                : constants_1.IN_GENERIC;
             return {
                 params: payload.params,
-                key: helpers_1.epglue(channel === constants_1.CHANNEL_HTTP_REDIR
-                    ? constants_1.CHANNEL_HTTP_REDIR
-                    : constants_1.IN_GENERIC, service, name),
-                channel: channel,
+                key: helpers_1.epglue(routeChannel, service, name),
+                channel: msgChannel,
             };
         };
         this.registerRoute('get', `/coffee`, teapotHandler);
