@@ -19,11 +19,11 @@ http:
     #pseudo-services for web-sdk
     track: track
   routes:
-    # Можно добавалять свои кастомные роуты
-    - ["get", "/wh/:projectId/:service/:name"]
-    - ["post", "/wh/:projectId/:service/:name"]
-    - ["get", "/redir/:projectId/:service/:name"]
-    - ["get", "/img/:projectId/:service/:name"]
+    # Можно добавалять свои кастомные роуты (конфликтуют)
+    # - ["get", "/wh/:projectId/:service/:name"]
+    # - ["post", "/wh/:projectId/:service/:name"]
+    # - ["get", "/redir/:projectId/:service/:name"]
+    # - ["get", "/img/:projectId/:service/:name"]
 
 websocket:
   http:
