@@ -172,7 +172,9 @@ export class Router {
         : CHANNEL_HTTP
       return {
         params: payload.params,
-        key: epglue(IN_GENERIC, this.serviceMap[service], name),
+        key: epglue(channel === CHANNEL_HTTP_REDIR
+          ? CHANNEL_HTTP_REDIR
+          : IN_GENERIC, service, name),
         channel: channel,
       };
     };

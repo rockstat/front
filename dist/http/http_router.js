@@ -100,7 +100,9 @@ class Router {
                 : constants_1.CHANNEL_HTTP;
             return {
                 params: payload.params,
-                key: helpers_1.epglue(constants_1.IN_GENERIC, this.serviceMap[service], name),
+                key: helpers_1.epglue(channel === constants_1.CHANNEL_HTTP_REDIR
+                    ? constants_1.CHANNEL_HTTP_REDIR
+                    : constants_1.IN_GENERIC, service, name),
                 channel: channel,
             };
         };
