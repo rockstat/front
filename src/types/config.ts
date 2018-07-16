@@ -9,6 +9,8 @@ export { Envs };
 export interface IdentifyConfig {
   param: string;
   cookieMaxAge: number;
+  cookieDomain?: string;
+  cookiePath?: string;
 }
 
 export interface HTTPServiceMapParams {

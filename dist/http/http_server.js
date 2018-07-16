@@ -141,7 +141,9 @@ let HttpServer = class HttpServer {
         // Preparing UID cookie
         const userIdCookie = cookie.serialize(this.identopts.param, uid, {
             httpOnly: true,
-            expires: this.cookieExpires
+            expires: this.cookieExpires,
+            path: this.identopts.cookiePath,
+            domain: this.identopts.cookieDomain
         });
         // Regular response headers
         helpers_1.applyHeaders(res, helpers_1.corsHeaders(routeOn.origin), helpers_1.noCacheHeaders(), helpers_1.cookieHeaders([userIdCookie]));

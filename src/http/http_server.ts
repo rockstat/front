@@ -229,9 +229,12 @@ export class HttpServer {
       uid,
       {
         httpOnly: true,
-        expires: this.cookieExpires
+        expires: this.cookieExpires,
+        path: this.identopts.cookiePath,
+        domain: this.identopts.cookieDomain
       }
     )
+
     // Regular response headers
     applyHeaders(
       res,
