@@ -10,7 +10,13 @@ server-side data collector; services for geo-coding and detecting client device 
 a new server deployment system.
 [Read more](https://rockstat.ru/about)
 
-![Rockstat sheme](https://rockstat.ru/media/rockstat_v3_arch.png?3)
+## About Rockstat Frontier
+
+Frontier service is a entrypoint for all external data.
+
+Look at the scheme
+
+![Rockstat sheme](media/request_lifecycle.png?3)
 
 ## Envs and defaults
 
@@ -23,7 +29,6 @@ a new server deployment system.
     PORT_WSS=8083
 
     LOG_LEVEL=info
-
 
 ## Building
 
