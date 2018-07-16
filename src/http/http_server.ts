@@ -105,6 +105,7 @@ export class HttpServer {
   start() {
     const { host, port } = this.options;
     this.log.info('Starting HTTP transport %s:%s', host, port);
+    this.log.info(this.identopts, 'Indentify options');
     this.httpServer = createServer((req, res) => {
       this.handle(req, res);
     });
