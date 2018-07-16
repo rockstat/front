@@ -1108,8 +1108,8 @@ rimraf@^2.6.1, rimraf@^2.6.2:
     glob "^7.0.5"
 
 "rock-me-ts@git+https://github.com/rockstat/rock-me-ts.git":
-  version "1.4.3"
-  resolved "git+https://github.com/rockstat/rock-me-ts.git#c1f39a49914e30eef85d7feceaaae7d96f6f1d42"
+  version "1.4.4"
+  resolved "git+https://github.com/rockstat/rock-me-ts.git#ee90fd11ed6c0b84cd89add2710e54f705e317aa"
   dependencies:
     bluebird "^3.5.1"
     cctz "^1.7.7"

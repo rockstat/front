@@ -63,7 +63,7 @@ let HttpServer = class HttpServer {
         assert(typeof req.url === 'string', 'Request url required');
         assert(typeof req.method === 'string', 'Request method required');
         // extracting useful headers
-        const { 'user-agent': userAgent, 'content-type': contentType, 'x-real-ip': realIp, 'x-forwarded-for': forwardedFor, origin, referer } = req.headers;
+        const { 'user-agent': userAgent, 'content-type': contentType, 'x-real-ip': realIp, 'origin': origin, 'referer': referer } = req.headers;
         // parsing url
         const urlParts = url_1.parse(req.url || '');
         const query = urlParts.query ? qs.parse(urlParts.query) : {};

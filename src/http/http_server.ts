@@ -128,9 +128,8 @@ export class HttpServer {
       'user-agent': userAgent,
       'content-type': contentType,
       'x-real-ip': realIp,
-      'x-forwarded-for': forwardedFor,
-      origin,
-      referer
+      'origin': origin,
+      'referer': referer
     } = req.headers;
 
     // parsing url
