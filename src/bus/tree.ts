@@ -1,17 +1,14 @@
-import { BusMsgHdr, BusMsgHdrResult, BusMsgHdrsResult } from '@app/types';
+
 import Container from 'typedi';
 import { Logger } from 'rock-me-ts';
-
-interface LevelChildren {
-  handlers: BusMsgHdr[];
-  children: { [key: string]: LevelChildren };
-}
+// import { printTree } from './print'
+import { LevelChildrenAsync, BusMsgHdr, BusMsgHdrResult } from './interfaces'
 
 export class TreeBus {
-  map: WeakMap<BusMsgHdr, Array<string>> = new WeakMap();
-  log: Logger
+  protected map: WeakMap<BusMsgHdr, Array<string>> = new WeakMap();
+  protected log: Logger
 
-  private tree: LevelChildren = {
+  private tree: LevelChildrenAsync = {
     handlers: [],
     children: {}
   };

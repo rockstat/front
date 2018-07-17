@@ -59,6 +59,7 @@ class TreeNameBus {
         node.handlers.push(handler);
         this.handlerEvents(handler).push(key);
         this.log.info(`+ added handler ${handler} to ${key}. Curr: ${hel}`);
+        // printTree(this.tree)
         return this;
     }
     unSubscribe(key, handler) {
@@ -83,11 +84,13 @@ class TreeNameBus {
         while (hel.includes(key)) {
             hel.splice(hel.indexOf(key), 1);
         }
+        // printTree(this.tree)
         return this;
     }
     simulate(key) {
         const path = key.split('.').concat(['']);
         let node = this.tree;
+        let cpath = [];
         const handlers = [];
         for (const name of path) {
             for (let handler of node.handlers) {

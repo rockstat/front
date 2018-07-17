@@ -146,7 +146,8 @@ let Dispatcher = class Dispatcher {
         msg.id = this.idGen.flake();
         msg.time = Number(new Date());
         // ### Phase 1: enriching
-        const enrichments = await this.enrichBus.publish(key, msg);
+        const enrichers = this.enrichBus.publish(key, msg);
+        const enrichments = await BBPromise.all(enrichers);
         if (enrichments.length && msg.data) {
             Object.assign(msg.data, ...enrichments);
         }

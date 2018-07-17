@@ -1,17 +1,14 @@
 import { Promise } from 'bluebird';
 import Container from 'typedi';
 import { Logger } from 'rock-me-ts';
-
-interface LevelChildren {
-  handlers: string[];
-  children: { [key: string]: LevelChildren };
-}
+// import { printTree } from "./print";
+import { LevelChildrenStr } from './interfaces'
 
 export class TreeNameBus {
   map: Map<string, Array<string>> = new Map();
   log: Logger
 
-  private tree: LevelChildren = {
+  protected tree: LevelChildrenStr = {
     handlers: [],
     children: {}
   };
@@ -28,6 +25,7 @@ export class TreeNameBus {
     }
     return hel;
   }
+
 
   replace(keys: string[], handler: string) {
     const hel = this.handlerEvents(handler);
@@ -52,7 +50,7 @@ export class TreeNameBus {
       }
       return;
     }
-    if (hel.indexOf(key) >= 0){
+    if (hel.indexOf(key) >= 0) {
       return;
     }
 
@@ -71,6 +69,7 @@ export class TreeNameBus {
     node.handlers.push(handler);
     this.handlerEvents(handler).push(key);
     this.log.info(`+ added handler ${handler} to ${key}. Curr: ${hel}`);
+    // printTree(this.tree)
     return this;
   }
 
@@ -96,12 +95,14 @@ export class TreeNameBus {
     while (hel.includes(key)) {
       hel.splice(hel.indexOf(key), 1);
     }
+    // printTree(this.tree)
     return this;
   }
 
   simulate(key: string): string[] {
     const path = key.split('.').concat(['']);
     let node = this.tree;
+    let cpath:Array<string> = [];
     const handlers: string[] = [];
     for (const name of path) {
       for (let handler of node.handlers) {

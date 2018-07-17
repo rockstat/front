@@ -4,7 +4,8 @@
   "description": "Rockstat platform server endpoint frontier",
   "main": "dist/start.js",
   "scripts": {
-    "start": "ts-node-dev -r 'tsconfig-paths/register' -r 'source-map-support/register' ./src/start.ts | pino",
+    "start": "ts-node -r 'tsconfig-paths/register' -r 'source-map-support/register' ./src/start.ts | pino",
+    "dev": "ts-node-dev -r 'tsconfig-paths/register' -r 'source-map-support/register' ./src/start.ts | pino",
     "build": "rimraf dist && tsc -p tsconfig.json",
     "prod": "node dist/start",
     "clean": "rimraf dist",
