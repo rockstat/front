@@ -1,4 +1,4 @@
-import { Envs } from 'rock-me-ts';
+import { Envs } from '@rockstat/rock-me-ts';
 
 export type MappedType<T> = { [K in keyof T]: T[K] };
 
@@ -11,6 +11,7 @@ export interface IdentifyConfig {
   cookieMaxAge: number;
   cookieDomain?: string;
   cookiePath?: string;
+  domain?: string;
 }
 
 export interface HTTPServiceMapParams {

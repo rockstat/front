@@ -5,7 +5,7 @@ import { parse as urlParse } from 'url';
 import * as assert from 'assert';
 import * as cookie from 'cookie';
 import * as qs from 'qs';
-import { Meter, Logger, TheIds, AppConfig } from 'rock-me-ts';
+import { Meter, Logger, TheIds, AppConfig } from '@rockstat/rock-me-ts';
 import { BrowserLib } from '@app/BrowserLib';
 import { Dispatcher } from '@app/Dispatcher';
 import { Router } from './http_router'
@@ -48,6 +48,7 @@ import {
   applyHeaders,
   corsAdditionalHeaders,
   isObject,
+  autoDomain
 } from '@app/helpers';
 import {
   HttpConfig,
@@ -81,6 +82,7 @@ export class HttpServer {
   title: string;
   uidkey: string;
   cookieExpires: Date;
+  cookieDomain?: string;
 
   constructor() {
     const config = Container.get<AppConfig<FrontierConfig>>(AppConfig);
@@ -97,6 +99,9 @@ export class HttpServer {
     this.log = logger.for(this);
     this.router = new Router(this.options);
     this.cookieExpires = new Date(new Date().getTime() + this.identopts.cookieMaxAge * 1000);
+    this.cookieDomain = this.identopts.cookieDomain === 'auto' && this.identopts.domain
+      ? '.' + autoDomain(this.identopts.domain)
+      : undefined;
   }
 
   /**
@@ -105,7 +110,7 @@ export class HttpServer {
   start() {
     const { host, port } = this.options;
     this.log.info('Starting HTTP transport %s:%s', host, port);
-    this.log.info(this.identopts, 'Indentify options');
+    this.log.info({ finalCookieDomain: this.cookieDomain, ...this.identopts }, 'Indentify options');
     this.httpServer = createServer((req, res) => {
       this.handle(req, res);
     });
@@ -232,7 +237,7 @@ export class HttpServer {
         httpOnly: true,
         expires: this.cookieExpires,
         path: this.identopts.cookiePath,
-        domain: this.identopts.cookieDomain
+        domain: this.cookieDomain
       }
     )
 
