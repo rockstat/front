@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const typedi_1 = require("typedi");
-const rock_me_ts_1 = require("rock-me-ts");
+const rock_me_ts_1 = require("@rockstat/rock-me-ts");
 class TreeBus {
     constructor() {
         this.map = new WeakMap();

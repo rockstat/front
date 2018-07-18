@@ -1,6 +1,6 @@
 import { Service } from "typedi";
 import { AppServer } from "@app/AppServer";
-import { Logger } from 'rock-me-ts';
+import { Logger } from '@rockstat/rock-me-ts';
 
 @Service()
 export class StubStore {

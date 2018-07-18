@@ -2,7 +2,7 @@ import { Service, Container } from "typedi";
 import { readFileSync } from 'fs';
 import { BrowserLibConfig, Envs, FrontierConfig } from "@app/types";
 import { ENV_DEV } from "@app/constants";
-import { LoggerType, Logger, AppConfig } from 'rock-me-ts';
+import { LoggerType, Logger, AppConfig } from '@rockstat/rock-me-ts';
 type LibParams = { [key: string]: string };
 
 export class BrowserLib {

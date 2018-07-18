@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const typedi_1 = require("typedi");
 const FindMyWay = require("find-my-way");
-const rock_me_ts_1 = require("rock-me-ts");
+const rock_me_ts_1 = require("@rockstat/rock-me-ts");
 const helpers_1 = require("@app/helpers");
 const constants_1 = require("@app/constants");
 ;

@@ -12,8 +12,7 @@ COPY package.json .
 COPY yarn.lock .
 
 RUN yarn install --production
-RUN yarn global add pino
-
+RUN yarn global add pino && yarn cache clean
 COPY . .
 RUN ln -nsf ../dist ./node_modules/@app
 

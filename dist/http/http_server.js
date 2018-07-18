@@ -16,7 +16,7 @@ const url_1 = require("url");
 const assert = require("assert");
 const cookie = require("cookie");
 const qs = require("qs");
-const rock_me_ts_1 = require("rock-me-ts");
+const rock_me_ts_1 = require("@rockstat/rock-me-ts");
 const BrowserLib_1 = require("@app/BrowserLib");
 const Dispatcher_1 = require("@app/Dispatcher");
 const http_router_1 = require("./http_router");
@@ -40,6 +40,9 @@ let HttpServer = class HttpServer {
         this.log = logger.for(this);
         this.router = new http_router_1.Router(this.options);
         this.cookieExpires = new Date(new Date().getTime() + this.identopts.cookieMaxAge * 1000);
+        this.cookieDomain = this.identopts.cookieDomain === 'auto' && this.identopts.domain
+            ? '.' + helpers_1.autoDomain(this.identopts.domain)
+            : undefined;
     }
     /**
      * Start listening
@@ -47,7 +50,7 @@ let HttpServer = class HttpServer {
     start() {
         const { host, port } = this.options;
         this.log.info('Starting HTTP transport %s:%s', host, port);
-        this.log.info(this.identopts, 'Indentify options');
+        this.log.info({ finalCookieDomain: this.cookieDomain, ...this.identopts }, 'Indentify options');
         this.httpServer = http_1.createServer((req, res) => {
             this.handle(req, res);
         });
@@ -144,7 +147,7 @@ let HttpServer = class HttpServer {
             httpOnly: true,
             expires: this.cookieExpires,
             path: this.identopts.cookiePath,
-            domain: this.identopts.cookieDomain
+            domain: this.cookieDomain
         });
         // Regular response headers
         helpers_1.applyHeaders(res, helpers_1.corsHeaders(routeOn.origin), helpers_1.noCacheHeaders(), helpers_1.cookieHeaders([userIdCookie]));

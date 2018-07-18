@@ -42,7 +42,7 @@ import {
   METHOD_STATUS,
   MethodRegRequest,
   EnrichersRequirements,
-} from 'rock-me-ts';
+} from '@rockstat/rock-me-ts';
 import { baseRedirect } from '@app/handlers';
 import { dotPropGetter, getvals } from '@app/helpers/getprop';
 

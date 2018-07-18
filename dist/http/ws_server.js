@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const typedi_1 = require("typedi");
 const WebSocket = require("ws");
-const rock_me_ts_1 = require("rock-me-ts");
+const rock_me_ts_1 = require("@rockstat/rock-me-ts");
 const Dispatcher_1 = require("@app/Dispatcher");
 const helpers_1 = require("@app/helpers");
 const url_1 = require("url");

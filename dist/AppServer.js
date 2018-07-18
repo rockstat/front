@@ -9,7 +9,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 require("reflect-metadata");
 const typedi_1 = require("typedi");
 const Dispatcher_1 = require("./Dispatcher");
-const rock_me_ts_1 = require("rock-me-ts");
+const rock_me_ts_1 = require("@rockstat/rock-me-ts");
 const http_1 = require("@app/http");
 let AppServer = class AppServer {
     setup() {

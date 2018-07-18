@@ -1,6 +1,6 @@
 import { Promise } from 'bluebird';
 import Container from 'typedi';
-import { Logger } from 'rock-me-ts';
+import { Logger } from '@rockstat/rock-me-ts';
 // import { printTree } from "./print";
 import { LevelChildrenStr } from './interfaces'
 

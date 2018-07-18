@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const typedi_1 = require("typedi");
 const fs_1 = require("fs");
 const constants_1 = require("@app/constants");
-const rock_me_ts_1 = require("rock-me-ts");
+const rock_me_ts_1 = require("@rockstat/rock-me-ts");
 class BrowserLib {
     constructor() {
         this.loaded = false;

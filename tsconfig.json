@@ -16,7 +16,7 @@
     "outDir": "./dist/",
     "typeRoots": [
       "node_modules/@types",
-      "node_modules/rock-me-ts/@types",
+      "node_modules/@rockstat/rock-me-ts/@types",
       "@types"
     ],
     "baseUrl": "./",

@@ -1,7 +1,7 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { Service, Inject, Container } from 'typedi';
 import * as FindMyWay from 'find-my-way';
-import { Logger, Meter } from 'rock-me-ts';
+import { Logger, Meter } from '@rockstat/rock-me-ts';
 import { epglue } from '@app/helpers';
 import {
   PATH_HTTP_404,
