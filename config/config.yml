@@ -57,10 +57,7 @@ rpc:
   listen_direct: true
 
 redis:
-  host: <%= env.REDIS_HOST || '127.0.0.1' %>
-  port: <%= env.REDIS_PORT || '6379' %>
-  db: <%= env.REDIS_DB || 2 %>
-  url:
+  dsn: <%= env.REDIS_DSN %>
 log:
   use: pino
   pino:

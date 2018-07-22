@@ -11,8 +11,8 @@
     keypather "^1.10.2"
 
 "@rockstat/rock-me-ts@^1.5.3":
-  version "1.5.3"
-  resolved "https://registry.yarnpkg.com/@rockstat/rock-me-ts/-/rock-me-ts-1.5.3.tgz#8d205dd9234b62fa76eaf2e719d249e541e7f6c1"
+  version "1.6.0"
+  resolved "https://registry.yarnpkg.com/@rockstat/rock-me-ts/-/rock-me-ts-1.6.0.tgz#d61486c55eb74cb73e41f768c14dbd33da425c2d"
   dependencies:
     bluebird "^3.5.1"
     cctz "^1.7.7"
@@ -987,8 +987,8 @@ pino-std-serializers@^2.0.0:
   resolved "https://registry.yarnpkg.com/pino-std-serializers/-/pino-std-serializers-2.1.0.tgz#01953dcaecd5f43b331ecf2e312a49c9fd64851c"
 
 pino@^4.16.1:
-  version "4.17.3"
-  resolved "https://registry.yarnpkg.com/pino/-/pino-4.17.3.tgz#3536ea36f6258356ba8891d18dbf1afed41fcf09"
+  version "4.17.5"
+  resolved "https://registry.yarnpkg.com/pino/-/pino-4.17.5.tgz#771e7b94acf09082c1063bc5a91edc59a5503dc4"
   dependencies:
     chalk "^2.4.1"
     fast-json-parse "^1.0.3"
@@ -1358,8 +1358,8 @@ ts-node@^6.0.3:
     yn "^2.0.0"
 
 tsc-watch@^1.0.17:
-  version "1.0.23"
-  resolved "https://registry.yarnpkg.com/tsc-watch/-/tsc-watch-1.0.23.tgz#ac4138bd5541e855de69bda50f1bf4e1607c2b20"
+  version "1.0.26"
+  resolved "https://registry.yarnpkg.com/tsc-watch/-/tsc-watch-1.0.26.tgz#a9130775b018b46b03116840debaac6dd40fbc56"
   dependencies:
     chalk "^2.3.0"
     cross-spawn "^5.1.0"
