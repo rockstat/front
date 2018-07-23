@@ -1,0 +1,31 @@
+sudo: required
+dist: trusty
+
+env:
+  global:
+    - PROJECT_NAME=frontier
+    - IMAGE_NAME=$DOCKER_USERNAME/$PROJECT_NAME
+
+services:
+- docker
+
+script:
+- docker build -t $PROJECT_NAME .
+
+after_script:
+- docker images
+
+before_deploy:
+- docker tag $PROJECT_NAME $IMAGE_NAME
+- docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
+
+deploy:
+  provider: script
+  skip_cleanup: true
+  script: docker push "$IMAGE_NAME"
+  on:
+    branch: master
+
+# helpful links
+# https://medium.com/mobileforgood/patterns-for-continuous-integration-with-docker-on-travis-ci-71857fff14c5
+

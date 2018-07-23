@@ -14,10 +14,12 @@ ARG RELEASE=master
 COPY package.json .
 COPY yarn.lock .
 
-RUN yarn install --production
+#  --production
+RUN yarn install
 RUN yarn global add pino && yarn cache clean
 COPY . .
 RUN ln -nsf ../dist ./node_modules/@app
+RUN yarn build
 
 # Downloading latest JSLib
 ARG LIB_VERSION=HEAD

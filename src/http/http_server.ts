@@ -217,10 +217,10 @@ export class HttpServer {
       return send(res, STATUS_INT_ERROR);
     }
 
-    const validBody = body;
-    // Looking for uid
-    const uid = query[this.uidkey] || body && validBody && body[this.uidkey] || cookies[this.uidkey] || this.idGen.flake();
-
+    // Lookup uid
+    const uid = query[this.uidkey] || (body && body[this.uidkey]) || cookies[this.uidkey] || this.idGen.flake();
+    // Lookup project id
+    const projectId = routed.params.projectId || (body && body.projectId) || routeOn.query.projectId || 0;
     // transport data to store
     const { remoteAddress } = req.connection;
     const transportData: HTTPTransportData = {
@@ -267,7 +267,7 @@ export class HttpServer {
       channel: routed.channel,
       service: routed.params.service,
       name: routed.params.name,
-      projectId: routed.params.projectId,
+      projectId: projectId,
       uid: uid,
       td: transportData,
       data: Object.assign(body, routeOn.query)

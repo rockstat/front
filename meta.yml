@@ -1,3 +1,7 @@
 ---
 row: 0
 col: 3
+title: Frontier
+ports:
+- [10001, 8080]
+- [10002, 8082]
