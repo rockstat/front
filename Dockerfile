@@ -7,22 +7,26 @@ ENV LOG_LEVEL warn
 # RUN mkdir -p /app
 WORKDIR /app
 
-#cachebust
+# Cachebuster
 ARG RELEASE=master
+ENV NODE_ENV production
 
 COPY package.json .
 COPY yarn.lock .
 
-#  --production
-RUN yarn install
+# RUN yarn install
+RUN yarn install --production
 RUN yarn global add pino && yarn cache clean
 COPY . .
 RUN ln -nsf ../dist ./node_modules/@app
-RUN yarn build
-ENV NODE_ENV production
+
+# For container build
+# RUN yarn build
+# ENV NODE_ENV production
+
 # Downloading latest JSLib
-ARG LIB_VERSION=HEAD
-#ENV LIB_URL https://raw.githubusercontent.com/rockstat/jslib/$LIB_VERSION/dist/lib.js
+# ARG LIB_VERSION=HEAD
+# ENV LIB_URL https://raw.githubusercontent.com/rockstat/jslib/$LIB_VERSION/dist/lib.js
 ENV LIB_URL https://cdn.rstat.org/dist/dev/lib-latest.js
 RUN curl $LIB_URL > web-sdk-dist/lib.js
 
