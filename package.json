@@ -1,6 +1,6 @@
 {
   "name": "rst-frontier",
-  "version": "3.1.1",
+  "version": "3.1.2",
   "description": "Rockstat platform server endpoint frontier",
   "main": "dist/start.js",
   "scripts": {
@@ -12,7 +12,8 @@
     "lint": "tslint -c tslint.json -t stylish -p ./tsconfig.json",
     "security-check": "nsp check",
     "watch": "tsc -w",
-    "tun": "lt --port 10001 -s rstdev"
+    "tun": "lt --port 10001 -s rstdev",
+    "patch": "yarn version --loose-semver --new-version patch"
   },
   "repository": {
     "type": "git",
