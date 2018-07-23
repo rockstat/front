@@ -1,0 +1,30 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CONTENT_TYPE_HTML = 'text/html';
+exports.CONTENT_TYPE_PLAIN = 'text/plain';
+exports.CONTENT_TYPE_GIF = 'image/gif';
+exports.CONTENT_TYPE_URLENCODED = 'application/x-www-form-urlencoded';
+exports.CONTENT_TYPE_JSON = 'application/json; charset=utf-8';
+exports.CONTENT_TYPE_JS = 'text/javascript';
+exports.HContentType = 'Content-Type';
+exports.HLocation = 'Location';
+exports.HResponseTime = 'X-Response-Time';
+exports.HMyName = 'X-My-Name';
+exports.ResponseGif = 'GIF';
+exports.ResponseRedir = 'REDIR';
+exports.ResponseJson = 'JSON';
+exports.ResponseAuto = 'AUTO';
+exports.STATUS_OK = 200;
+exports.STATUS_OK_NO_CONTENT = 204;
+exports.STATUS_BAD_REQUEST = 400;
+exports.STATUS_NOT_FOUND = 404;
+exports.STATUS_TEAPOT = 418;
+exports.STATUS_INT_ERROR = 500;
+exports.STATUS_TEMP_REDIR = 302;
+exports.METHOD_OPTIONS = 'OPTIONS';
+exports.METHOD_POST = 'POST';
+exports.METHOD_GET = 'GET';
+exports.CONTENT_BAD_REQUEST = '{"error":"Bad request"}';
+// For testing purpose
+exports.AbsentRedir = 'https://alcolytics.ru?utm_source=AbsenRedir';
+//# sourceMappingURL=http.js.map
