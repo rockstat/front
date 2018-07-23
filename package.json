@@ -13,7 +13,7 @@
     "security-check": "nsp check",
     "watch": "tsc -w",
     "tun": "lt --port 10001 -s rstdev",
-    "build:push": "git add dist/*",
+    "build:push": "git add dist/* && git add package.json && git commit -m build && git push origin HEAD",
     "patch": "yarn version --loose-semver --new-version patch"
   },
   "repository": {
