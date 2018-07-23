@@ -2,7 +2,6 @@ FROM node:9
 
 # Env vars
 ENV TZ UTC
-ENV NODE_ENV production
 ENV PORT 8080
 ENV LOG_LEVEL warn
 # RUN mkdir -p /app
@@ -20,7 +19,7 @@ RUN yarn global add pino && yarn cache clean
 COPY . .
 RUN ln -nsf ../dist ./node_modules/@app
 RUN yarn build
-
+ENV NODE_ENV production
 # Downloading latest JSLib
 ARG LIB_VERSION=HEAD
 #ENV LIB_URL https://raw.githubusercontent.com/rockstat/jslib/$LIB_VERSION/dist/lib.js
