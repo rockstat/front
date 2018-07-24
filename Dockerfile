@@ -9,20 +9,20 @@ WORKDIR /app
 
 # Cachebuster
 ARG RELEASE=master
-ENV NODE_ENV production
+# ENV NODE_ENV production
 
 COPY package.json .
 COPY yarn.lock .
 
-# RUN yarn install
-RUN yarn install --production
+RUN yarn install
+# RUN yarn install --production
 RUN yarn global add pino && yarn cache clean
 COPY . .
 RUN ln -nsf ../dist ./node_modules/@app
 
 # For container build
-# RUN yarn build
-# ENV NODE_ENV production
+RUN yarn build
+ENV NODE_ENV production
 
 # Downloading latest JSLib
 # ARG LIB_VERSION=HEAD

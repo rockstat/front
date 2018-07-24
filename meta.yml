@@ -5,3 +5,4 @@ title: Frontier
 ports:
 - [10001, 8080]
 - [10002, 8082]
+persistent: true

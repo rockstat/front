@@ -6,7 +6,7 @@
   "scripts": {
     "start": "ts-node -r 'tsconfig-paths/register' -r 'source-map-support/register' ./src/start.ts | pino",
     "dev": "ts-node-dev -r 'tsconfig-paths/register' -r 'source-map-support/register' ./src/start.ts | pino",
-    "build": "rimraf dist && tsc -p tsconfig.json && yarn run patch",
+    "build": "rimraf dist && tsc -p tsconfig.json",
     "prod": "node dist/start",
     "clean": "rimraf dist",
     "lint": "tslint -c tslint.json -t stylish -p ./tsconfig.json",
@@ -14,8 +14,10 @@
     "watch": "tsc -w",
     "tun": "lt --port 10001 -s rstdev",
     "build:push": "git add dist/* && git add package.json && git commit -m build && git push origin HEAD",
+    "build:patch": "yarn run patch && git add package.json",
     "patch": "yarn version --loose-semver --new-version patch"
   },
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/rockstat/frontier"
@@ -29,6 +31,8 @@
     "@types/node": "^9.6.18",
     "@types/qs": "^6.5.1",
     "@types/ws": "^5.1.1",
+    "@types/pino": "^4.16.0",
+    "@types/statsd-client": "^0.4.0",
     "localtunnel": "^1.9.0",
     "rimraf": "^2.6.2",
     "ts-node": "^6.0.3",
