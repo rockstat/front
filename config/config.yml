@@ -13,13 +13,8 @@ http:
   channels:
     # service: channel
     # channels details look at src/constants/common.ts
-    wh: wh
-    webhook: wh
     redir: redir
-    redirect: redir
     pixel: pixel
-    gif: pixel
-    img: pixel
     #pseudo-services for web-sdk
     track: track
   routes:
