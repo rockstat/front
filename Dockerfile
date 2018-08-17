@@ -28,7 +28,7 @@ ENV NODE_ENV production
 # ARG LIB_VERSION=HEAD
 # ENV LIB_URL https://raw.githubusercontent.com/rockstat/jslib/$LIB_VERSION/dist/lib.js
 ENV LIB_URL https://cdn.rstat.org/dist/dev/lib-latest.js
-RUN curl $LIB_URL > web-sdk-dist/lib.js
+RUN curl -s $LIB_URL > web-sdk-dist/lib.js
 
 EXPOSE 8080
 
