@@ -29,17 +29,17 @@
     "@types/cookie": "^0.3.1",
     "@types/micro": "^7.3.1",
     "@types/node": "^9.6.18",
-    "@types/qs": "^6.5.1",
-    "@types/ws": "^5.1.1",
     "@types/pino": "^4.16.0",
+    "@types/qs": "^6.5.1",
     "@types/statsd-client": "^0.4.0",
+    "@types/ws": "^6.0.0",
     "localtunnel": "^1.9.0",
     "rimraf": "^2.6.2",
-    "ts-node": "^6.0.3",
+    "ts-node": "^7.0.1",
     "ts-node-dev": "^1.0.0-pre.21",
     "tsc-watch": "^1.0.17",
     "tsconfig-paths": "^3.3.2",
-    "typescript": "^2.7.2"
+    "typescript": "^3.0.1"
   },
   "dependencies": {
     "@rockstat/rock-me-ts": "^1.5.3",
@@ -56,6 +56,6 @@
     "rpc-websockets": "^4.0.2",
     "source-map-support": "^0.5.5",
     "typedi": "^0.8.0",
-    "ws": "^5.2.0"
+    "ws": "^6.0.0"
   }
 }
