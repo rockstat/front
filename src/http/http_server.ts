@@ -225,7 +225,8 @@ export class HttpServer {
     const { remoteAddress } = req.connection;
     const transportData: HTTPTransportData = {
       ip: f(realIp) || remoteAddress || '0.0.0.0',
-      ua: f(userAgent) || 'Absent',
+      ua: f(userAgent) || '',
+      ref: f(referer)
     };
     // Generating fingerprint
     transportData.fpid = this.idGen.xxhash(`${transportData.ip}:${transportData.ua}`);
