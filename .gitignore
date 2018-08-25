@@ -7,3 +7,4 @@
 /web-sdk-dist
 /.env*
 TextApp*
+/build
