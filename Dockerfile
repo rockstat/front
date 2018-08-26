@@ -32,4 +32,4 @@ RUN curl -s $LIB_URL > web-sdk-dist/lib.js
 
 EXPOSE 8080
 
-CMD [ "node", "dist/start.js" ]
+CMD [ "yarn", "start:prod"]
