@@ -3,7 +3,7 @@ dist: trusty
 
 env:
   global:
-    - PROJECT_NAME=frontier
+    - PROJECT_NAME=front
     - ORG=rockstat
     - IMAGE_NAME=$ORG/$PROJECT_NAME
 
