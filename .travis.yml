@@ -4,7 +4,8 @@ dist: trusty
 env:
   global:
     - PROJECT_NAME=frontier
-    - IMAGE_NAME=$DOCKER_USERNAME/$PROJECT_NAME
+    - ORG=rockstat
+    - IMAGE_NAME=$ORG/$PROJECT_NAME
 
 services:
 - docker
