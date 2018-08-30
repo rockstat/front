@@ -189,10 +189,10 @@ export class Dispatcher {
 
   async emit(key: string, msg: BaseIncomingMessage): Promise<any> {
 
-    this.log.debug(` -> ${key}`);
-
     msg.id = this.idGen.flake();
     msg.time = Number(new Date());
+
+    this.log.debug(` -> ${key} [${msg.id}]`);
 
     // ### Phase 1: enriching
     const enrichers = this.enrichBus.publish(key, msg);
@@ -200,11 +200,14 @@ export class Dispatcher {
     if (enrichments.length && msg.data) {
       Object.assign(msg.data, ...enrichments);
     }
+
     // ### Phase 2: deliver to listeners
     BBPromise.all(this.listenBus.publish(key, msg)).then(results => { });
 
     // ### Phase 3: handling if configuring
     const handlers = this.handleBus.publish(key, msg);
+
+    // returning dispatch result
     return await handlers[handlers.length - 1];
   }
 }
