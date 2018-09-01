@@ -318,7 +318,7 @@ export class HttpServer {
     } catch (error) {
       this.log.warn(error);
       return {
-        error: 'Internal error. Smth wrong.',
+        errorMessage: 'Internal error. Smth wrong.',
         errorCode: STATUS_INT_ERROR
       }
     }
