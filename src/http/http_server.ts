@@ -286,7 +286,7 @@ export class HttpServer {
 
     if (dispatched.error) {
       statusCode = dispatched.errorCode || STATUS_INT_ERROR;
-      response = dispatched.error;
+      response = dispatched;
     } else if (dispatched.location) {
       statusCode = STATUS_TEMP_REDIR;
       res.setHeader(HLocation, dispatched.location);
