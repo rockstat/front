@@ -36,7 +36,6 @@
     "@types/ws": "^6.0.0",
     "localtunnel": "^1.9.0",
     "rimraf": "^2.6.2",
-    "semantic-release-cli": "^4.0.7",
     "ts-node": "^7.0.1",
     "ts-node-dev": "^1.0.0-pre.21",
     "tsc-watch": "^1.0.17",
@@ -44,7 +43,7 @@
     "typescript": "^3.0.1"
   },
   "dependencies": {
-    "@rockstat/rock-me-ts": "^1.6.1",
+    "@rockstat/rock-me-ts": "^1",
     "ajv": "^6.4.0",
     "bluebird": "^3.5.1",
     "cookie": "^0.3.1",

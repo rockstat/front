@@ -1,35 +1,29 @@
-FROM node:9
+FROM node:10-alpine
 
-# Env vars
 ENV TZ UTC
 ENV PORT 8080
 ENV LOG_LEVEL warn
-# RUN mkdir -p /app
-WORKDIR /app
+ENV LIB_URL https://cdn.rstat.org/dist/dev/lib-latest.js
 
-# Cachebuster
-ARG RELEASE=master
-# ENV NODE_ENV production
+RUN apk add python --no-cache make build-base gcc git curl
+
+WORKDIR /app
 
 COPY package.json .
 COPY yarn.lock .
 
-RUN yarn install
-# RUN yarn install --production
-RUN yarn global add pino && yarn cache clean
+RUN yarn install \
+  && yarn cache clean
+
 COPY . .
-RUN ln -nsf ../dist ./node_modules/@app
+RUN ln -nsf ../dist ./node_modules/@app \
+  && yarn build
 
 # For container build
 RUN yarn build
-ENV NODE_ENV production
-
-# Downloading latest JSLib
-# ARG LIB_VERSION=HEAD
-# ENV LIB_URL https://raw.githubusercontent.com/rockstat/jslib/$LIB_VERSION/dist/lib.js
-ENV LIB_URL https://cdn.rstat.org/dist/dev/lib-latest.js
 RUN curl -s $LIB_URL > web-sdk-dist/lib.js
 
+ENV NODE_ENV production
 EXPOSE 8080
 
 CMD [ "yarn", "start:prod"]
