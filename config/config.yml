@@ -15,8 +15,10 @@ http:
     # channels details look at src/constants/common.ts
     redir: redir
     pixel: pixel
+    gif: pixel
     #pseudo-services for web-sdk
     track: track
+    away: track
   routes:
     # Можно добавалять свои кастомные роуты (конфликтуют)
     # - ["get", "/wh/:projectId/:service/:name"]

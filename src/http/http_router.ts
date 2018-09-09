@@ -13,7 +13,9 @@ import {
   CHANNEL_HTTP_PIXEL,
   CHANNEL_HTTP,
   CHANNEL_HTTP_REDIR,
-  OTHER
+  OTHER,
+  IN_PIXEL,
+  CHANNEL_GENERIC
 } from '@app/constants';
 import {
   HTTPRouteParams,
@@ -124,37 +126,6 @@ export class Router {
       }
     };
 
-    // const pixelHandler: RequestHandler = (payload) => {
-    //   this.metrics.tick('request.pixel');
-    //   return {
-    //     params: payload.params,
-    //     key: epglue(IN_GENERIC, payload.params.service, payload.params.name),
-    //     channel: CHANNEL_HTTP_PIXEL,
-    //   };
-    // };
-
-    // /**
-    //  * example: http://127.0.0.1:10001/redir/111/a/b?to=https%3A%2F%2Fya.ru
-    //  */
-    // const redirHandler: RequestHandler = (payload) => {
-    //   this.metrics.tick('request.redir');
-    //   return {
-    //     params: payload.params,
-    //     key: epglue(IN_REDIR, payload.params.service, payload.params.name),
-    //     channel: CHANNEL_HTTP_REDIR,
-    //   };
-    // };
-
-    // const webhookHandler: RequestHandler = (payload) => {
-    //   this.metrics.tick('request.wh');
-    //   return {
-    //     params: payload.params,
-    //     key: epglue(IN_GENERIC, payload.params.service, payload.params.name),
-    //     channel: CHANNEL_HTTP_WEBHOOK,
-    //   };
-    // };
-
-
     const libjsHandler: RequestHandler = (payload) => {
       this.metrics.tick('request.jslib');
       return {
@@ -167,16 +138,10 @@ export class Router {
     const genericHandler: RequestHandler = (payload) => {
       this.metrics.tick('request.generic');
       const { service, name } = payload.params;
-      const msgChannel = this.serviceMap[service] !== undefined
-        ? this.serviceMap[service]
-        : CHANNEL_HTTP
-      const routeChannel = msgChannel === CHANNEL_HTTP_REDIR
-        ? IN_REDIR
-        : IN_GENERIC
       return {
         params: payload.params,
-        key: epglue(routeChannel, service, name),
-        channel: msgChannel,
+        key: epglue(IN_GENERIC, service, name),
+        channel: CHANNEL_GENERIC,
       };
     };
 

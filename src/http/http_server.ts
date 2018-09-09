@@ -5,7 +5,7 @@ import { parse as urlParse } from 'url';
 import * as assert from 'assert';
 import * as cookie from 'cookie';
 import * as qs from 'qs';
-import { Meter, Logger, TheIds, AppConfig } from '@rockstat/rock-me-ts';
+import { Meter, Logger, TheIds, AppConfig, DispatchResult, RESP_META_KEY, BandResponseMeta, RESP_ERROR, RESP_REDIRECT, RESP_PIXEL, error } from '@rockstat/rock-me-ts';
 import { BrowserLib } from '@app/BrowserLib';
 import { Dispatcher } from '@app/Dispatcher';
 import { Router } from './http_router'
@@ -34,7 +34,9 @@ import {
   PATH_HTTP_TEAPOT,
   PATH_HTTP_404,
   SERVICE_TRACK,
-  CHANNEL_HTTP_WEBHOOK
+  CHANNEL_HTTP_WEBHOOK,
+  STATUS_DESCRIPTIONS,
+  STATUS_UNKNOWN
 } from '@app/constants';
 import {
   computeOrigin,
@@ -59,9 +61,8 @@ import {
   RouteOn,
   BaseIncomingMessage,
   HTTPTransportData,
-  DispatchResult,
+  RouteConfig,
 } from '@app/types';
-
 
 const f = (i?: string | string[]) => Array.isArray(i) ? i[0] : i;
 const parseOpts = { limit: '50kb' };
@@ -83,6 +84,8 @@ export class HttpServer {
   uidkey: string;
   cookieExpires: Date;
   cookieDomain?: string;
+  responders: { [k: string]: any };
+  routeOpts: RouteConfig;
 
   constructor() {
     const config = Container.get<AppConfig<FrontierConfig>>(AppConfig);
@@ -102,6 +105,7 @@ export class HttpServer {
     this.cookieDomain = this.identopts.cookieDomain === 'auto' && this.identopts.domain
       ? '.' + autoDomain(this.identopts.domain)
       : undefined;
+
   }
 
   /**
@@ -198,7 +202,7 @@ export class HttpServer {
     if (routed.key === PATH_HTTP_TEAPOT) {
       res.setHeader(HMyName, this.title);
       res.setHeader(HContentType, CONTENT_TYPE_PLAIN);
-      return send(res, STATUS_TEAPOT, "I'm a teapot");
+      return send(res, STATUS_TEAPOT, STATUS_DESCRIPTIONS[STATUS_TEAPOT]);
     }
 
     if (routed.key === PATH_HTTP_404) {
@@ -207,12 +211,12 @@ export class HttpServer {
     }
 
     // Handling POST if routed right way!
-    let [error, body] = (routeOn.method === METHOD_POST)
+    let [err, body] = (routeOn.method === METHOD_POST)
       ? await this.parseBody(routed.contentType || routeOn.contentType, req)
       : [undefined, {}];
     // Bad body
-    if (error) {
-      this.log.error(error);
+    if (err) {
+      this.log.error(err);
       res.setHeader(HContentType, CONTENT_TYPE_PLAIN);
       return send(res, STATUS_INT_ERROR);
     }
@@ -282,22 +286,31 @@ export class HttpServer {
     // ####################################################
 
     let statusCode = 200;
-    let response;
+    let response:any = null;
 
-    if (dispatched.error) {
-      statusCode = dispatched.errorCode || STATUS_INT_ERROR;
-      response = dispatched;
-    } else if (dispatched.location) {
-      statusCode = STATUS_TEMP_REDIR;
-      res.setHeader(HLocation, dispatched.location);
-    } else {
-      response = dispatched;
-    }
+    const meta: BandResponseMeta | undefined = dispatched && dispatched[RESP_META_KEY];
 
+    if (meta && meta.type === RESP_ERROR) {
+      // respond with structured error
+      statusCode = meta.httpCode || STATUS_INT_ERROR;
+      response = { errorMessage: meta.errorMessage || STATUS_DESCRIPTIONS[statusCode] || STATUS_UNKNOWN }
 
-    if (routed.channel === CHANNEL_HTTP_PIXEL) {
+    } else if (meta && meta.type === RESP_REDIRECT && meta.location) {
+      // respond with redirect
+      statusCode = meta.httpCode || STATUS_TEMP_REDIR;
+      res.setHeader(HLocation, meta.location);
+
+    } else if (meta && meta.type === RESP_REDIRECT && !meta.location) {
+      // Bad request / respond with structured error
+      response = error(STATUS_DESCRIPTIONS[STATUS_BAD_REQUEST], STATUS_BAD_REQUEST);
+
+    } else if (meta && meta.type === RESP_PIXEL) {
+      // respond with pixel
       res.setHeader(HContentType, CONTENT_TYPE_GIF);
       response = emptyGif;
+
+    } else {
+      response = dispatched;
     }
 
     const reqTime = requestTime()
@@ -307,6 +320,7 @@ export class HttpServer {
 
   }
 
+
   /**
    * Start message handling
    * @param key internal routing key
@@ -315,12 +329,9 @@ export class HttpServer {
   private async dispatch(key: string, msg: BaseIncomingMessage): Promise<DispatchResult> {
     try {
       return await this.dispatcher.emit(key, msg);
-    } catch (error) {
-      this.log.warn(error);
-      return {
-        errorMessage: 'Internal error. Smth wrong.',
-        errorCode: STATUS_INT_ERROR
-      }
+    } catch (err) {
+      this.log.warn(err);
+      return error(STATUS_DESCRIPTIONS[STATUS_INT_ERROR], STATUS_INT_ERROR)
     }
   }
 

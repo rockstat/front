@@ -8,9 +8,10 @@ import {
   BaseIncomingMessage,
   BusMsgHdr,
   FrontierConfig,
-  DispatchResult,
   Dictionary,
   IncomingMessage,
+  HttpConfig,
+  HTTPServiceMapParams,
 } from '@app/types';
 import {
   TreeBus,
@@ -25,6 +26,7 @@ import {
   IN_REDIR,
   STATUS_INT_ERROR,
   ENRICH,
+  IN_PIXEL,
 } from '@app/constants';
 import {
   epglue
@@ -42,8 +44,9 @@ import {
   METHOD_STATUS,
   MethodRegRequest,
   EnrichersRequirements,
+  DispatchResult
 } from '@rockstat/rock-me-ts';
-import { baseRedirect } from '@app/handlers';
+import { baseRedirect, basePixel } from '@app/handlers';
 import { dotPropGetter, getvals } from '@app/helpers/getprop';
 
 @Service()
@@ -57,6 +60,7 @@ export class Dispatcher {
   appConfig: AppConfig<FrontierConfig>;
   idGen: TheIds;
   status: AppStatus;
+  servicesMap: HTTPServiceMapParams
   rpc: RPCAgnostic;
   rpcHandlers: { [k: string]: [string, string] } = {};
   rpcEnrichers: { [k: string]: Array<string> } = {};
@@ -69,6 +73,7 @@ export class Dispatcher {
     this.status = new AppStatus();
     this.log.info('Starting');
     this.appConfig = Container.get<AppConfig<FrontierConfig>>(AppConfig);
+    this.servicesMap = this.appConfig.http.channels;
     this.idGen = Container.get(TheIds);
   }
 
@@ -123,14 +128,16 @@ export class Dispatcher {
         this.handleBus.replace(updateHdrs, this.rpcGateway)
       }
       return this.status.get({});
-    });;
-    // Default redirect handler
+    });
     this.log.info('register handler here');
-    this.handleBus.subscribe(IN_REDIR, baseRedirect);
+    // default redirect handler
+    baseRedirect(this.servicesMap, this);
+    // default pixel handler
+    basePixel(this.servicesMap, this);
     // notify band director
     setInterval(() => {
       this.rpc.notify(SERVICE_DIRECTOR, RPC_IAMALIVE, { name: SERVICE_FRONTIER })
-    }, 5*1000)
+    }, 5 * 1000)
     // Registering remote listeners notification
     this.listenBus.subscribe('*', async (key: string, msg: IncomingMessage) => {
       try {
@@ -192,7 +199,7 @@ export class Dispatcher {
     msg.id = this.idGen.flake();
     msg.time = Number(new Date());
 
-    this.log.debug(` -> ${key} [${msg.id}]`);
+    this.log.debug(` ---> ${key} [${msg.id}]`);
 
     // ### Phase 1: enriching
     const enrichers = this.enrichBus.publish(key, msg);
@@ -206,8 +213,8 @@ export class Dispatcher {
 
     // ### Phase 3: handling if configuring
     const handlers = this.handleBus.publish(key, msg);
-
-    // returning dispatch result
-    return await handlers[handlers.length - 1];
+    const result = await handlers[handlers.length - 1];
+    this.log.debug(` <--- ${key}`, msg);
+    return result
   }
 }

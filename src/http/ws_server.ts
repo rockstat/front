@@ -4,7 +4,7 @@ import { readFileSync, stat } from 'fs';
 import { Socket } from 'net';
 import { Service, Inject, Container } from 'typedi';
 import * as WebSocket from 'ws';
-import { Logger, TheIds, AppConfig } from "@rockstat/rock-me-ts";
+import { Logger, TheIds, AppConfig, DispatchResult, error } from "@rockstat/rock-me-ts";
 import { Dispatcher } from '@app/Dispatcher';
 import {
   WsConfig,
@@ -14,7 +14,6 @@ import {
   FrontierConfig,
   IncomingMsgData,
   AnyStruct,
-  DispatchResult,
   WsHTTPParams,
 } from '@app/types';
 import {
@@ -110,12 +109,9 @@ export class WebSocketServer {
   private async dispatch(key: string, msg: BaseIncomingMessage): Promise<DispatchResult> {
     try {
       return await this.dispatcher.emit(key, msg);
-    } catch (error) {
-      this.log.warn(error);
-      return {
-        error: 'Internal error. Smth wrong.',
-        errorCode: STATUS_INT_ERROR
-      }
+    } catch (err) {
+      this.log.warn(err);
+      return error('Error while dispatching request')
     }
   }
 

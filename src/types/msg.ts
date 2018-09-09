@@ -45,14 +45,6 @@ export interface IncomingMessageProps {
 export type BaseIncomingMessage = IncomingMessageProps & Partial<MessageIdTime>;
 export type IncomingMessage = IncomingMessageProps & MessageIdTime;
 
-export interface DispatchResultFields {
-  location?: string;
-  error?: string;
-  errorCode?: number;
-}
-
-export type DispatchResult = { [k: string]: any } & DispatchResultFields;
-
 export interface ClientHttpMessage extends BaseIncomingMessage {
   uid: string;
   ip: string;
