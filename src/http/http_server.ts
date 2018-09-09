@@ -61,7 +61,6 @@ import {
   RouteOn,
   BaseIncomingMessage,
   HTTPTransportData,
-  RouteConfig,
 } from '@app/types';
 
 const f = (i?: string | string[]) => Array.isArray(i) ? i[0] : i;
@@ -85,7 +84,6 @@ export class HttpServer {
   cookieExpires: Date;
   cookieDomain?: string;
   responders: { [k: string]: any };
-  routeOpts: RouteConfig;
 
   constructor() {
     const config = Container.get<AppConfig<FrontierConfig>>(AppConfig);
