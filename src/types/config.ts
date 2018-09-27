@@ -79,6 +79,7 @@ export type ClientConfig = {
 
 export type FrontierConfig = {
   name: string;
+  version: string;
   env: Envs;
   http: HttpConfig;
   websocket: WsConfig;
