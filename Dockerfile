@@ -1,6 +1,8 @@
 FROM rockstat/band-base-ts:latest
 
-LABEL band.title="Front"
+LABEL band.service.version="3.2.0"
+LABEL band.service.title="Front"
+LABEL band.service.def_position="3x0"
 
 ENV PORT 8080
 ENV LIB_URL https://cdn.rstat.org/dist/dev/lib-latest.js
