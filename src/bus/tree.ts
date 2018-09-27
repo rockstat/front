@@ -1,7 +1,6 @@
 
 import Container from 'typedi';
 import { Logger } from '@rockstat/rock-me-ts';
-// import { printTree } from './print'
 import { LevelChildrenAsync, BusMsgHdr, BusMsgHdrResult } from './interfaces'
 
 export class TreeBus {
@@ -54,7 +53,7 @@ export class TreeBus {
       }
       return;
     }
-
+    this.log.info(`Registered handler for ${key}, ${handler.prototype}`)
     const path = key === '*' ? [] : key.split('.');
     let node = this.tree;
     for (const name of path) {

@@ -1,11 +1,11 @@
-import { STATUS_OK, STATUS_TEMP_REDIR, STATUS_BAD_REQUEST, STATUS_INT_ERROR } from "@app/constants";
+import { STATUS_OK, STATUS_TEMP_REDIR, STATUS_BAD_REQUEST, STATUS_INT_ERROR } from "@rockstat/rock-me-ts";
 
 // ###### HTTP messages part
 
 
 export interface HTTPTransportData {
   ip: string;
-  ua: string;
+  ua?: string;
   // Fingerprint based on ip address and browser user-agent
   fpid?: string;
   // http referer
@@ -42,8 +42,6 @@ export interface IncomingMessageProps {
   data: IncomingMsgData;
 }
 
-export type BaseIncomingMessage = IncomingMessageProps & Partial<MessageIdTime>;
-export type IncomingMessage = IncomingMessageProps & MessageIdTime;
 
 export interface ClientHttpMessage extends BaseIncomingMessage {
   uid: string;
@@ -55,6 +53,10 @@ export interface WebHookMessage extends BaseIncomingMessage {
   service: string;
   name: string;
 }
+
+
+export type BaseIncomingMessage = IncomingMessageProps & Partial<MessageIdTime>;
+export type IncomingMessage = IncomingMessageProps & MessageIdTime;
 
 
 // ###### BUS

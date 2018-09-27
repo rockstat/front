@@ -4,3 +4,4 @@ export * from './stringTemplate';
 export * from './validation';
 export * from './auto-domain';
 export * from './remove-www';
+export * from './file-loader';

@@ -1,32 +1,29 @@
 sudo: required
 dist: trusty
-
+branches:
+  only:
+  - master
+  - dev
 env:
   global:
-    - PROJECT_NAME=front
-    - ORG=rockstat
-    - IMAGE_NAME=$ORG/$PROJECT_NAME
-
+  - PROJECT_NAME=front
+  - ORG=rockstat
+  - IMAGE_NAME=$ORG/$PROJECT_NAME
+  - TAG="$( [ $TRAVIS_BRANCH == 'master' ] && echo latest || echo $TRAVIS_BRANCH )"
+  - secure: bB5Y+bokrlZZ33JcVHEBWER19qRT4rDIDdBaInax41Gt+XtHo4lvj+abj5sv92W36XjZs8O0sF4wa0oSKEniBeEjBAAjtPD6dSet+GHzHlledUH/VWA3+nN/mKv0ImeiWTHmC2tPYhxkeRzeREGeCwZMsxk3NSSkLAJh11Z+ikgaJgFq7oB8bUM66RgaYvYlCu22Sx7KR9zdjlrNJWkEsHVYy45KC+pRzi2hzAOKyhlT7mL1hEw8gxkBUayPw1SG10y0ByxdA3T9368oi3oJhluXALI/tRCYPNZRh4uGKtbGfu0W+qx+bbtLHKE5v9itYeRDuoP60w8heMs7MNqyMWMrP1lZy3fojTHyudKI2HKC8NC1/3cv+cYgHNGUITBRRcCnxh826nGdvVkU5IJd8U4PemOdqm/XsyYRsZAXcV3sxD84hJgRPcLJqqCYOyie0BQh8U8vb3MqQoQJifMadDHoFqMBNGihpZECH6FZcEynSsXNo/vJU3DLh+ChAwWlm9xhm0uhD/yzFSnH9+cAUNbX6wM3xLUZeXFXcbJ7NffP80tSIW9wWNJwNLedtzgg0vOpdgCm9lIeu3ZN91MYZxnu/6BdJA4F7zgF7YUkaJXB/8H7RaPrqdhTXfLgIlPhF+CzL3M5sxR/y58DD5VgO8Yuj+Me9JpqRHBzjpFfa5I=
 services:
 - docker
-
 script:
-- docker build -t $PROJECT_NAME .
-
+- cat Dockerfile | sed  "s/\:latest/\:$TAG/g" > Dockerfile.tag
+- docker build -t $PROJECT_NAME -f Dockerfile.tag .
 after_script:
 - docker images
-
 before_deploy:
-- docker tag $PROJECT_NAME $IMAGE_NAME
+- docker tag "$PROJECT_NAME $IMAGE_NAME:$TAG"
 - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
-
 deploy:
   provider: script
   skip_cleanup: true
-  script: docker push "$IMAGE_NAME"
+  script: docker push "$IMAGE_NAME:$TAG"
   on:
-    branch: master
-
-# helpful links
-# https://medium.com/mobileforgood/patterns-for-continuous-integration-with-docker-on-travis-ci-71857fff14c5
-
+    all_branches: true

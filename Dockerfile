@@ -1,29 +1,26 @@
-FROM node:10-alpine
+FROM rockstat/band-base-ts:latest
 
-ENV TZ UTC
+LABEL band.title="Front"
+
 ENV PORT 8080
-ENV LOG_LEVEL warn
 ENV LIB_URL https://cdn.rstat.org/dist/dev/lib-latest.js
-
-RUN apk add python --no-cache make build-base gcc git curl
 
 WORKDIR /app
 
 COPY package.json .
 COPY yarn.lock .
 
-RUN yarn install \
+RUN yarn link "@rockstat/rock-me-ts" \
+  && yarn install \
   && yarn cache clean
 
 COPY . .
-RUN ln -nsf ../dist ./node_modules/@app \
-  && yarn build
-
-# For container build
-RUN yarn build
-RUN curl -s $LIB_URL > web-sdk-dist/lib.js
-
 ENV NODE_ENV production
+
 EXPOSE 8080
+
+RUN ln -nsf ../dist ./node_modules/@app \
+  && yarn build \
+  && curl -s $LIB_URL > static/lib.js
 
 CMD [ "yarn", "start:prod"]

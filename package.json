@@ -1,12 +1,12 @@
 {
-  "name": "rst-frontier",
+  "name": "@rockstat/front",
   "version": "3.2.0",
   "description": "Rockstat platform server endpoint frontier",
   "main": "dist/start.js",
   "scripts": {
     "start": "ts-node -r 'tsconfig-paths/register'  ./src/start.ts | pino",
     "start:prod": "node -r 'source-map-support/register' dist/start",
-    "dev": "ts-node-dev -r 'tsconfig-paths/register' -r 'source-map-support/register' ./src/start.ts | pino",
+    "start:dev": "ts-node-dev -r 'tsconfig-paths/register' -r 'source-map-support/register' ./src/start.ts | pino",
     "build": "rimraf dist && tsc -p tsconfig.json",
     "clean": "rimraf dist",
     "lint": "tslint -c tslint.json -t stylish -p ./tsconfig.json",

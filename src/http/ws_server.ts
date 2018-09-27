@@ -4,7 +4,7 @@ import { readFileSync, stat } from 'fs';
 import { Socket } from 'net';
 import { Service, Inject, Container } from 'typedi';
 import * as WebSocket from 'ws';
-import { Logger, TheIds, AppConfig, DispatchResult, error } from "@rockstat/rock-me-ts";
+import { Logger, TheIds, AppConfig, response, BandResponse, STATUS_BAD_REQUEST, RESP_DATA } from "@rockstat/rock-me-ts";
 import { Dispatcher } from '@app/Dispatcher';
 import {
   WsConfig,
@@ -31,7 +31,6 @@ import {
   IN_GENERIC,
   CHANNEL_WEBSOCK,
   ERROR_NOT_OBJECT,
-  STATUS_INT_ERROR,
   ERROR_ABSENT_DATA,
 } from '@app/constants';
 
@@ -75,44 +74,36 @@ export class WebSocketServer {
 
   /**
    * Transform incoming data to Message struct
-   * @param data object with data keys
    */
-  private async handle(raw: WebSocket.Data, state: SockState) {
+  private async handle(raw: WebSocket.Data, state: SockState): Promise<BandResponse> {
     let [error, data] = this.parse(raw);
     if (error) {
       this.log.error(error);
-      return { error: error.message };
+      return response.error({ statusCode: STATUS_BAD_REQUEST });
     }
     if (!data) {
       this.log.error(ERROR_ABSENT_DATA);
-      return;
+      return response.error({ statusCode: STATUS_BAD_REQUEST, errorMessage: ERROR_ABSENT_DATA });
     }
     if (data.name === 'ping') {
-      return;
+      return response.data({ data: 'pong' });
     }
-    const service = data.service && typeof data.service === 'string' ? data.service : 'noservice';
-    const name = data.name && typeof data.name === 'string' ? data.name : 'noname';
 
-    this.log.debug(`msg '${name}' received`);
+    if (!data.service || !data.name) {
+      return response.error({ statusCode: STATUS_BAD_REQUEST, errorMessage: 'Request must contain "service" and "name' })
+    }
+
+    this.log.debug(`msg '${data.name}' received`);
     const msg: BaseIncomingMessage = {
-      key: epglue(IN_GENERIC, service, name),
-      name: name,
-      service: service,
+      key: epglue(IN_GENERIC, data.service, data.name),
+      name: String(data.name),
+      service: String(data.service),
       channel: CHANNEL_WEBSOCK,
       data: data,
       uid: state.uid
     }
 
-    return await this.dispatch(msg.key, msg);
-  }
-
-  private async dispatch(key: string, msg: BaseIncomingMessage): Promise<DispatchResult> {
-    try {
-      return await this.dispatcher.emit(key, msg);
-    } catch (err) {
-      this.log.warn(err);
-      return error('Error while dispatching request')
-    }
+    return await this.dispatcher.dispatch(msg.key, msg);
   }
 
   /**
@@ -175,7 +166,25 @@ export class WebSocketServer {
             if (state) {
               state.touch = new Date().getTime();
               this.handle(raw, state).then(msg => {
-                msg && socket.send(this.encode(msg));
+                const resp: {
+                  [k: string]: any,
+                } = {
+                  status: msg.statusCode
+                };
+                if ('data' in msg) {
+                  resp.data = msg.data;
+                }
+                if ('location' in msg) {
+                  resp.location = msg.location;
+                }
+                if ('errorMessage' in msg) {
+                  resp.data = { error: msg.errorMessage };
+                }
+                if (socket.readyState === WebSocket.OPEN ){
+                  socket.send(this.encode(resp));
+                }
+              }).catch(error => {
+                this.log.error(error);
               });
             }
           });

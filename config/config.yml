@@ -16,15 +16,9 @@ http:
     redir: redir
     pixel: pixel
     gif: pixel
-    #pseudo-services for web-sdk
     track: track
     away: track
-  routes:
-    # Можно добавалять свои кастомные роуты (конфликтуют)
-    # - ["get", "/wh/:projectId/:service/:name"]
-    # - ["post", "/wh/:projectId/:service/:name"]
-    # - ["get", "/redir/:projectId/:service/:name"]
-    # - ["get", "/img/:projectId/:service/:name"]
+    t4k: track
 
 websocket:
   http:
@@ -49,7 +43,7 @@ websocket:
     # should not be compressed.
 
 rpc:
-  name: frontier
+  name: front
   listen_all: false
   listen_direct: true
 
@@ -63,11 +57,12 @@ log:
     prettyPrint: false
 
 client: {} # do not remove. root element should be present
-
 static:
-  prod:
-    file: web-sdk-dist/lib.js
-  dev:
-    file: web-sdk-dist/lib-dev.js
+  lib.js: "static/lib<%= envName === consts.ENV_PROD ? '' : '-dev' %>.js"
+  index.html: "static/index.html"
+  favicon.ico: "static/index.html"
+# env depended variables
+prod: {}
+dev: {}
 
 #!!js/undefined

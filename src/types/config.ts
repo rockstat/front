@@ -18,13 +18,11 @@ export interface HTTPServiceMapParams {
   [k: string]: string
 }
 
-export type LegacyRoutesConfig = Array<['post' | 'get', string]>;
 
 export interface HttpConfig {
   host: string;
   port: number;
   channels: HTTPServiceMapParams
-  routes?: LegacyRoutesConfig
 }
 
 // ##### WEBSOCKET #####
@@ -60,8 +58,8 @@ export interface WsConfig {
 
 // ##### TRACKING #####
 
-export type BrowserLibConfig = {
-  file: string;
+export type StaticConfig = {
+  lib: string;
 }
 
 export type ClientConfig = {
@@ -85,7 +83,7 @@ export type FrontierConfig = {
   http: HttpConfig;
   websocket: WsConfig;
   identify: IdentifyConfig;
-  static: { [key in Envs]: BrowserLibConfig };
+  static: StaticConfig;
   client: {
     common: ClientConfig;
   }

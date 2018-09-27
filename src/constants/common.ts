@@ -8,13 +8,16 @@ export const ENV_STAGE = 'stage';
 // === RPC services
 
 export const SERVICE_DIRECTOR = 'director';
-export const SERVICE_FRONTIER = 'frontier';
+export const SERVICE_FRONTIER = 'front';
 export const SERVICE_TRACK = 'track';
+export const SERVICE_PIXEL = 'pixel';
+export const SERVICE_REDIR = 'redir';
 
 
 export const BROADCAST = 'broadcast';
 export const ENRICH = 'enrich';
 export const OTHER = 'other';
+export const EMPTY = '';
 
 
 // === RPC methods
@@ -29,6 +32,7 @@ export const STRING = 'string';
 // === INPUT CHANNELS
 export const CHANNEL_WEBSOCK = 'ws';
 export const CHANNEL_HTTP = 'http';
+export const CHANNEL_STATIC = 'static-request';
 export const CHANNEL_HTTP_WEBHOOK = 'wh';
 export const CHANNEL_HTTP_PIXEL = 'pixel';
 export const CHANNEL_HTTP_REDIR = 'redir';
@@ -68,7 +72,6 @@ export const IN_REDIR = epglue(INCOMING, CHANNEL_HTTP_REDIR);
 export const PATH_HTTP_TEAPOT = epglue(CHANNEL_HTTP, '418');
 export const PATH_HTTP_404 = epglue(CHANNEL_HTTP, '404');
 export const PATH_HTTP_OPTS = epglue(CHANNEL_HTTP, 'options');
-export const PATH_HTTP_LIBJS = epglue(CHANNEL_HTTP, 'libjs');
 
 // === COMMANDS
 export const IN_WEBSOCK_HELLO = epglue(IN_WEBSOCK, KEY_HELLO);

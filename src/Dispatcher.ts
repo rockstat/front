@@ -8,9 +8,7 @@ import {
   BaseIncomingMessage,
   BusMsgHdr,
   FrontierConfig,
-  Dictionary,
   IncomingMessage,
-  HttpConfig,
   HTTPServiceMapParams,
 } from '@app/types';
 import {
@@ -23,10 +21,7 @@ import {
   SERVICE_DIRECTOR,
   SERVICE_FRONTIER,
   BROADCAST,
-  IN_REDIR,
-  STATUS_INT_ERROR,
   ENRICH,
-  IN_PIXEL,
 } from '@app/constants';
 import {
   epglue
@@ -44,9 +39,12 @@ import {
   METHOD_STATUS,
   MethodRegRequest,
   EnrichersRequirements,
-  DispatchResult
+  STATUS_INT_ERROR,
+  response,
+  BandResponse,
+  isBandResponse
 } from '@rockstat/rock-me-ts';
-import { baseRedirect, basePixel } from '@app/handlers';
+import { redirectHandler, pixelHandler, trackHandler } from '@app/handlers';
 import { dotPropGetter, getvals } from '@app/helpers/getprop';
 
 @Service()
@@ -60,6 +58,7 @@ export class Dispatcher {
   appConfig: AppConfig<FrontierConfig>;
   idGen: TheIds;
   status: AppStatus;
+  registrationsHash: string = '';
   servicesMap: HTTPServiceMapParams
   rpc: RPCAgnostic;
   rpcHandlers: { [k: string]: [string, string] } = {};
@@ -99,7 +98,11 @@ export class Dispatcher {
 
     // Registering status handler / payload receiver
     this.rpc.register<MethodRegRequest>(METHOD_STATUS, async (data) => {
-      if (data.register) {
+      if (data.register && data.state_hash) {
+        if (data.state_hash == this.registrationsHash) {
+          // Skip handling. Nothing changed
+          return;
+        }
         const updateHdrs: string[] = [];
         const newReqs: EnrichersRequirements = [];
         for (const row of data.register) {
@@ -124,6 +127,8 @@ export class Dispatcher {
             this.remoteEnrichers.subscribe(options.keys, service)
           }
         }
+        this.registrationsHash = data.state_hash;
+        // TODO: split by services (when enrichers will be splitted)
         this.enrichersRequirements = newReqs;
         this.handleBus.replace(updateHdrs, this.rpcGateway)
       }
@@ -131,9 +136,10 @@ export class Dispatcher {
     });
     this.log.info('register handler here');
     // default redirect handler
-    baseRedirect(this.servicesMap, this);
+    redirectHandler(this);
     // default pixel handler
-    basePixel(this.servicesMap, this);
+    pixelHandler(this);
+    trackHandler(this);
     // notify band director
     setInterval(() => {
       this.rpc.notify(SERVICE_DIRECTOR, RPC_IAMALIVE, { name: SERVICE_FRONTIER })
@@ -161,20 +167,36 @@ export class Dispatcher {
     this.log.info('Started');
   }
 
-  rpcGateway = async (key: string, msg: BaseIncomingMessage): Promise<DispatchResult> => {
+  /**
+   * Using to handle event remotely
+   */
+  rpcGateway = async (key: string, msg: BaseIncomingMessage): Promise<BandResponse> => {
     if (msg.service && msg.name && this.rpcHandlers[key]) {
       // Real destination
       const [service, method] = this.rpcHandlers[key];
-      return await this.rpc.request<Dictionary<any>>(service, method, msg);
+      try {
+        const data = await this.rpc.request<any>(service, method, msg);
+        if (isBandResponse(data)) {
+          return data;
+        }
+        return response.data({ data });
+      } catch (error) {
+        this.log.warn('error at rpcGateway', error);
+        return response.error({ statusCode: STATUS_INT_ERROR })
+      }
     }
     return this.defaultHandler(key, msg);
   }
 
-  defaultHandler: BusMsgHdr = async (key, msg): Promise<DispatchResult> => {
-    return {
-      key: key,
-      id: msg.id
-    }
+  defaultHandler: BusMsgHdr = async (key, msg): Promise<BandResponse> => {
+    return Promise.resolve().then(() =>
+      response.data({
+        data: {
+          key: key,
+          id: msg.id
+        }
+      })
+    )
   }
 
   registerListener(key: string, func: BusMsgHdr): void {
@@ -182,19 +204,7 @@ export class Dispatcher {
     this.listenBus.subscribe(key, func);
   }
 
-  async dispatch(key: string, msg: BaseIncomingMessage): Promise<DispatchResult> {
-    try {
-      return await this.emit(key, msg);
-    } catch (error) {
-      this.log.warn(error);
-      return {
-        error: 'Internal error. Smth wrong.',
-        code: STATUS_INT_ERROR
-      }
-    }
-  }
-
-  async emit(key: string, msg: BaseIncomingMessage): Promise<any> {
+  async dispatch(key: string, msg: BaseIncomingMessage): Promise<BandResponse> {
 
     msg.id = this.idGen.flake();
     msg.time = Number(new Date());
@@ -209,12 +219,15 @@ export class Dispatcher {
     }
 
     // ### Phase 2: deliver to listeners
-    BBPromise.all(this.listenBus.publish(key, msg)).then(results => { });
+    // Call using Promise then to avoid waiting
+    BBPromise.all(this.listenBus.publish(key, msg))
+      .then(() => this.log.debug('Listeners handled'))
+      .catch(error => this.log.error(error))
 
     // ### Phase 3: handling if configuring
     const handlers = this.handleBus.publish(key, msg);
-    const result = await handlers[handlers.length - 1];
+
     this.log.debug(` <--- ${key}`, msg);
-    return result
+    return await handlers[handlers.length - 1];
   }
 }

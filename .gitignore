@@ -4,7 +4,8 @@
 /config/custom
 /deploy
 /certs
-/web-sdk-dist
+/static/lib*
 /.env*
 TextApp*
 /build
+/dist
