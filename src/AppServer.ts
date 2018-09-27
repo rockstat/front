@@ -1,7 +1,7 @@
 import 'reflect-metadata';
-import { Container, Service, Inject } from 'typedi';
+import { Container, Service } from 'typedi';
 import { Dispatcher } from './Dispatcher';
-import { TheIds, Meter, Logger, RedisFactory, AppConfig, version as rockmeVersion } from '@rockstat/rock-me-ts';
+import { TheIds, Meter, Logger, RedisFactory, AppConfig, version as rockmeVersion, ENV_PROD } from '@rockstat/rock-me-ts';
 import {
   WebSocketServer,
   HttpServer
@@ -26,6 +26,7 @@ export class AppServer {
     Container.set(Logger, log);
     this.log = log.for(this);
     this.log.info(this.appConfig.config, 'Configuration');
+    this.log.info(`Configuration ${AppConfig.env} ${ENV_PROD} ${String(AppConfig.env) === ENV_PROD}`);
 
     this.log.info({
       version: this.appConfig.config.version,
