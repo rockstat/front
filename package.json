@@ -1,6 +1,6 @@
 {
   "name": "@rockstat/front",
-  "version": "3.3.1",
+  "version": "3.3.2",
   "description": "Rockstat platform server endpoint frontier",
   "main": "dist/start.js",
   "scripts": {
