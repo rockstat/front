@@ -1,6 +1,6 @@
 FROM rockstat/band-base-ts:latest
 
-LABEL band.service.version="3.2.1"
+LABEL band.service.version="3.3.0"
 LABEL band.service.title="Front"
 LABEL band.service.def_position="3x0"
 
