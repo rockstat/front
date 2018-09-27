@@ -16,7 +16,7 @@ Frontier service is a entrypoint for all external data.
 
 Look at the scheme
 
-![Rockstat sheme](media/request_lifecycle.png?3)
+![Rockstat sheme](https://rock.st/static/images/docs/schemas/request-lifecycle.svg)
 
 ## Envs and defaults
 
