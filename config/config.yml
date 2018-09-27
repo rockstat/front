@@ -59,11 +59,11 @@ log:
 
 client: {} # do not remove. root element should be present
 static:
-  lib.js: "static/lib<%= envName === consts.ENV_PROD ? '' : '-dev' %>.js"
+  lib.js: "static/lib<%= (envName === consts.ENV_PROD) ? '' : '-dev' %>.js"
   index.html: "static/index.html"
   favicon.ico: "static/index.html"
 # env depended variables
-prod: {}
+production: {}
 dev: {}
 
 #!!js/undefined
