@@ -1,5 +1,6 @@
 ---
 name: Rockstat frontier v3
+version: 3.3.0
 identify:
   param: uid
   cookieMaxAge: <%= 3 * 365 * 24 * 60 * 60 %>
