@@ -25,7 +25,7 @@ export class AppServer {
     const log = new Logger(this.appConfig.log)
     Container.set(Logger, log);
     this.log = log.for(this);
-    this.log.info('Configuration', this.appConfig.config);
+    this.log.info(this.appConfig.config, 'Configuration');
 
     this.log.info('Starting service');
 
