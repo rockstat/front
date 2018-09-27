@@ -19,7 +19,7 @@ script:
 after_script:
 - docker images
 before_deploy:
-- docker tag "$PROJECT_NAME $IMAGE_NAME:$TAG"
+- docker tag "$PROJECT_NAME" "$IMAGE_NAME:$TAG"
 - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
 deploy:
   provider: script
