@@ -1,3 +1,5 @@
+FROM rockstat/web-sdk:latest as web-sdk-build
+
 FROM rockstat/band-base-ts:latest
 
 LABEL band.service.version="3.3.3"
@@ -5,7 +7,6 @@ LABEL band.service.title="Front"
 LABEL band.service.def_position="3x0"
 
 ENV PORT 8080
-ENV LIB_URL https://cdn.rstat.org/dist/dev/lib-latest.js
 
 WORKDIR /app
 
@@ -21,8 +22,9 @@ ENV NODE_ENV production
 
 EXPOSE 8080
 
+COPY --from=web-sdk-build /usr/share/web-sdk static
+
 RUN ln -nsf ../dist ./node_modules/@app \
-  && yarn build \
-  && curl -s $LIB_URL > static/lib.js
+  && yarn build
 
 CMD [ "yarn", "start:prod"]
