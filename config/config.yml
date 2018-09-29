@@ -61,7 +61,7 @@ client: {} # do not remove. root element should be present
 static:
   lib.js: "static/lib<%= (envName === consts.ENV_PROD) ? '' : '-dev' %>.js"
   index.html: "static/index.html"
-  favicon.ico: "static/index.html"
+  favicon.ico: "static/favicon.ico"
 # env depended variables
 production: {}
 dev: {}
