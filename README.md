@@ -10,9 +10,9 @@ server-side data collector; services for geo-coding and detecting client device 
 a new server deployment system.
 [Read more](https://rockstat.ru/about)
 
-## About Rockstat Frontier
+## About Rockstat Front
 
-Frontier service is a entrypoint for all external data.
+Front service is a entrypoint for all external data.
 
 Look at the scheme
 

@@ -1,7 +1,7 @@
 {
   "name": "@rockstat/front",
   "version": "3.3.3",
-  "description": "Rockstat platform server endpoint frontier",
+  "description": "Rockstat Front service",
   "main": "dist/start.js",
   "scripts": {
     "start": "ts-node -r 'tsconfig-paths/register'  ./src/start.ts | pino",
@@ -20,7 +20,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/rockstat/frontier"
+    "url": "https://github.com/rockstat/front"
   },
   "author": "Dmitry Rodin <madiedinro@gmail.com>",
   "homepage": "https://rockstat.ru",

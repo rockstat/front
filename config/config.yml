@@ -1,5 +1,5 @@
 ---
-name: Rockstat frontier v3
+name: Rockstat Front service
 version: 3.3.3
 identify:
   param: uid
