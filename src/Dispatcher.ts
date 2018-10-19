@@ -42,7 +42,8 @@ import {
   STATUS_INT_ERROR,
   response,
   BandResponse,
-  isBandResponse
+  isBandResponse,
+  STATUS_OK
 } from '@rockstat/rock-me-ts';
 import {
   redirectHandler,
@@ -185,12 +186,13 @@ export class Dispatcher {
         const data: BandResponse | string | Array<any> | number | null = await this.rpc.request<any>(service, method, msg);
         if (data && typeof data === "object" && !Array.isArray(data) && isBandResponse(data)) {
           data.headers = data.headers || [];
+          data.statusCode = data.statusCode || STATUS_OK;
           return data;
         }
         return response.data({ data });
       } catch (error) {
         this.log.warn('error at rpcGateway', error);
-        return response.error({ statusCode: STATUS_INT_ERROR })
+        return response.error({ statusCode: STATUS_INT_ERROR, errorMessage: error.message })
       }
     }
     return this.defaultHandler(key, msg);
