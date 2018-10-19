@@ -44,8 +44,15 @@ import {
   BandResponse,
   isBandResponse
 } from '@rockstat/rock-me-ts';
-import { redirectHandler, pixelHandler, trackHandler } from '@app/handlers';
-import { dotPropGetter, getvals } from '@app/helpers/getprop';
+import {
+  redirectHandler,
+  pixelHandler,
+  trackHandler
+} from '@app/handlers';
+import {
+  dotPropGetter,
+  getvals
+} from '@app/helpers/getprop';
 
 @Service()
 export class Dispatcher {
@@ -175,8 +182,8 @@ export class Dispatcher {
       // Real destination
       const [service, method] = this.rpcHandlers[key];
       try {
-        const data = await this.rpc.request<any>(service, method, msg);
-        if (isBandResponse(data)) {
+        const data: BandResponse | string | Array<any> | number | null = await this.rpc.request<any>(service, method, msg);
+        if (data && typeof data === "object" && !Array.isArray(data) && isBandResponse(data)) {
           data.headers = data.headers || [];
           return data;
         }
