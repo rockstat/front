@@ -44,7 +44,7 @@ export class StaticData {
   }
 
   prepareLib(params: LibParams) {
-    const cmd = new Buffer(this.rtConfig(params));
+    const cmd = Buffer.from(this.rtConfig(params));
     return Buffer.concat([cmd, this.content['lib.js']]);
   }
 }

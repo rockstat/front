@@ -12,7 +12,7 @@ import { BandResponse } from '@rockstat/rock-me-ts';
 /**
  * Transparent 1x1 gif
  */
-export const emptyGif = new Buffer('R0lGODlhAQABAIAAAP///////yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==', 'base64');
+export const emptyGif = Buffer.from('R0lGODlhAQABAIAAAP///////yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==', 'base64');
 
 
 /**
