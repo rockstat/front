@@ -177,6 +177,7 @@ export class Dispatcher {
       try {
         const data = await this.rpc.request<any>(service, method, msg);
         if (isBandResponse(data)) {
+          data.headers = data.headers || [];
           return data;
         }
         return response.data({ data });
