@@ -4,6 +4,8 @@ import { Logger } from '@rockstat/rock-me-ts';
 import { LevelChildrenAsync, BusMsgHdr, BusMsgHdrResult } from './interfaces'
 
 export class TreeBus {
+
+  name: string;
   protected map: WeakMap<BusMsgHdr, Array<string>> = new WeakMap();
   protected log: Logger
 
@@ -12,8 +14,9 @@ export class TreeBus {
     children: {}
   };
 
-  constructor() {
+  constructor(name = 'untitled') {
     this.log = Container.get(Logger).for(this);
+    this.name = name;
   }
 
   handlerEvents(handler: BusMsgHdr): Array<string> {
@@ -28,13 +31,7 @@ export class TreeBus {
   replace(keys: string[], handler: BusMsgHdr) {
     const hel = this.handlerEvents(handler);
     const newKeys = keys.filter(k => !hel.includes(k));
-    for (const k of newKeys) {
-      this.log.info(`+ adding handler from ${k}`);
-    }
     const rmKeys = hel.filter(k => !keys.includes(k));
-    for (const k of rmKeys) {
-      this.log.info(`- removing handler from ${k}`);
-    }
     for (const k of rmKeys) {
       this.unSubscribe(k, handler);
     }
@@ -45,7 +42,7 @@ export class TreeBus {
 
   subscribe(key: string | string[], handler: BusMsgHdr) {
     if (!handler) {
-      throw new ReferenceError('handler not present');
+      throw new ReferenceError(`${this.name}: handler not present`);
     }
     if (Array.isArray(key)) {
       for (const k of key) {
@@ -53,7 +50,7 @@ export class TreeBus {
       }
       return;
     }
-    this.log.info(`Registered handler for ${key}, ${handler.prototype}`)
+    this.log.info(`${this.name}: Registering handler for ${key}}`)
     const path = key === '*' ? [] : key.split('.');
     let node = this.tree;
     for (const name of path) {
@@ -73,7 +70,7 @@ export class TreeBus {
 
   unSubscribe(key: string, handler: BusMsgHdr) {
     if (!handler) {
-      throw new ReferenceError('handler not present');
+      throw new ReferenceError(`${this.name}: handler not present`);
     }
     const path = key === '*' ? [] : key.split('.');
     let node = this.tree;
@@ -84,6 +81,8 @@ export class TreeBus {
       node = node.children[name];
     }
     // removing handler
+    this.log.info(`${this.name}: Unregistering handler for ${key}}`)
+    
     while (node.handlers.includes(handler)) {
       node.handlers.splice(node.handlers.indexOf(handler), 1);
     }

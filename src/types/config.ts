@@ -75,6 +75,15 @@ export type ClientConfig = {
 }
 
 
+// ##### MSG BUS #####
+
+
+export interface MsgBusConfig {
+  enrichers: { [k: string]: Array<string> }
+  handlers: { [k: string]: string }
+}
+
+
 // ##### CONFIG ROOT #####
 
 export type FrontierConfig = {
@@ -87,6 +96,7 @@ export type FrontierConfig = {
   static: StaticConfig;
   client: {
     common: ClientConfig;
-  }
+  };
+  bus: MsgBusConfig;
 }
 

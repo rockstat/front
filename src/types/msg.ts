@@ -1,4 +1,6 @@
 import { STATUS_OK, STATUS_TEMP_REDIR, STATUS_BAD_REQUEST, STATUS_INT_ERROR } from "@rockstat/rock-me-ts";
+import { Dispatcher } from "@app/Dispatcher";
+import { Dictionary } from "@app/types/base";
 
 // ###### HTTP messages part
 
@@ -61,10 +63,18 @@ export type IncomingMessage = IncomingMessageProps & MessageIdTime;
 
 // ###### BUS
 
-export type BusMsgHdr = (key: string, msg: any) => Promise<any>;
+export type BusMsgHdr = (key: string, msg: BaseIncomingMessage) => Promise<any>;
+
+export interface BusBaseEnricher {
+  handle: (key: string, msg: BaseIncomingMessage) => Promise<Dictionary<any>>;
+}
+
+
+
 export type BusMsgHdrResult = PromiseLike<any>
 export type BusMsgHdrsResult = PromiseLike<any[]>
 
+export type BusRegistratorBase = (dispatcher: Dispatcher, handler: BusMsgHdr, key: string) => void;
 
 // ###### RPC
 

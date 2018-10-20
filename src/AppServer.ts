@@ -7,6 +7,7 @@ import {
   HttpServer
 } from '@app/http';
 import { FrontierConfig } from '@app/types';
+import * as constants from '@app/constants';
 
 
 @Service()
@@ -20,12 +21,11 @@ export class AppServer {
   meter: Meter;
 
   setup() {
-    this.appConfig = new AppConfig<FrontierConfig>()
+    this.appConfig = new AppConfig<FrontierConfig>({ vars: constants })
     Container.set(AppConfig, this.appConfig);
     const log = new Logger(this.appConfig.log)
     Container.set(Logger, log);
     this.log = log.for(this);
-    this.log.info(this.appConfig.config, 'Configuration');
     this.log.info(`Configuration ${AppConfig.env} ${ENV_PROD} ${String(AppConfig.env) === ENV_PROD}`);
 
     this.log.info({

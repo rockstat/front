@@ -5,11 +5,13 @@ import {
   AppServer
 } from '@app/AppServer';
 import {
-  BaseIncomingMessage,
   BusMsgHdr,
   FrontierConfig,
   IncomingMessage,
+  BaseIncomingMessage,
   HTTPServiceMapParams,
+  BusBaseEnricher,
+  MsgBusConfig,
 } from '@app/types';
 import {
   TreeBus,
@@ -17,52 +19,54 @@ import {
 } from '@app/bus';
 import {
   IN_GENERIC,
-  RPC_IAMALIVE,
   SERVICE_DIRECTOR,
   SERVICE_FRONTIER,
   BROADCAST,
   ENRICH,
+  RPC_IAMALIVE,
 } from '@app/constants';
 import {
   epglue
 } from '@app/helpers';
 import {
+  AppConfig,
   TheIds,
-  RPCAdapterRedis,
-  RPCAgnostic,
   Logger,
   AppStatus,
   RedisFactory,
-  AgnosticRPCOptions,
   Meter,
-  AppConfig,
-  METHOD_STATUS,
+  RPCAdapterRedis,
+  RPCAgnostic,
+  AgnosticRPCOptions,
   MethodRegRequest,
   EnrichersRequirements,
+  METHOD_STATUS,
   STATUS_INT_ERROR,
-  response,
+  STATUS_OK,
   BandResponse,
   isBandResponse,
-  STATUS_OK
+  response,
 } from '@rockstat/rock-me-ts';
-import {
-  redirectHandler,
-  pixelHandler,
-  trackHandler
-} from '@app/handlers';
+import * as EnrichersRepo from '@app/enrichers';
+import * as HandlersRepo from '@app/handlers';
 import {
   dotPropGetter,
   getvals
 } from '@app/helpers/getprop';
 
+type HandlerRepo = typeof HandlersRepo
+type EnricherRepo = typeof EnrichersRepo
+type HandlersNames = keyof HandlerRepo;
+type EnrichersNames = keyof EnricherRepo;
+
 @Service()
 export class Dispatcher {
 
   log: Logger;
-  enrichBus: TreeBus = new TreeBus();
+  enrichBus: TreeBus = new TreeBus('enrichers');
   remoteEnrichers: TreeNameBus = new TreeNameBus()
-  listenBus: TreeBus = new TreeBus();
-  handleBus: TreeBus = new TreeBus();
+  listenBus: TreeBus = new TreeBus('listeners');
+  handleBus: TreeBus = new TreeBus('handlers');
   appConfig: AppConfig<FrontierConfig>;
   idGen: TheIds;
   status: AppStatus;
@@ -94,7 +98,6 @@ export class Dispatcher {
     const redisFactory = Container.get(RedisFactory);
     // Stat meter
     const meter = Container.get(Meter);
-
 
     // Setup RPC
     const channels = [this.appConfig.rpc.name];
@@ -142,17 +145,32 @@ export class Dispatcher {
       }
       return this.status.get({});
     });
-    this.log.info('register handler here');
-    // default redirect handler
-    redirectHandler(this);
-    // default pixel handler
-    pixelHandler(this);
-    trackHandler(this);
-    // notify band director
-    setInterval(() => {
-      this.rpc.notify(SERVICE_DIRECTOR, RPC_IAMALIVE, { name: SERVICE_FRONTIER })
-    }, 5 * 1000)
-    // Registering remote listeners notification
+
+    // Attaching enrichers
+    const enrichersConfig: {
+      [k in EnrichersNames]?: MsgBusConfig['enrichers'][k]
+    } = this.appConfig.get('bus').enrichers;
+    Object
+      .entries(enrichersConfig)
+      .filter(([name, chans]) => chans && (name in EnrichersRepo))
+      .forEach(([name, chans]: [EnrichersNames, Array<string>]) => {
+        const enricher = new EnrichersRepo[name]();
+        chans.forEach(chan => this.enrichBus.subscribe(chan, enricher.handle));
+      })
+
+
+    // Attaching handlers
+    const handlersConfig: {
+      [k in HandlersNames]?: MsgBusConfig['handlers'][k]
+    } = this.appConfig.get('bus').handlers;
+    Object
+      .entries(handlersConfig)
+      .filter(([name, chan]) => chan && (name in HandlersRepo))
+      .forEach(([name, chan]: [HandlersNames, string]) => {
+        this.handleBus.subscribe(chan, HandlersRepo[name]());
+      })
+
+
     this.listenBus.subscribe('*', async (key: string, msg: IncomingMessage) => {
       try {
         return await this.rpc.notify(BROADCAST, BROADCAST, msg);
@@ -160,6 +178,7 @@ export class Dispatcher {
         this.log.error(`catch! ${error.message}`);
       }
     });
+
     // Registering remote enrichers notification
     this.enrichBus.subscribe('*', async (key: string, msg: IncomingMessage) => {
       try {
@@ -169,6 +188,10 @@ export class Dispatcher {
         this.log.error(`catch! ${error.message}`);
       }
     });
+    // status notification for band director
+    setInterval(() => {
+      this.rpc.notify(SERVICE_DIRECTOR, RPC_IAMALIVE, { name: SERVICE_FRONTIER })
+    }, 5 * 1000)
   }
 
   start() {

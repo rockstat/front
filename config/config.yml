@@ -65,5 +65,13 @@ static:
 # env depended variables
 production: {}
 dev: {}
+bus:
+  enrichers:
+    FingerPrintEnricher: [<%= IN_GENERIC %>.<%= SERVICE_TRACK %>]
+    UserDataEnricher: [<%= IN_GENERIC %>.<%= SERVICE_TRACK %>]
+  handlers:
+    PixelHandler: <%= IN_GENERIC %>.<%= SERVICE_PIXEL %>
+    RedirectHandler: <%= IN_GENERIC %>.<%= SERVICE_REDIR %>
+    TrackHandler: <%= IN_GENERIC %>.<%= SERVICE_TRACK %>
 
 #!!js/undefined

@@ -4,12 +4,9 @@ import { IN_GENERIC, SERVICE_PIXEL } from "@app/constants";
 import { Dispatcher } from "@app/Dispatcher";
 import { epglue } from "@app/helpers";
 
-export const pixelHandler = (disp: Dispatcher) => {
-  const handler = async (key: string, msg: BaseIncomingMessage): Promise<BandResponse> => {
+export const PixelHandler = () => {
+  return async (key: string, msg: BaseIncomingMessage): Promise<BandResponse> => {
     console.log(msg)
     return response.pixel({})
   }
-
-  disp.handleBus.subscribe(epglue(IN_GENERIC, SERVICE_PIXEL), handler);
-
 }
