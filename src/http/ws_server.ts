@@ -205,7 +205,7 @@ export class WebSocketServer {
         case OUT_WEBSOCK_BROADCAST: return await this.sendBroadcast(data);
       }
     });
-    this.dispatcher.registerListener(CMD_WEBSOCK, async (key: string, msg: { data: AddToGroupPayload }) => {
+    this.dispatcher.registerListener(CMD_WEBSOCK, async (key: string, msg: any) => {
       switch (key) {
         case CMD_WEBSOCK_ADD_GROUP: return await this.addToGroup(msg.data);
       }
