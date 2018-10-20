@@ -157,8 +157,10 @@ export class HttpServer {
           contentType = CONTENT_TYPE_JSON;
           data = JSON.stringify(resp.data);
         }
-      } else {
-        data = JSON.stringify(resp.data);
+      } 
+      // Raw string responses
+      else {
+        data = String(resp.data);
       }
     }
     if (resp._response___type === RESP_REDIRECT) {
