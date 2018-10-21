@@ -55,7 +55,8 @@ import {
   corsAdditionalHeaders,
   isObject,
   autoDomain,
-  epglue
+  epglue,
+  cleanUid
 } from '@app/helpers';
 import {
   HttpConfig,
@@ -157,7 +158,7 @@ export class HttpServer {
           contentType = CONTENT_TYPE_JSON;
           data = JSON.stringify(resp.data);
         }
-      } 
+      }
       // Raw string responses
       else {
         data = String(resp.data);
@@ -235,7 +236,12 @@ export class HttpServer {
       body = pBody || {};
     }
 
-    const uid = query[this.uidkey] || (body && body[this.uidkey]) || cookie[this.uidkey] || this.idGen.flake()
+    const uid = (
+      cleanUid(query[this.uidkey]) ||
+      cleanUid(body && body[this.uidkey]) ||
+      cleanUid(cookie[this.uidkey]) ||
+      this.idGen.flake()
+    )
 
     const transportData: HTTPTransportData = {
       ip: f(realIpHeader) || req.connection.remoteAddress,

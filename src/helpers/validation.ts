@@ -2,6 +2,21 @@
 const objectToString = Object.prototype.toString;
 const objectAsString = '[object Object]';
 
+const uidRE = new RegExp('^[0-9]{10,22}$');
+
+export function isValidUid(uid?: string): boolean {
+  if (!uid) return false;
+  return uidRE.test(uid);
+};
+
+/**
+ * return valid uid or undefined
+ */
+export function cleanUid(uid?: string): string | undefined {
+  return isValidUid(uid) ? uid : undefined;
+}
+
+
 export function isObject(v: any): boolean {
   return !!v && typeof v === 'object' && !Array.isArray(v) && objectToString.call(v) === objectAsString;
 }
