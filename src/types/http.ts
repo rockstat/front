@@ -39,8 +39,8 @@ export interface RouteOn {
   path: string;
   origin: string;
   uid: string;
-  service?: string;
-  action?: string;
+  service: string;
+  name: string;
   projectId?: number;
   td: HTTPTransportData
 }

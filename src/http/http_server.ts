@@ -1,8 +1,7 @@
 import { IncomingMessage, ServerResponse, createServer, Server, OutgoingHttpHeaders } from 'http';
-import { createError, send as microSend, sendError, text, json, buffer } from 'micro';
+import { send as microSend, sendError, text, json, buffer } from 'micro';
 import { Service, Inject, Container } from 'typedi';
 import { parse as urlParse } from 'url';
-import * as assert from 'assert';
 import * as Cookie from 'cookie';
 import * as qs from 'qs';
 import {
@@ -10,7 +9,6 @@ import {
   Logger,
   TheIds,
   AppConfig,
-  RESP_TYPE_KEY,
   RESP_REDIRECT,
   RESP_PIXEL,
   RESP_DATA,
@@ -27,11 +25,11 @@ import { Dispatcher } from '@app/Dispatcher';
 import {
   IN_GENERIC,
   CHANNEL_HTTP,
-  HResponseTime,
-  HContentType,
-  HContentLength,
-  HLocation,
-  HMyName,
+  HEADER_RESPONSE_TIME,
+  HEADER_CONTENT_TYPE,
+  HEADER_CONTENT_LENGTH,
+  HEADER_LOCATION,
+  HEADER_MY_NAME,
   METHOD_GET,
   METHOD_POST,
   METHOD_OPTIONS,
@@ -56,7 +54,8 @@ import {
   isObject,
   autoDomain,
   epglue,
-  cleanUid
+  cleanUid,
+  pathParts
 } from '@app/helpers';
 import {
   HttpConfig,
@@ -67,7 +66,6 @@ import {
   RouteOn,
   BaseIncomingMessage,
   HTTPTransportData,
-  HandledResult,
   Dictionary,
 } from '@app/types';
 
@@ -95,7 +93,8 @@ export class HttpServer {
   metrics: Meter;
   log: Logger;
   title: string;
-  uidkey: string;
+  uidParam: string = 'uid';
+  uidCookie: string;
   cookieExpires: Date;
   cookieDomain?: string;
   servicesMap: Dictionary<string>
@@ -110,7 +109,7 @@ export class HttpServer {
     this.options = config.http;
     this.title = config.get('name');
     this.identopts = config.identify;
-    this.uidkey = this.identopts.param;
+    this.uidCookie = this.identopts.param;
     this.clientopts = config.client.common;
     this.log = logger.for(this);
     this.servicesMap = this.options.channels;
@@ -131,30 +130,39 @@ export class HttpServer {
     this.httpServer = createServer((req, res) => {
       const requestTime = this.metrics.timenote('http.request')
       this.metrics.tick('request')
-      this.handle(req).then((result: BandResponse) => {
-        const reqTime = requestTime();
-        this.send(res, result, reqTime)
-      })
+      this.handle(req)
+        .then((result: BandResponse) => {
+          const reqTime = requestTime();
+          this.send(res, result, reqTime)
+        })
+        .catch(exc => {
+          console.error('exception catched >> ', exc);
+        })
     });
     this.httpServer.listen(this.options.port, this.options.host);
   }
 
 
   private send(res: ServerResponse, resp: BandResponse, reqTime: number) {
-    resp.headers.push([HResponseTime, reqTime])
+    resp.headers.push([HEADER_RESPONSE_TIME, reqTime])
     let data: string | Buffer = '';
     let contentType: string = CONTENT_TYPE_PLAIN;
 
-    // if ('contentType' in resp && resp.contentType === CONTENT_TYPE_GIF || resp._response___type === RESP_PIXEL) {
-    // }
+
     if (resp._response___type === RESP_DATA) {
+      // overiide null values with empty string
       if (resp.data === null) {
         resp.data = '';
-      } else if (typeof resp.data === 'object') {
+      }
+      // Object or Buffer or Array...
+      else if (typeof resp.data === 'object') {
+        // buffer -> raw data
         if (resp.data instanceof Buffer) {
           contentType = resp.contentType || CONTENT_TYPE_OCTET;
           data = resp.data;
-        } else {
+        }
+        // Object or Array -> need to serialize
+        else {
           contentType = CONTENT_TYPE_JSON;
           data = JSON.stringify(resp.data);
         }
@@ -167,7 +175,7 @@ export class HttpServer {
     if (resp._response___type === RESP_REDIRECT) {
       data = '';
       contentType = CONTENT_TYPE_PLAIN;
-      resp.headers.push([HLocation, resp.location]);
+      resp.headers.push([HEADER_LOCATION, resp.location]);
     }
     if (resp._response___type === RESP_PIXEL) {
       data = emptyGif;
@@ -178,8 +186,8 @@ export class HttpServer {
       data = JSON.stringify({ message: resp.errorMessage });
       contentType = CONTENT_TYPE_JSON;
     }
-    resp.headers.push([HContentType, contentType])
-    resp.headers.push([HContentLength, Buffer.byteLength(data)])
+    resp.headers.push([HEADER_CONTENT_TYPE, contentType])
+    resp.headers.push([HEADER_CONTENT_LENGTH, Buffer.byteLength(data)])
     for (const [h, v] of resp.headers) {
       res.setHeader(h, v);
     }
@@ -204,7 +212,6 @@ export class HttpServer {
       return response.error({ statusCode: STATUS_INT_ERROR })
     }
 
-    const urlParts = urlParse(req.url);
     // extracting useful headers
     const {
       'user-agent': userAgentHeader,
@@ -215,19 +222,20 @@ export class HttpServer {
     } = req.headers;
 
     // parsing url
-
+    const urlParts = urlParse(req.url);
     const query: Dictionary<string> = urlParts.query ? qs.parse(urlParts.query) : {};
-    const cookie: Dictionary<string> = Cookie.parse(f(req.headers.cookie) || '');
+    const parsedPath = pathParts(urlParts.pathname || '')
     // parse cookie
-
-    let [, urlServiceStr, urlAction, urlProjectId] = (urlParts.pathname || '').split('/');;
-    const [urlServiceService, urlServiceExt] = urlServiceStr.split('.');
-
+    const cookie: Dictionary<string> = Cookie.parse(f(req.headers.cookie) || '');
+    // 
+    const [urlService, urlName, urlProjectId] = parsedPath.parts;
+    
     // Handling POST if routed right way!
+    const contentType = parsedPath.ext && extContentTypeMap[parsedPath.ext] || ContentTypeHeader
+
     let body: HTTPBodyParams = {};
-    const contentType: string | undefined = urlServiceExt && extContentTypeMap[urlServiceExt] || ContentTypeHeader
     if (req.method === METHOD_POST) {
-      const [err, pBody] = await this.parseBody(contentType, req);
+      const [err, pBody] = await this.parseBody(req, contentType);
       // Bad body
       if (err) {
         this.log.error(err);
@@ -237,9 +245,9 @@ export class HttpServer {
     }
 
     const uid = (
-      cleanUid(query[this.uidkey]) ||
-      cleanUid(body && body[this.uidkey]) ||
-      cleanUid(cookie[this.uidkey]) ||
+      cleanUid(query[this.uidParam]) ||
+      cleanUid(body && body[this.uidParam]) ||
+      cleanUid(cookie[this.uidCookie]) ||
       this.idGen.flake()
     )
 
@@ -257,8 +265,8 @@ export class HttpServer {
       cookie,
       body: body,
       path: urlParts.pathname || '/',
-      service: this.servicesMap[urlServiceService] || urlServiceService,
-      action: urlAction || query.name || body.name,
+      service: query.service || body.service || !!urlService && this.servicesMap[urlService] || urlService,
+      name: urlName || query.name || body.name,
       projectId: Number(urlProjectId || query.projectId || body.projectId || 0),
       origin: computeOrigin(originHeader, refererHeader),
       uid,
@@ -267,17 +275,12 @@ export class HttpServer {
 
     const routed = await this.route(routeOn)
 
-    const userIdCookie = Cookie.serialize(
-      this.identopts.param,
-      uid,
-      {
-        httpOnly: true,
-        expires: this.cookieExpires,
-        path: this.identopts.cookiePath,
-        domain: this.cookieDomain
-      }
+    routed.headers.push(
+      ...secureHeaders(),
+      ...corsHeaders(routeOn.origin),
+      ...noCacheHeaders(),
+      ...cookieHeaders([this.prepareUidCookie(uid)])
     )
-    routed.headers.push(...secureHeaders(), ...corsHeaders(routeOn.origin), ...noCacheHeaders(), ...cookieHeaders([userIdCookie]))
     return routed;
 
   }
@@ -292,7 +295,7 @@ export class HttpServer {
           ...corsAnswerHeaders(),
           ...corsAdditionalHeaders(),
         ],
-        data: ''
+        data: null
       })
     }
 
@@ -306,7 +309,7 @@ export class HttpServer {
       return response.error({
         statusCode: STATUS_TEAPOT,
         headers: [
-          [HMyName, this.title],
+          [HEADER_MY_NAME, this.title],
         ]
       });
     }
@@ -319,14 +322,14 @@ export class HttpServer {
       });
     }
 
-    if (routeOn.service && routeOn.action) {
-
-      const key = epglue(IN_GENERIC, routeOn.service, routeOn.action);
+    // ### Send request to BUS
+    if (routeOn.service && routeOn.name) {
+      const key = epglue(IN_GENERIC, routeOn.service, routeOn.name);
       const msg: BaseIncomingMessage = {
         key,
         channel: routeOn.contentType.includes('image') ? CHANNEL_HTTP_PIXEL : CHANNEL_HTTP,
         service: routeOn.service,
-        name: routeOn.action,
+        name: routeOn.name,
         projectId: routeOn.projectId,
         uid: routeOn.uid,
         td: routeOn.td,
@@ -335,8 +338,27 @@ export class HttpServer {
       return await this.dispatcher.dispatch(key, msg);
     }
 
+    // ### 404
+    this.log.debug('404 request');
     return response.error({ statusCode: STATUS_NOT_FOUND })
 
+  }
+
+  /**
+   * prepare UID cookie
+   * @param uid 
+   */
+  private prepareUidCookie(uid: string) {
+    return Cookie.serialize(
+      this.identopts.param,
+      uid,
+      {
+        httpOnly: true,
+        expires: this.cookieExpires,
+        path: this.identopts.cookiePath,
+        domain: this.cookieDomain
+      }
+    )
   }
 
   /**
@@ -344,7 +366,7 @@ export class HttpServer {
    * @param routeOn
    * @param req
    */
-  private async parseBody(contentType: string | undefined, req: IncomingMessage): Promise<[undefined, HTTPBodyParams] | [Error, undefined]> {
+  private async parseBody(req: IncomingMessage, contentType?: string): Promise<[undefined, HTTPBodyParams] | [Error, undefined]> {
     let result: HTTPBodyParams;
     try {
       if (!contentType || !contentType.includes('json')) {

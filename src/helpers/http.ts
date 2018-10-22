@@ -15,6 +15,39 @@ import { BandResponse } from '@rockstat/rock-me-ts';
 export const emptyGif = Buffer.from('R0lGODlhAQABAIAAAP///////yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==', 'base64');
 
 
+
+
+/**
+ * Handles url path string
+ * @param path 
+ */
+export const pathParts = (pathString: string): PathPartsResult => {
+  const parts = pathString.split('/');
+  let ext;
+  // remove firts slash
+  parts.shift()
+  let last = parts.pop()
+  if (last) {
+    const idx = last.lastIndexOf('.');
+    // if ext found, extract them
+    if (idx >= 0) {
+      ext = last.substr(idx + 1, last.length)
+      last = last.substr(0, idx)
+    }
+    parts.push(last)
+  }
+  return {
+    parts,
+    ext
+  }
+}
+
+interface PathPartsResult {
+  parts: Array<string>;
+  ext?: string;
+}
+
+
 /**
  *
  * @param url

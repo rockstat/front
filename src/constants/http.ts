@@ -7,17 +7,17 @@ export const CONTENT_TYPE_URLENCODED = 'application/x-www-form-urlencoded';
 export const CONTENT_TYPE_JSON = 'application/json';
 export const CONTENT_TYPE_JS = 'text/javascript';
 
-export const HContentType = 'Content-Type';
-export const HContentLength = 'Content-Length';
-export const HLocation = 'Location';
-export const HResponseTime = 'X-Response-Time';
-export const HMyName = 'X-My-Name';
+export const HEADER_CONTENT_TYPE = 'Content-Type';
+export const HEADER_CONTENT_LENGTH = 'Content-Length';
+export const HEADER_LOCATION = 'Location';
+export const HEADER_RESPONSE_TIME = 'X-Response-Time';
+export const HEADER_MY_NAME = 'X-My-Name';
+export const HEADER_USER_AGENT = 'User-Agent'
 
-export const ResponseGif = 'GIF';
-export const ResponseRedir = 'REDIR';
-export const ResponseJson = 'JSON';
-export const ResponseAuto = 'AUTO';
-
+export const RESPONSE_GIF = 'GIF';
+export const RESPONSE_REDIR = 'REDIR';
+export const RESPONSE_JSON = 'JSON';
+export const RESPONSE_AUTO = 'AUTO';
 
 
 export const METHOD_OPTIONS = 'OPTIONS';
