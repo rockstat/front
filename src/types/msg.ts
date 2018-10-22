@@ -1,6 +1,6 @@
 import { STATUS_OK, STATUS_TEMP_REDIR, STATUS_BAD_REQUEST, STATUS_INT_ERROR } from "@rockstat/rock-me-ts";
 import { Dispatcher } from "@app/Dispatcher";
-import { Dictionary } from "@app/types/base";
+import { Dictionary } from "./base";
 
 // ###### HTTP messages part
 
@@ -44,19 +44,6 @@ export interface IncomingMessageProps {
   data: IncomingMsgData;
 }
 
-
-export interface ClientHttpMessage extends BaseIncomingMessage {
-  uid: string;
-  ip: string;
-  userAgent: string;
-}
-
-export interface WebHookMessage extends BaseIncomingMessage {
-  service: string;
-  name: string;
-}
-
-
 export type BaseIncomingMessage = IncomingMessageProps & Partial<MessageIdTime>;
 export type IncomingMessage = IncomingMessageProps & MessageIdTime;
 
@@ -69,41 +56,6 @@ export interface BusBaseEnricher {
   handle: (key: string, msg: BaseIncomingMessage) => Promise<Dictionary<any>>;
 }
 
-
-
 export type BusMsgHdrResult = PromiseLike<any>
 export type BusMsgHdrsResult = PromiseLike<any[]>
 
-export type BusRegistratorBase = (dispatcher: Dispatcher, handler: BusMsgHdr, key: string) => void;
-
-// ###### RPC
-
-export interface RPCBase {
-  jsonrpc: '2.0';
-  to: string;
-  from: string;
-}
-
-export type RPCRequestParams = { [k: string]: any } | null;
-
-export interface RPCRequest extends RPCBase {
-  id?: string;
-  method: string;
-  params: RPCRequestParams;
-}
-
-export interface RPCResponse extends RPCBase {
-  id: string;
-  result: any;
-}
-
-export interface RPCErrorDetails {
-  message: string;
-  code: number;
-  data?: any;
-}
-
-export interface RPCResponseError extends RPCBase {
-  id: string;
-  error: RPCErrorDetails;
-}

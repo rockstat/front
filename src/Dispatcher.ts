@@ -45,6 +45,7 @@ import {
   STATUS_OK,
   BandResponse,
   isBandResponse,
+  UnknownResponse,
   response,
 } from '@rockstat/rock-me-ts';
 import * as EnrichersRepo from '@app/enrichers';
@@ -114,25 +115,25 @@ export class Dispatcher {
           // Skip handling. Nothing changed
           return;
         }
-        const updateHdrs: string[] = [];
-        const newReqs: EnrichersRequirements = [];
+        const handledRoutingKeys: string[] = [];
+        const enrichersRequirements: EnrichersRequirements = [];
         for (const row of data.register) {
           const { service, method, options } = row;
           const route = { service, method };
           if (options && options.alias) {
             route.service = options.alias;
           }
-          const bindToKey = epglue(IN_GENERIC, route.service, route.method)
+          const routingKey = epglue(IN_GENERIC, route.service, route.method)
           if (row.role === 'handler') {
-            this.rpcHandlers[bindToKey] = [service, method];
-            updateHdrs.push(bindToKey);
+            this.rpcHandlers[routingKey] = [service, method];
+            handledRoutingKeys.push(routingKey);
           }
           if (row.role === 'enricher' && options && Array.isArray(options.keys)) {
             this.propGetters[service] = dotPropGetter(options.props || {});
             // Handling enrichments data selection
             if (options.props) {
               for (const [k, v] of Object.entries(options.props)) {
-                newReqs.push([k, v]);
+                enrichersRequirements.push([k, v]);
               }
             }
             this.remoteEnrichers.subscribe(options.keys, service)
@@ -140,8 +141,8 @@ export class Dispatcher {
         }
         this.registrationsHash = data.state_hash;
         // TODO: split by services (when enrichers will be splitted)
-        this.enrichersRequirements = newReqs;
-        this.handleBus.replace(updateHdrs, this.rpcGateway)
+        this.enrichersRequirements = enrichersRequirements;
+        this.handleBus.replace(handledRoutingKeys, this.rpcGateway)
       }
       return this.status.get({});
     });
@@ -170,7 +171,7 @@ export class Dispatcher {
         this.handleBus.subscribe(chan, HandlersRepo[name]());
       })
 
-
+    // Listeners gateway
     this.listenBus.subscribe('*', async (key: string, msg: IncomingMessage) => {
       try {
         return await this.rpc.notify(BROADCAST, BROADCAST, msg);
@@ -188,6 +189,7 @@ export class Dispatcher {
         this.log.error(`catch! ${error.message}`);
       }
     });
+
     // status notification for band director
     setInterval(() => {
       this.rpc.notify(SERVICE_DIRECTOR, RPC_IAMALIVE, { name: SERVICE_FRONTIER })
@@ -206,11 +208,16 @@ export class Dispatcher {
       // Real destination
       const [service, method] = this.rpcHandlers[key];
       try {
-        const data: BandResponse | string | Array<any> | number | null = await this.rpc.request<any>(service, method, msg);
-        if (data && typeof data === "object" && !Array.isArray(data) && isBandResponse(data)) {
-          data.headers = data.headers || [];
-          data.statusCode = data.statusCode || STATUS_OK;
-          return data;
+        const data: UnknownResponse = await this.rpc.request<any>(service, method, msg);
+        // todo: check via isBandResponse
+        if (data && typeof data === "object" && !Array.isArray(data)) {
+          if ('_response___type' in data) {
+            // todo: needed type with optional headers and statusCode
+            data.headers = data.headers || [];
+            data.statusCode = data.statusCode || STATUS_OK;
+            return data;
+          }
+
         }
         return response.data({ data });
       } catch (error) {
