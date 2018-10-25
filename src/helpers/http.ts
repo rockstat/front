@@ -1,11 +1,8 @@
 import { parse as parseQs } from 'qs';
-import { ServerResponse, OutgoingHttpHeaders, } from 'http';
-
 import { parse as parseUrl } from 'url';
 import { listVal } from './common';
 import { CONTENT_TYPE_URLENCODED, CONTENT_TYPE_JSON } from '../constants/http';
 import { HTTPHeaders } from '@app/types';
-import { BandResponse } from '@rockstat/rock-me-ts';
 
 
 
@@ -21,9 +18,9 @@ export const emptyGif = Buffer.from('R0lGODlhAQABAIAAAP///////yH5BAEKAAEALAAAAAA
  * Handles url path string
  * @param path 
  */
-export const pathParts = (pathString: string): PathPartsResult => {
+export const pathParts = (pathString: string, mark: string): PathPartsResult => {
   const parts = pathString.split('/');
-  let ext;
+  let ext, native = false;
   // remove firts slash
   parts.shift()
   let last = parts.pop()
@@ -34,9 +31,15 @@ export const pathParts = (pathString: string): PathPartsResult => {
       ext = last.substr(idx + 1, last.length)
       last = last.substr(0, idx)
     }
-    parts.push(last)
+    parts.push(last)    
+  }
+  const idx = parts.indexOf(mark);
+  if (idx >= 0) {
+    parts.splice(idx, 1);
+    native = true;
   }
   return {
+    native,
     parts,
     ext
   }
@@ -44,6 +47,7 @@ export const pathParts = (pathString: string): PathPartsResult => {
 
 interface PathPartsResult {
   parts: Array<string>;
+  native: boolean;
   ext?: string;
 }
 

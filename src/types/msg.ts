@@ -1,5 +1,3 @@
-import { STATUS_OK, STATUS_TEMP_REDIR, STATUS_BAD_REQUEST, STATUS_INT_ERROR } from "@rockstat/rock-me-ts";
-import { Dispatcher } from "@app/Dispatcher";
 import { Dictionary } from "./base";
 
 // ###### HTTP messages part

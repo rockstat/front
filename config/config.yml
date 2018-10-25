@@ -6,19 +6,20 @@ identify:
   cookieMaxAge: <%= 3 * 365 * 24 * 60 * 60 %>
   cookieDomain: auto
   cookiePath: /
+  # whould be prefixed with "."
   domain: <%= env.DOMAIN %>
 
 http:
   host: <%= env.HOST || '0.0.0.0' %>
   port: <%= env.PORT || '8080' %>
-  channels:
+  # mark in url segment which tell return native response
+  url_mark: band
+  # services to channels map
+  sevices_map:
     # service: channel
     # channels details look at src/constants/common.ts
-    redir: redir
-    pixel: pixel
+    away: redir
     gif: pixel
-    track: track
-    away: track
     t4k: track
 
 websocket:
@@ -73,5 +74,6 @@ bus:
     PixelHandler: <%= IN_GENERIC %>.<%= SERVICE_PIXEL %>
     RedirectHandler: <%= IN_GENERIC %>.<%= SERVICE_REDIR %>
     TrackHandler: <%= IN_GENERIC %>.<%= SERVICE_TRACK %>
+    HelloHandler: <%= IN_GENERIC %>.hello
 
 #!!js/undefined

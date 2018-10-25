@@ -1,33 +1,26 @@
 import { createServer as createHTTPSServer, Server as HTTPSServer } from 'https';
 import { IncomingMessage } from 'http';
-import { readFileSync, stat } from 'fs';
-import { Socket } from 'net';
-import { Service, Inject, Container } from 'typedi';
+import { Container } from 'typedi';
 import * as WebSocket from 'ws';
-import { Logger, TheIds, AppConfig, response, BandResponse, STATUS_BAD_REQUEST, RESP_DATA } from "@rockstat/rock-me-ts";
+import { Logger, AppConfig, response, BandResponse, STATUS_BAD_REQUEST, RESP_DATA } from "@rockstat/rock-me-ts";
 import { Dispatcher } from '@app/Dispatcher';
 import {
   WsConfig,
-  Dictionary,
   BaseIncomingMessage,
-  HttpConfig,
   FrontierConfig,
-  IncomingMsgData,
   AnyStruct,
   WsHTTPParams,
+  Dictionary,
 } from '@app/types';
 import {
-  isObject, isString, isEmptyString, epglue, epchild
+  isObject, epglue
 } from '@app/helpers';
 import { parse as urlParse } from 'url';
 import {
   OUT_WEBSOCK,
   CMD_WEBSOCK_ADD_GROUP,
   OUT_WEBSOCK_BROADCAST,
-  STRING,
   CMD_WEBSOCK,
-  IN_WEBSOCK_HELLO,
-  IN_WEBSOCK,
   IN_GENERIC,
   CHANNEL_WEBSOCK,
   ERROR_NOT_OBJECT,
@@ -47,10 +40,8 @@ interface SockLookup {
 }
 
 interface AddToGroupPayload {
-
   uid: string;
   group: string;
-
 }
 
 export class WebSocketServer {
@@ -72,39 +63,6 @@ export class WebSocketServer {
     this.log = Container.get(Logger).for(this);
   }
 
-  /**
-   * Transform incoming data to Message struct
-   */
-  private async handle(raw: WebSocket.Data, state: SockState): Promise<BandResponse> {
-    let [error, data] = this.parse(raw);
-    if (error) {
-      this.log.error(error);
-      return response.error({ statusCode: STATUS_BAD_REQUEST });
-    }
-    if (!data) {
-      this.log.error(ERROR_ABSENT_DATA);
-      return response.error({ statusCode: STATUS_BAD_REQUEST, errorMessage: ERROR_ABSENT_DATA });
-    }
-    if (data.name === 'ping') {
-      return response.data({ data: 'pong' });
-    }
-
-    if (!data.service || !data.name) {
-      return response.error({ statusCode: STATUS_BAD_REQUEST, errorMessage: 'Request must contain "service" and "name' })
-    }
-
-    this.log.debug(`msg '${data.name}' received`);
-    const msg: BaseIncomingMessage = {
-      key: epglue(IN_GENERIC, data.service, data.name),
-      name: String(data.name),
-      service: String(data.service),
-      channel: CHANNEL_WEBSOCK,
-      data: data,
-      uid: state.uid
-    }
-
-    return await this.dispatcher.dispatch(msg.key, msg);
-  }
 
   /**
    * Parse JSON and check is an object
@@ -165,22 +123,8 @@ export class WebSocketServer {
             const state = this.socksState.get(socket);
             if (state) {
               state.touch = new Date().getTime();
-              this.handle(raw, state).then(msg => {
-                const resp: {
-                  [k: string]: any,
-                } = {
-                  status: msg.statusCode
-                };
-                if ('data' in msg) {
-                  resp.data = msg.data;
-                }
-                if ('location' in msg) {
-                  resp.location = msg.location;
-                }
-                if ('errorMessage' in msg) {
-                  resp.data = { error: msg.errorMessage };
-                }
-                if (socket.readyState === WebSocket.OPEN ){
+              this.handle(state, raw).then(resp => {
+                if (socket.readyState === WebSocket.OPEN) {
                   socket.send(this.encode(resp));
                 }
               }).catch(error => {
@@ -194,6 +138,43 @@ export class WebSocketServer {
       this.log.info('Connection without url or credentials');
       socket.close();
     });
+  }
+
+  /**
+    * Transform incoming data to Message struct
+    */
+  private async handle(state: SockState, raw: WebSocket.Data): Promise<BandResponse> {
+    let [error, data] = this.parse(raw);
+    const reqId = data && data.id__;
+    const resp = await this.doHandle(state, data, error);
+    resp.id__ = reqId;
+    return resp;
+  }
+
+  private async doHandle(state: SockState, data?: Dictionary<any>, error?: Error): Promise<BandResponse> {
+    if (error) {
+      this.log.error(error);
+      return response.error({ statusCode: STATUS_BAD_REQUEST });
+    }
+    else if (!data) {
+      this.log.error(ERROR_ABSENT_DATA);
+      return response.error({ statusCode: STATUS_BAD_REQUEST, errorMessage: ERROR_ABSENT_DATA });
+    }
+    else if (!data.service || !data.name) {
+      return response.error({ statusCode: STATUS_BAD_REQUEST, errorMessage: 'Request must contain "service" and "name' })
+    }
+
+    this.log.debug(`msg '${data.name}' received`);
+    const msg: BaseIncomingMessage = {
+      key: epglue(IN_GENERIC, data.service, data.name),
+      name: String(data.name),
+      service: String(data.service),
+      channel: CHANNEL_WEBSOCK,
+      data: data,
+      uid: state.uid
+    }
+    return await this.dispatcher.dispatch(msg.key, msg);
+
   }
 
   /**

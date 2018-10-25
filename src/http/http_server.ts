@@ -95,6 +95,7 @@ export class HttpServer {
   title: string;
   uidParam: string = 'uid';
   uidCookie: string;
+  urlMark: string;
   cookieExpires: Date;
   cookieDomain?: string;
   servicesMap: Dictionary<string>
@@ -111,12 +112,13 @@ export class HttpServer {
     this.identopts = config.identify;
     this.uidCookie = this.identopts.param;
     this.clientopts = config.client.common;
+    this.urlMark = config.http.url_mark;
     this.log = logger.for(this);
-    this.servicesMap = this.options.channels;
+    this.servicesMap = this.options.sevices_map;
     this.cookieExpires = new Date(new Date().getTime() + this.identopts.cookieMaxAge * 1000);
-    this.cookieDomain = this.identopts.cookieDomain === 'auto' && this.identopts.domain
-      ? '.' + autoDomain(this.identopts.domain)
-      : undefined;
+    this.cookieDomain = this.identopts.cookieDomain === 'auto'
+      ? (this.identopts.domain ? '.' + autoDomain(this.identopts.domain) : undefined)
+      : this.identopts.cookieDomain
 
   }
 
@@ -136,7 +138,7 @@ export class HttpServer {
           this.send(res, result, reqTime)
         })
         .catch(exc => {
-          console.error('exception catched >> ', exc);
+          console.error('exception caused >> ', exc);
         })
     });
     this.httpServer.listen(this.options.port, this.options.host);
@@ -145,54 +147,62 @@ export class HttpServer {
 
   private send(res: ServerResponse, resp: BandResponse, reqTime: number) {
     resp.headers.push([HEADER_RESPONSE_TIME, reqTime])
-    let data: string | Buffer = '';
+    let raw: string | Buffer = '';
     let contentType: string = CONTENT_TYPE_PLAIN;
+    const { headers, ...rest } = resp;
 
+    if (resp.native__) {
+      raw = JSON.stringify(rest);
+    } else {
 
-    if (resp._response___type === RESP_DATA) {
-      // overiide null values with empty string
-      if (resp.data === null) {
-        resp.data = '';
-      }
-      // Object or Buffer or Array...
-      else if (typeof resp.data === 'object') {
-        // buffer -> raw data
-        if (resp.data instanceof Buffer) {
-          contentType = resp.contentType || CONTENT_TYPE_OCTET;
-          data = resp.data;
+      if (rest.type__ === RESP_DATA) {
+        // overiide null values with empty string
+        if (rest.data === null) {
+          rest.data = '';
         }
-        // Object or Array -> need to serialize
+        // Object or Buffer or Array...
+        else if (typeof rest.data === 'object') {
+          // buffer -> raw data
+          if (rest.data instanceof Buffer) {
+            contentType = rest.contentType || CONTENT_TYPE_OCTET;
+            raw = rest.data;
+          }
+          // Object or Array -> need to serialize
+          else {
+            contentType = CONTENT_TYPE_JSON;
+            raw = JSON.stringify(rest.data);
+          }
+        }
+        // Raw string responses
         else {
-          contentType = CONTENT_TYPE_JSON;
-          data = JSON.stringify(resp.data);
+          raw = String(rest.data);
         }
       }
-      // Raw string responses
-      else {
-        data = String(resp.data);
+
+      if (rest.type__ === RESP_REDIRECT) {
+        raw = '';
+        contentType = CONTENT_TYPE_PLAIN;
+        headers.push([HEADER_LOCATION, rest.location]);
       }
-    }
-    if (resp._response___type === RESP_REDIRECT) {
-      data = '';
-      contentType = CONTENT_TYPE_PLAIN;
-      resp.headers.push([HEADER_LOCATION, resp.location]);
-    }
-    if (resp._response___type === RESP_PIXEL) {
-      data = emptyGif;
-      contentType = CONTENT_TYPE_GIF;
+
+      if (rest.type__ === RESP_PIXEL) {
+        raw = emptyGif;
+        contentType = CONTENT_TYPE_GIF;
+      }
+
+      if (rest.type__ === RESP_ERROR) {
+        raw = JSON.stringify({ message: rest.errorMessage });
+        contentType = CONTENT_TYPE_JSON;
+      }
+      headers.push([HEADER_CONTENT_TYPE, contentType])
+      headers.push([HEADER_CONTENT_LENGTH, Buffer.byteLength(raw)])
     }
 
-    if (resp._response___type === RESP_ERROR) {
-      data = JSON.stringify({ message: resp.errorMessage });
-      contentType = CONTENT_TYPE_JSON;
-    }
-    resp.headers.push([HEADER_CONTENT_TYPE, contentType])
-    resp.headers.push([HEADER_CONTENT_LENGTH, Buffer.byteLength(data)])
     for (const [h, v] of resp.headers) {
       res.setHeader(h, v);
     }
     res.statusCode = resp.statusCode;
-    res.end(data);
+    res.end(raw);
   }
 
   /**
@@ -224,14 +234,16 @@ export class HttpServer {
     // parsing url
     const urlParts = urlParse(req.url);
     const query: Dictionary<string> = urlParts.query ? qs.parse(urlParts.query) : {};
-    const parsedPath = pathParts(urlParts.pathname || '')
+    const urlPath = urlParts.pathname || ''
+    const { native, ...parsedPath } = pathParts(urlPath, this.urlMark);
     // parse cookie
     const cookie: Dictionary<string> = Cookie.parse(f(req.headers.cookie) || '');
-    // 
     const [urlService, urlName, urlProjectId] = parsedPath.parts;
-    
+
+    console.log(parsedPath, native)
+
     // Handling POST if routed right way!
-    const contentType = parsedPath.ext && extContentTypeMap[parsedPath.ext] || ContentTypeHeader
+    const contentType = parsedPath.ext && extContentTypeMap[parsedPath.ext] || ContentTypeHeader || '';
 
     let body: HTTPBodyParams = {};
     if (req.method === METHOD_POST) {
@@ -260,20 +272,21 @@ export class HttpServer {
     // Data for routing request
     const routeOn: RouteOn = {
       method: req.method,
-      contentType: contentType || '',
+      contentType,
       query,
       cookie,
-      body: body,
-      path: urlParts.pathname || '/',
-      service: query.service || body.service || !!urlService && this.servicesMap[urlService] || urlService,
+      body,
+      uid,
+      path: urlPath,
+      service: query.service || body.service || (urlService && this.servicesMap[urlService]) || urlService,
       name: urlName || query.name || body.name,
       projectId: Number(urlProjectId || query.projectId || body.projectId || 0),
       origin: computeOrigin(originHeader, refererHeader),
-      uid,
       td: transportData
     };
 
     const routed = await this.route(routeOn)
+    routed.native__ = native;
 
     routed.headers.push(
       ...secureHeaders(),
@@ -317,7 +330,7 @@ export class HttpServer {
     // ### Allow only GET and POST
     if (routeOn.path === '/lib.js') {
       return response.data({
-        data: this.static.prepareLib({ initialUid: routeOn.uid, ...this.clientopts }),
+        data: this.static.prepareLib({ initialUid: routeOn.uid, urlMark: this.urlMark, ...this.clientopts }),
         contentType: CONTENT_TYPE_JS
       });
     }

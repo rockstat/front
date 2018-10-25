@@ -22,7 +22,8 @@ export interface HTTPServiceMapParams {
 export interface HttpConfig {
   host: string;
   port: number;
-  channels: HTTPServiceMapParams
+  url_mark: string;
+  sevices_map: HTTPServiceMapParams
 }
 
 // ##### WEBSOCKET #####
@@ -56,7 +57,7 @@ export interface WsConfig {
   perMessageDeflate: wsDeflateConfig;
 }
 
-// ##### TRACKING #####
+// ##### CLIENT #####
 
 export type StaticConfig = {
   lib: string;
@@ -76,7 +77,6 @@ export type ClientConfig = {
 
 
 // ##### MSG BUS #####
-
 
 export interface MsgBusConfig {
   enrichers: { [k: string]: Array<string> }

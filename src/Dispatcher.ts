@@ -44,7 +44,6 @@ import {
   STATUS_INT_ERROR,
   STATUS_OK,
   BandResponse,
-  isBandResponse,
   UnknownResponse,
   response,
 } from '@rockstat/rock-me-ts';
@@ -72,7 +71,6 @@ export class Dispatcher {
   idGen: TheIds;
   status: AppStatus;
   registrationsHash: string = '';
-  servicesMap: HTTPServiceMapParams
   rpc: RPCAgnostic;
   rpcHandlers: { [k: string]: [string, string] } = {};
   rpcEnrichers: { [k: string]: Array<string> } = {};
@@ -85,7 +83,6 @@ export class Dispatcher {
     this.status = new AppStatus();
     this.log.info('Starting');
     this.appConfig = Container.get<AppConfig<FrontierConfig>>(AppConfig);
-    this.servicesMap = this.appConfig.http.channels;
     this.idGen = Container.get(TheIds);
   }
 
@@ -211,13 +208,12 @@ export class Dispatcher {
         const data: UnknownResponse = await this.rpc.request<any>(service, method, msg);
         // todo: check via isBandResponse
         if (data && typeof data === "object" && !Array.isArray(data)) {
-          if ('_response___type' in data) {
+          if ('type__' in data) {
             // todo: needed type with optional headers and statusCode
             data.headers = data.headers || [];
             data.statusCode = data.statusCode || STATUS_OK;
             return data;
           }
-
         }
         return response.data({ data });
       } catch (error) {
