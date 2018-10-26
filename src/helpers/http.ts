@@ -1,8 +1,20 @@
 import { parse as parseQs } from 'qs';
 import { parse as parseUrl } from 'url';
 import { listVal } from './common';
-import { CONTENT_TYPE_URLENCODED, CONTENT_TYPE_JSON } from '../constants/http';
-import { HTTPHeaders } from '@app/types';
+import { 
+  CONTENT_TYPE_URLENCODED, 
+  CONTENT_TYPE_JSON, 
+  HEADER_REAL_IP, 
+  HEADER_USER_AGENT, 
+  HEADER_REFERER 
+} from '../constants/http';
+import { 
+  HTTPHeaders, 
+  HTTPTransportData 
+} from '@app/types';
+import { 
+  IncomingMessage 
+} from 'http';
 
 
 
@@ -10,8 +22,6 @@ import { HTTPHeaders } from '@app/types';
  * Transparent 1x1 gif
  */
 export const emptyGif = Buffer.from('R0lGODlhAQABAIAAAP///////yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==', 'base64');
-
-
 
 
 /**
@@ -31,7 +41,7 @@ export const pathParts = (pathString: string, mark: string): PathPartsResult => 
       ext = last.substr(idx + 1, last.length)
       last = last.substr(0, idx)
     }
-    parts.push(last)    
+    parts.push(last)
   }
   const idx = parts.indexOf(mark);
   if (idx >= 0) {
@@ -133,6 +143,21 @@ const NoCacheHeaders = Object.entries({
 });
 export function noCacheHeaders(): HTTPHeaders {
   return NoCacheHeaders;
+}
+
+
+const f = (i?: string | string[]) => Array.isArray(i) ? i[0] : i;
+
+/**
+ * 
+ * @param req request
+ */
+export const extractTransportData: (req: IncomingMessage) => HTTPTransportData = (req) => {
+  return {
+    ip: f(req.headers[HEADER_REAL_IP.toLowerCase()]) || req.connection.remoteAddress || '',
+    ua: f(req.headers[HEADER_USER_AGENT.toLowerCase()]),
+    ref: f(req.headers[HEADER_REFERER.toLowerCase()])
+  };
 }
 
 /**

@@ -2,7 +2,7 @@ import { createServer as createHTTPSServer, Server as HTTPSServer } from 'https'
 import { IncomingMessage } from 'http';
 import { Container } from 'typedi';
 import * as WebSocket from 'ws';
-import { Logger, AppConfig, response, BandResponse, STATUS_BAD_REQUEST, RESP_DATA } from "@rockstat/rock-me-ts";
+import { Logger, AppConfig, response, BandResponse, STATUS_BAD_REQUEST, RESP_DATA, Meter } from "@rockstat/rock-me-ts";
 import { Dispatcher } from '@app/Dispatcher';
 import {
   WsConfig,
@@ -11,9 +11,10 @@ import {
   AnyStruct,
   WsHTTPParams,
   Dictionary,
+  HTTPTransportData,
 } from '@app/types';
 import {
-  isObject, epglue
+  isObject, epglue, extractTransportData
 } from '@app/helpers';
 import { parse as urlParse } from 'url';
 import {
@@ -32,6 +33,7 @@ interface SockState {
   authorized: boolean;
   touch: number;
   groups: Set<string>;
+  td: HTTPTransportData;
 }
 
 interface SockLookup {
@@ -48,6 +50,7 @@ export class WebSocketServer {
   server: HTTPSServer;
   wss: WebSocket.Server;
   options: WsConfig;
+  metrics: Meter;
   secureOptions: { cert: Buffer, key: Buffer };
   socksState: WeakMap<WebSocket, SockState> = new WeakMap();
   log: Logger;
@@ -61,6 +64,7 @@ export class WebSocketServer {
     this.options = Container.get<AppConfig<FrontierConfig>>(AppConfig).ws;
     this.dispatcher = Container.get(Dispatcher);
     this.log = Container.get(Logger).for(this);
+    this.metrics = Container.get(Meter);
   }
 
 
@@ -105,6 +109,7 @@ export class WebSocketServer {
   private setup() {
     this.wss.on('connection', (socket: WebSocket, req: IncomingMessage) => {
       this.log.debug('client connected');
+      this.metrics.tick('ws.connect');
       if (req.url) {
         const parsedUrl = urlParse(req.url, true);
         const { uid } = parsedUrl.query;
@@ -114,18 +119,23 @@ export class WebSocketServer {
             uid: uid,
             authorized: false,
             touch: new Date().getTime(),
-            groups: new Set()
+            groups: new Set(),
+            td: extractTransportData(req)
           });
           socket.on('close', (code: number, reason: string) => {
             this.log.debug(`closed ${code} ${reason}`);
+            this.metrics.tick('ws.close')
           })
           socket.on('message', (raw) => {
+            const requestTime = this.metrics.timenote('ws.message')
+            this.metrics.tick('ws.message')
             const state = this.socksState.get(socket);
             if (state) {
               state.touch = new Date().getTime();
               this.handle(state, raw).then(resp => {
                 if (socket.readyState === WebSocket.OPEN) {
                   socket.send(this.encode(resp));
+                  requestTime();
                 }
               }).catch(error => {
                 this.log.error(error);

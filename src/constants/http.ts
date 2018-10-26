@@ -11,6 +11,8 @@ export const HEADER_CONTENT_TYPE = 'Content-Type';
 export const HEADER_CONTENT_LENGTH = 'Content-Length';
 export const HEADER_LOCATION = 'Location';
 export const HEADER_RESPONSE_TIME = 'X-Response-Time';
+export const HEADER_REAL_IP = 'X-Real-IP';
+export const HEADER_REFERER = 'Referer';
 export const HEADER_MY_NAME = 'X-My-Name';
 export const HEADER_USER_AGENT = 'User-Agent'
 

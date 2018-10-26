@@ -55,7 +55,8 @@ import {
   autoDomain,
   epglue,
   cleanUid,
-  pathParts
+  pathParts,
+  extractTransportData
 } from '@app/helpers';
 import {
   HttpConfig,
@@ -131,7 +132,7 @@ export class HttpServer {
     this.log.info({ finalCookieDomain: this.cookieDomain, ...this.identopts }, 'Indentify options');
     this.httpServer = createServer((req, res) => {
       const requestTime = this.metrics.timenote('http.request')
-      this.metrics.tick('request')
+      this.metrics.tick('http.request')
       this.handle(req)
         .then((result: BandResponse) => {
           const reqTime = requestTime();
@@ -224,9 +225,7 @@ export class HttpServer {
 
     // extracting useful headers
     const {
-      'user-agent': userAgentHeader,
       'content-type': ContentTypeHeader,
-      'x-real-ip': realIpHeader,
       'origin': originHeader,
       'referer': refererHeader
     } = req.headers;
@@ -263,11 +262,7 @@ export class HttpServer {
       this.idGen.flake()
     )
 
-    const transportData: HTTPTransportData = {
-      ip: f(realIpHeader) || req.connection.remoteAddress,
-      ua: f(userAgentHeader),
-      ref: f(refererHeader)
-    };
+    const transportData = extractTransportData(req);
 
     // Data for routing request
     const routeOn: RouteOn = {
