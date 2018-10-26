@@ -9,8 +9,6 @@ import {
   FrontierConfig,
   IncomingMessage,
   BaseIncomingMessage,
-  HTTPServiceMapParams,
-  BusBaseEnricher,
   MsgBusConfig,
 } from '@app/types';
 import {
@@ -46,6 +44,7 @@ import {
   BandResponse,
   UnknownResponse,
   response,
+  MethodRegistrationOptions,
 } from '@rockstat/rock-me-ts';
 import * as EnrichersRepo from '@app/enrichers';
 import * as HandlersRepo from '@app/handlers';
@@ -72,7 +71,7 @@ export class Dispatcher {
   status: AppStatus;
   registrationsHash: string = '';
   rpc: RPCAgnostic;
-  rpcHandlers: { [k: string]: [string, string] } = {};
+  rpcHandlers: { [k: string]: [string, string, MethodRegistrationOptions] } = {};
   rpcEnrichers: { [k: string]: Array<string> } = {};
   propGetters: { [k: string]: (obj: any) => { [k: string]: any } } = {};
   enrichersRequirements: EnrichersRequirements = [];
@@ -105,6 +104,10 @@ export class Dispatcher {
     this.rpc = new RPCAgnostic(rpcOptions);
     this.rpc.setup(rpcAdaptor);
 
+    // status notification for band director
+    setInterval(() => {
+      this.rpc.notify(SERVICE_DIRECTOR, RPC_IAMALIVE, { name: SERVICE_FRONTIER })
+    }, 5 * 1000)
     // Registering status handler / payload receiver
     this.rpc.register<MethodRegRequest>(METHOD_STATUS, async (data) => {
       if (data.register && data.state_hash) {
@@ -112,7 +115,7 @@ export class Dispatcher {
           // Skip handling. Nothing changed
           return;
         }
-        const handledRoutingKeys: string[] = [];
+        const handlerRoutingKeys: string[] = [];
         const enrichersRequirements: EnrichersRequirements = [];
         for (const row of data.register) {
           const { service, method, options } = row;
@@ -122,8 +125,8 @@ export class Dispatcher {
           }
           const routingKey = epglue(IN_GENERIC, route.service, route.method)
           if (row.role === 'handler') {
-            this.rpcHandlers[routingKey] = [service, method];
-            handledRoutingKeys.push(routingKey);
+            this.rpcHandlers[routingKey] = [service, method, options];
+            handlerRoutingKeys.push(routingKey);
           }
           if (row.role === 'enricher' && options && Array.isArray(options.keys)) {
             this.propGetters[service] = dotPropGetter(options.props || {});
@@ -139,30 +142,31 @@ export class Dispatcher {
         this.registrationsHash = data.state_hash;
         // TODO: split by services (when enrichers will be splitted)
         this.enrichersRequirements = enrichersRequirements;
-        this.handleBus.replace(handledRoutingKeys, this.rpcGateway)
+        this.handleBus.replace(handlerRoutingKeys, this.rpcGateway)
       }
       return this.status.get({});
     });
+
+    this.rpc.register<{}>('handlers', async () => {
+      return this.rpcHandlers;
+    })
 
     // Attaching enrichers
     const enrichersConfig: {
       [k in EnrichersNames]?: MsgBusConfig['enrichers'][k]
     } = this.appConfig.get('bus').enrichers;
-    Object
-      .entries(enrichersConfig)
+    Object.entries(enrichersConfig)
       .filter(([name, chans]) => chans && (name in EnrichersRepo))
       .forEach(([name, chans]: [EnrichersNames, Array<string>]) => {
         const enricher = new EnrichersRepo[name]();
         chans.forEach(chan => this.enrichBus.subscribe(chan, enricher.handle));
       })
 
-
     // Attaching handlers
     const handlersConfig: {
       [k in HandlersNames]?: MsgBusConfig['handlers'][k]
     } = this.appConfig.get('bus').handlers;
-    Object
-      .entries(handlersConfig)
+    Object.entries(handlersConfig)
       .filter(([name, chan]) => chan && (name in HandlersRepo))
       .forEach(([name, chan]: [HandlersNames, string]) => {
         this.handleBus.subscribe(chan, HandlersRepo[name]());
@@ -181,16 +185,11 @@ export class Dispatcher {
     this.enrichBus.subscribe('*', async (key: string, msg: IncomingMessage) => {
       try {
         const smallMsg = getvals(msg, this.enrichersRequirements);
-        return await this.rpc.request(ENRICH, ENRICH, smallMsg, this.remoteEnrichers.simulate(key));
+        return await this.rpc.request(ENRICH, ENRICH, smallMsg, { services: this.remoteEnrichers.simulate(key) });
       } catch (error) {
         this.log.error(`catch! ${error.message}`);
       }
     });
-
-    // status notification for band director
-    setInterval(() => {
-      this.rpc.notify(SERVICE_DIRECTOR, RPC_IAMALIVE, { name: SERVICE_FRONTIER })
-    }, 5 * 1000)
   }
 
   start() {
@@ -203,9 +202,9 @@ export class Dispatcher {
   rpcGateway = async (key: string, msg: BaseIncomingMessage): Promise<BandResponse> => {
     if (msg.service && msg.name && this.rpcHandlers[key]) {
       // Real destination
-      const [service, method] = this.rpcHandlers[key];
+      const [service, method, options] = this.rpcHandlers[key];
       try {
-        const data: UnknownResponse = await this.rpc.request<any>(service, method, msg);
+        const data: UnknownResponse = await this.rpc.request<any>(service, method, msg, { timeout: options.timeout });
         // todo: check via isBandResponse
         if (data && typeof data === "object" && !Array.isArray(data)) {
           if ('type__' in data) {

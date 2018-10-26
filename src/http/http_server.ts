@@ -238,9 +238,7 @@ export class HttpServer {
     // parse cookie
     const cookie: Dictionary<string> = Cookie.parse(f(req.headers.cookie) || '');
     const [urlService, urlName, urlProjectId] = parsedPath.parts;
-
-    console.log(parsedPath, native)
-
+    
     // Handling POST if routed right way!
     const contentType = parsedPath.ext && extContentTypeMap[parsedPath.ext] || ContentTypeHeader || '';
 
