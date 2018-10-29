@@ -68,7 +68,7 @@ export class TreeNameBus {
     // Adding handler key
     node.handlers.push(handler);
     this.handlerEvents(handler).push(key);
-    this.log.info(`+ added handler ${handler} to ${key}. Curr: ${hel}`);
+    this.log.info(`+ added handler ${handler} to ${key}  | Curr: ${hel}`);
     // printTree(this.tree)
     return this;
   }

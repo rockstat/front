@@ -58,6 +58,11 @@ type EnricherRepo = typeof EnrichersRepo
 type HandlersNames = keyof HandlerRepo;
 type EnrichersNames = keyof EnricherRepo;
 
+const HANDLER = 'handler';
+const ENRICHER = 'enricher';
+const LISTENER = 'listener';
+
+
 @Service()
 export class Dispatcher {
 
@@ -123,12 +128,13 @@ export class Dispatcher {
           if (options && options.alias) {
             route.service = options.alias;
           }
-          const routingKey = epglue(IN_GENERIC, route.service, route.method)
-          if (row.role === 'handler') {
+          const routingPath = [IN_GENERIC, route.service].concat([route.method].filter(e => e !== '*'))
+          const routingKey = routingPath.join('.');
+          if (row.role === HANDLER) {
             this.rpcHandlers[routingKey] = [service, method, options];
             handlerRoutingKeys.push(routingKey);
           }
-          if (row.role === 'enricher' && options && Array.isArray(options.keys)) {
+          if (row.role === ENRICHER && options && Array.isArray(options.keys)) {
             this.propGetters[service] = dotPropGetter(options.props || {});
             // Handling enrichments data selection
             if (options.props) {
@@ -142,7 +148,8 @@ export class Dispatcher {
         this.registrationsHash = data.state_hash;
         // TODO: split by services (when enrichers will be splitted)
         this.enrichersRequirements = enrichersRequirements;
-        this.handleBus.replace(handlerRoutingKeys, this.rpcGateway)
+        // Registering/unregistering remote handlers
+        this.handleBus.replace(handlerRoutingKeys, this.handlersGateway)
       }
       return this.status.get({});
     });
@@ -151,10 +158,11 @@ export class Dispatcher {
       return this.rpcHandlers;
     })
 
-    // Attaching enrichers
+    // Attaching internal enrichers
     const enrichersConfig: {
       [k in EnrichersNames]?: MsgBusConfig['enrichers'][k]
     } = this.appConfig.get('bus').enrichers;
+
     Object.entries(enrichersConfig)
       .filter(([name, chans]) => chans && (name in EnrichersRepo))
       .forEach(([name, chans]: [EnrichersNames, Array<string>]) => {
@@ -162,44 +170,53 @@ export class Dispatcher {
         chans.forEach(chan => this.enrichBus.subscribe(chan, enricher.handle));
       })
 
-    // Attaching handlers
+    // Registering remote enrichers notification
+    this.enrichBus.subscribe('*', this.enrichersGateway);
+
+
+    // Attaching internal handlers
     const handlersConfig: {
       [k in HandlersNames]?: MsgBusConfig['handlers'][k]
     } = this.appConfig.get('bus').handlers;
+
     Object.entries(handlersConfig)
       .filter(([name, chan]) => chan && (name in HandlersRepo))
       .forEach(([name, chan]: [HandlersNames, string]) => {
         this.handleBus.subscribe(chan, HandlersRepo[name]());
       })
 
-    // Listeners gateway
-    this.listenBus.subscribe('*', async (key: string, msg: IncomingMessage) => {
-      try {
-        return await this.rpc.notify(BROADCAST, BROADCAST, msg);
-      } catch (error) {
-        this.log.error(`catch! ${error.message}`);
-      }
-    });
+    // Remote listeners gateway
+    this.listenBus.subscribe('*', this.listenersGateway);
 
-    // Registering remote enrichers notification
-    this.enrichBus.subscribe('*', async (key: string, msg: IncomingMessage) => {
-      try {
-        const smallMsg = getvals(msg, this.enrichersRequirements);
-        return await this.rpc.request(ENRICH, ENRICH, smallMsg, { services: this.remoteEnrichers.simulate(key) });
-      } catch (error) {
-        this.log.error(`catch! ${error.message}`);
-      }
-    });
   }
 
   start() {
     this.log.info('Started');
   }
 
+
+  listenersGateway = async (key: string, msg: IncomingMessage) => {
+    try {
+      return await this.rpc.notify(BROADCAST, BROADCAST, msg);
+    } catch (error) {
+      this.log.error(`catch! ${error.message}`);
+    }
+  }
+
+  enrichersGateway = async (key: string, msg: IncomingMessage) => {
+    try {
+      const smallMsg = getvals(msg, this.enrichersRequirements);
+      return await this.rpc.request(ENRICH, ENRICH, smallMsg, { services: this.remoteEnrichers.simulate(key) });
+    } catch (error) {
+      this.log.error(`catch! ${error.message}`);
+    }
+  }
+
+
   /**
    * Using to handle event remotely
    */
-  rpcGateway = async (key: string, msg: BaseIncomingMessage): Promise<BandResponse> => {
+  handlersGateway = async (key: string, msg: BaseIncomingMessage): Promise<BandResponse> => {
     if (msg.service && msg.name && this.rpcHandlers[key]) {
       // Real destination
       const [service, method, options] = this.rpcHandlers[key];
@@ -252,17 +269,19 @@ export class Dispatcher {
     if (enrichments.length && msg.data) {
       Object.assign(msg.data, ...enrichments);
     }
-
-    // ### Phase 2: deliver to listeners
-    // Call using Promise then to avoid waiting
+    
+    // ### Phase 2: handling if configuring
+    const handler = this.handleBus.handler(key, msg);
+    this.log.debug(` <--- ${key}`, msg);
+    const handled = await handler;  
+    
+    // ### Phase 3: send to listeners
+    // Scheduling using Promise to avoid waiting
     BBPromise.all(this.listenBus.publish(key, msg))
       .then(() => this.log.debug('Listeners handled'))
       .catch(error => this.log.error(error))
 
-    // ### Phase 3: handling if configuring
-    const handlers = this.handleBus.publish(key, msg);
+    return handled;
 
-    this.log.debug(` <--- ${key}`, msg);
-    return await handlers[handlers.length - 1];
   }
 }

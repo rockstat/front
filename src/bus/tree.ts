@@ -51,9 +51,11 @@ export class TreeBus {
       return;
     }
     this.log.info(`${this.name}: Registering handler for ${key}}`)
+    const parts = [];
     const path = key === '*' ? [] : key.split('.');
     let node = this.tree;
     for (const name of path) {
+      parts.push(name);
       if (!node.children[name]) {
         node.children[name] = {
           handlers: [],
@@ -65,6 +67,7 @@ export class TreeBus {
     // Adding handler key
     node.handlers.push(handler);
     this.handlerEvents(handler).push(key);
+    this.log.info(`> ${parts.join('.')}`)
     return this;
   }
 
@@ -72,7 +75,7 @@ export class TreeBus {
     if (!handler) {
       throw new ReferenceError(`${this.name}: handler not present`);
     }
-    const path = key === '*' ? [] : key.split('.');
+    const path = key === '*' ? [] : key.split('.').filter(e => e !== '*');;
     let node = this.tree;
     for (const name of path) {
       if (!node.children[name]) {
@@ -82,7 +85,7 @@ export class TreeBus {
     }
     // removing handler
     this.log.info(`${this.name}: Unregistering handler for ${key}}`)
-    
+
     while (node.handlers.includes(handler)) {
       node.handlers.splice(node.handlers.indexOf(handler), 1);
     }
@@ -109,4 +112,23 @@ export class TreeBus {
     }
     return handlers;
   }
+
+  handler(key: string, msg: any): PromiseLike<any> {
+    const parts = key.split('.').concat(['']);
+    const path: Array<string> = [];
+    let node = this.tree;
+    const handlers: BusMsgHdr[] = [];
+    for (const name of parts) {
+      for (let handler of node.handlers) {
+        handlers.push(handler);
+      }
+      if (!node.children[name]) {
+        break;
+      }
+      path.push(name);
+      node = node.children[name];
+    }
+    return handlers[handlers.length - 1](path.join('.'), msg);
+  }
+
 }
