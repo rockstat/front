@@ -233,7 +233,7 @@ export class Dispatcher {
         }
         return response.data({ data });
       } catch (error) {
-        this.log.warn('error at rpcGateway', error);
+        this.log.warn(error, {error, key, msg});
         return response.error({ statusCode: STATUS_INT_ERROR, errorMessage: error.message })
       }
     }
