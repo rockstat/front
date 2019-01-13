@@ -70,9 +70,8 @@ import {
   Dictionary,
 } from '@app/types';
 
-const f = (i?: string | string[]) => Array.isArray(i) ? i[0] : i;
-const parseOpts = { limit: '50kb' };
-
+const REQUEST_PAYLOAD_LIMIT = '100kb'
+const REQUEST_PARSE_OPTIONS = { limit: REQUEST_PAYLOAD_LIMIT };
 
 const extContentTypeMap: Dictionary<string> = {
   'json': CONTENT_TYPE_JSON,
@@ -80,6 +79,8 @@ const extContentTypeMap: Dictionary<string> = {
   'js': CONTENT_TYPE_JS,
   'html': CONTENT_TYPE_HTML
 }
+
+const f = (i?: string | string[]) => Array.isArray(i) ? i[0] : i;
 
 @Service()
 export class HttpServer {
@@ -235,6 +236,7 @@ export class HttpServer {
     const query: Dictionary<string> = urlParts.query ? qs.parse(urlParts.query) : {};
     const urlPath = urlParts.pathname || ''
     const { native, ...parsedPath } = pathParts(urlPath, this.urlMark);
+    
     // parse cookie
     const cookie: Dictionary<string> = Cookie.parse(f(req.headers.cookie) || '');
     const [urlService, urlName, urlProjectId] = parsedPath.parts;
@@ -376,9 +378,9 @@ export class HttpServer {
     let result: HTTPBodyParams;
     try {
       if (!contentType || !contentType.includes('json')) {
-        result = parseQuery(await text(req, parseOpts));
+        result = parseQuery(await text(req, REQUEST_PARSE_OPTIONS));
       } else {
-        result = await json(req, parseOpts);
+        result = await json(req, REQUEST_PARSE_OPTIONS);
       }
       return [undefined, isObject(result) ? result : {}];
     } catch (error) {
