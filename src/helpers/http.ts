@@ -164,7 +164,7 @@ export const extractTransportData: (req: IncomingMessage) => HTTPTransportData =
  * Security headers
  */
 const SecureHeaders = Object.entries({
-  'X-Content-Type-Options': 'nosniff',
+  // 'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'SAMEORIGIN',
   'X-XSS-Protection': '1'
 });
