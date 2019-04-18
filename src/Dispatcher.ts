@@ -142,7 +142,7 @@ export class Dispatcher {
                 enrichersRequirements.push([k, v]);
               }
             }
-            this.remoteEnrichers.subscribe(options.keys, service)
+            this.remoteEnrichers.subscribe(options.keys, route.service)
           }
         }
         this.registrationsHash = data.state_hash;
