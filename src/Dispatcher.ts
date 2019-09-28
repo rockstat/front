@@ -135,7 +135,7 @@ export class Dispatcher {
             handlerRoutingKeys.push(routingKey);
           }
           if (row.role === ENRICHER && options && Array.isArray(options.keys)) {
-            this.propGetters[service] = dotPropGetter(options.props || {});
+            this.propGetters[route.service] = dotPropGetter(options.props || {});
             // Handling enrichments data selection
             if (options.props) {
               for (const [k, v] of Object.entries(options.props)) {
@@ -155,6 +155,11 @@ export class Dispatcher {
     });
 
     this.rpc.register<{}>('handlers', async () => {
+      return this.rpcHandlers;
+    })
+
+
+    this.rpc.register<{}>('enrichers', async () => {
       return this.rpcHandlers;
     })
 
