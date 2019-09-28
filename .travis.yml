@@ -15,8 +15,7 @@ services:
 - docker
 script:
 - echo "$PROJECT_NAME $IMAGE_NAME:$TAG"
-- cat Dockerfile | sed  "s/\:latest/\:$TAG/g" > Dockerfile.tag
-- docker build -t $PROJECT_NAME -f Dockerfile.tag .
+- docker build -t $PROJECT_NAME . --build-arg WEB_SDK_CONTAINER=rockstat/web-sdk:$TAG --build-arg BASE_CONTAINER=rockstat/band-base-ts:$TAG
 after_script:
 - docker images
 before_deploy:

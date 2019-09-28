@@ -1,6 +1,9 @@
-FROM rockstat/web-sdk:latest as web-sdk-build
+ARG WEB_SDK_CONTAINER=rockstat/web-sdk:latest
+ARG BASE_CONTAINER=rockstat/band-base-ts:latest
 
-FROM rockstat/band-base-ts:latest
+FROM $WEB_SDK_CONTAINER as web-sdk-build
+
+FROM $BASE_CONTAINER
 
 LABEL band.service.version="3.3.3"
 LABEL band.service.title="Front"

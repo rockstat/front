@@ -9,3 +9,4 @@
 TextApp*
 /build
 /dist
+.pytest_cache
