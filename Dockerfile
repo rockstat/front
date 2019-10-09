@@ -5,7 +5,7 @@ FROM $WEB_SDK_CONTAINER as web-sdk-build
 
 FROM $BASE_CONTAINER
 
-LABEL band.service.version="3.4.0"
+LABEL band.service.version="3.4.1"
 LABEL band.service.title="Front"
 LABEL band.service.def_position="3x0"
 
