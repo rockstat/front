@@ -171,7 +171,7 @@ export class WebSocketServer {
       return response.error({ statusCode: STATUS_BAD_REQUEST, errorMessage: ERROR_ABSENT_DATA });
     }
     else if (!data.service || !data.name) {
-      return response.error({ statusCode: STATUS_BAD_REQUEST, errorMessage: 'Request must contain "service" and "name' })
+      return response.error({ statusCode: STATUS_BAD_REQUEST, errorMessage: 'Request must contains "service" and "name' })
     }
 
     this.log.debug(`msg '${data.name}' received`);
