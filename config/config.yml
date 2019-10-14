@@ -1,6 +1,6 @@
 ---
 name: Rockstat Front service
-version: 3.4.1
+version: 3.4.2
 identify:
   param: uid
   cookieMaxAge: <%= 3 * 365 * 24 * 60 * 60 %>
