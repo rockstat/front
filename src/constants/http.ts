@@ -3,6 +3,7 @@ export const CONTENT_TYPE_HTML = 'text/html';
 export const CONTENT_TYPE_OCTET = 'application/octet-stream';
 export const CONTENT_TYPE_PLAIN = 'text/plain';
 export const CONTENT_TYPE_GIF = 'image/gif';
+export const CONTENT_TYPE_ICON = 'image/x-icon';
 export const CONTENT_TYPE_URLENCODED = 'application/x-www-form-urlencoded';
 export const CONTENT_TYPE_JSON = 'application/json';
 export const CONTENT_TYPE_JS = 'text/javascript';

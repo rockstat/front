@@ -34,6 +34,7 @@ import {
   METHOD_POST,
   METHOD_OPTIONS,
   CONTENT_TYPE_GIF,
+  CONTENT_TYPE_ICON,
   CONTENT_TYPE_JSON,
   CONTENT_TYPE_JS,
   CONTENT_TYPE_HTML,
@@ -236,11 +237,11 @@ export class HttpServer {
     const query: Dictionary<string> = urlParts.query ? qs.parse(urlParts.query) : {};
     const urlPath = urlParts.pathname || ''
     const { native, ...parsedPath } = pathParts(urlPath, this.urlMark);
-    
+
     // parse cookie
     const cookie: Dictionary<string> = Cookie.parse(f(req.headers.cookie) || '');
     const [urlService, urlName, urlProjectId] = parsedPath.parts;
-    
+
     // Handling POST if routed right way!
     const contentType = parsedPath.ext && extContentTypeMap[parsedPath.ext] || ContentTypeHeader || '';
 
@@ -330,6 +331,29 @@ export class HttpServer {
       });
     }
 
+    // ### Allow only GET and POST
+    if (routeOn.path === '/lib.js') {
+      return response.data({
+        data: this.static.prepareLib({ initialUid: routeOn.uid, urlMark: this.urlMark, ...this.clientopts }),
+        contentType: CONTENT_TYPE_JS
+      });
+    }
+
+
+    if (routeOn.path === '/') {
+      return response.data({
+        data: this.static.getItem('index'),
+        contentType: CONTENT_TYPE_HTML
+      });
+    }
+
+    if (routeOn.path === '/favicon.ico') {
+      return response.data({
+        data: this.static.getItem('favicon'),
+        contentType: CONTENT_TYPE_ICON
+      });
+    }
+
     // ### Send request to BUS
     if (routeOn.service && routeOn.name) {
       const key = epglue(IN_GENERIC, routeOn.service, routeOn.name);
@@ -354,7 +378,7 @@ export class HttpServer {
 
   /**
    * prepare UID cookie
-   * @param uid 
+   * @param uid
    */
   private prepareUidCookie(uid: string) {
     return Cookie.serialize(
