@@ -60,7 +60,7 @@ log:
 
 client: {} # do not remove. root element should be present
 static:
-  lib.js: "static/lib<%= (envName === consts.ENV_PROD) ? '' : '-dev' %>.js"
+  lib.js: "node_modules/@rockstat/web_sdk/dist/lib<%= (envName === consts.ENV_PROD) ? '' : '-dev' %>.js"
 # env depended variables
 production: {}
 dev: {}

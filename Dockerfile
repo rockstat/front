@@ -25,7 +25,9 @@ ENV NODE_ENV production
 
 EXPOSE 8080
 
-COPY --from=web-sdk-build /usr/share/web-sdk static
+COPY --from=web-sdk-build /usr/share/web-sdk /web-sdk
+RUN cd /web-sdk && yarn install --production && yarn link
+RUN yarn link @rockstat@web_sdk
 
 RUN ln -nsf ../dist ./node_modules/@app \
   && yarn build

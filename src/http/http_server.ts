@@ -151,13 +151,12 @@ export class HttpServer {
   private send(res: ServerResponse, resp: BandResponse, reqTime: number) {
     resp.headers.push([HEADER_RESPONSE_TIME, reqTime])
     let raw: string | Buffer = '';
-    let contentType: string = CONTENT_TYPE_PLAIN;
+    let contentType: string = CONTENT_TYPE_JSON;
     const { headers, ...rest } = resp;
 
     if (resp.native__) {
       raw = JSON.stringify(rest);
     } else {
-
       if (rest.type__ === RESP_DATA) {
         // overiide null values with empty string
         if (rest.data === null) {
@@ -184,7 +183,7 @@ export class HttpServer {
 
       if (rest.type__ === RESP_REDIRECT) {
         raw = '';
-        contentType = CONTENT_TYPE_PLAIN;
+        contentType = CONTENT_TYPE_HTML;
         headers.push([HEADER_LOCATION, rest.location]);
       }
 
