@@ -13,13 +13,14 @@ export const TrackHandler = () => {
     if (msg.channel === CHANNEL_WEBSOCK){
       if (msg.name === 'ping') {
         return response.data({
-          data: {
-            message: 'pong'
-          } 
+          data: { message: 'pong' }
         })
       }
-      if (msg.name === 'hello') {
+      else if (msg.name === 'hello') {
         return response.data({ data: { message: 'hi' } })
+      }
+      else {
+        return response.data({data: {id: msg.id}});
       }
     }
     return response.error({ statusCode: STATUS_NOT_FOUND })
