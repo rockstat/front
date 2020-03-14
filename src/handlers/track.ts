@@ -19,9 +19,8 @@ export const TrackHandler = () => {
       else if (msg.name === 'hello') {
         return response.data({ data: { message: 'hi' } })
       }
-      else {
-        return response.data({data: {id: msg.id}});
-      }
+
+      return response.data({data: {id: msg.id}});
     }
     return response.error({ statusCode: STATUS_NOT_FOUND })
   }
