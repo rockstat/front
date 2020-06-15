@@ -8,6 +8,8 @@ FROM $BASE_CONTAINER
 LABEL band.service.version="3.5.0"
 LABEL band.service.title="Front"
 LABEL band.service.def_position="3x0"
+LABEL caddy.targetport="8080"
+
 
 ENV PORT 8080
 
