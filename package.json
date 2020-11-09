@@ -48,7 +48,7 @@
     "bluebird": "^3.5.1",
     "cookie": "^0.3.1",
     "eventemitter3": "^3.1.0",
-    "find-my-way": "^1.11.1",
+    "find-my-way": "^2.2.5",
     "get-value": "^3.0.1",
     "micro": "^9.1.4",
     "qs": "^6.5.1",
