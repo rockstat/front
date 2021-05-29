@@ -56,6 +56,6 @@
     "rpc-websockets": "^4.0.2",
     "source-map-support": "^0.5.5",
     "typedi": "^0.8.0",
-    "ws": "^6.0.0"
+    "ws": "^7.4.6"
   }
 }
