@@ -51,7 +51,7 @@
     "find-my-way": "^1.11.1",
     "get-value": "^3.0.1",
     "micro": "^9.1.4",
-    "qs": "^6.5.1",
+    "qs": "^6.5.3",
     "reflect-metadata": "^0.1.12",
     "rpc-websockets": "^4.0.2",
     "source-map-support": "^0.5.5",
