@@ -1,7 +1,7 @@
 import { Service, Inject } from "typedi";
-import * as Ajv from 'ajv';
+// import * as Ajv from 'ajv';
 
-const ajv = new Ajv();
+// const ajv = new Ajv();
 
 @Service()
 export class Validator {

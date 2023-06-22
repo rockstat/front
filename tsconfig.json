@@ -19,9 +19,9 @@
       "node_modules/@rockstat/rock-me-ts/@types",
       "@types"
     ],
-    "baseUrl": "./",
+    "baseUrl": "./src/",
     "paths": {
-      "@app/*": ["src/*"]
+      "@app/*": ["*"]
     }
   },
   "include": [

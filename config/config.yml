@@ -50,7 +50,7 @@ rpc:
   listen_direct: true
 
 redis:
-  dsn: <%= env.REDIS_DSN %>
+  dsn: <%= env.REDIS_DSN || 'redis://127.0.0.1:6379' %>
 log:
   use: pino
   pino:

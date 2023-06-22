@@ -105,11 +105,12 @@ export class HttpServer {
 
   constructor() {
     const config = Container.get<AppConfig<FrontierConfig>>(AppConfig);
-    const logger = Container.get(Logger);
+    const logger = Container.get<Logger>(Logger);
     this.metrics = Container.get(Meter);
     this.idGen = Container.get(TheIds);
     this.dispatcher = Container.get(Dispatcher);
-    this.static = Container.get(StaticData);
+    Container.set(StaticData, new StaticData());
+    this.static = Container.get<StaticData>(StaticData);
     this.options = config.http;
     this.title = config.get('name');
     this.identopts = config.identify;
@@ -233,7 +234,7 @@ export class HttpServer {
 
     // parsing url
     const urlParts = urlParse(req.url);
-    const query: Dictionary<string> = urlParts.query ? qs.parse(urlParts.query) : {};
+    const query: Dictionary<any> = urlParts.query ? qs.parse(urlParts.query) : {};
     const urlPath = urlParts.pathname || ''
     const { native, ...parsedPath } = pathParts(urlPath, this.urlMark);
 
@@ -312,7 +313,7 @@ export class HttpServer {
       return response.error({ statusCode: STATUS_BAD_REQUEST });
     }
 
-    // ### Allow only GET and POST
+    // ### Coffe test
     if (routeOn.path === '/coffee') {
       return response.error({
         statusCode: STATUS_TEAPOT,
@@ -330,15 +331,7 @@ export class HttpServer {
       });
     }
 
-    // ### Allow only GET and POST
-    if (routeOn.path === '/lib.js') {
-      return response.data({
-        data: this.static.prepareLib({ initialUid: routeOn.uid, urlMark: this.urlMark, ...this.clientopts }),
-        contentType: CONTENT_TYPE_JS
-      });
-    }
-
-
+    // ### Index
     if (routeOn.path === '/') {
       return response.data({
         data: this.static.getItem('index'),
@@ -403,7 +396,13 @@ export class HttpServer {
       if (!contentType || !contentType.includes('json')) {
         result = parseQuery(await text(req, REQUEST_PARSE_OPTIONS));
       } else {
-        result = await json(req, REQUEST_PARSE_OPTIONS);
+        // result = await json(req, REQUEST_PARSE_OPTIONS);
+        let r = await json(req, REQUEST_PARSE_OPTIONS);
+        if (typeof r === 'object' && r !== null){
+          result = r;
+        } else {
+          result = {}
+        }
       }
       return [undefined, isObject(result) ? result : {}];
     } catch (error) {
