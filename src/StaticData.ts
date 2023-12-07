@@ -44,7 +44,7 @@ export class StaticData {
   }
 
   rtConfig(params: LibParams): string {
-    return `;window["rstat"]&&window["rstat"]('configure',${JSON.stringify(params)});`;
+    return `;window["rstat4"]&&window["rstat4"]('configure',${JSON.stringify(params)});`;
   }
 
   prepareLib(params: LibParams) {

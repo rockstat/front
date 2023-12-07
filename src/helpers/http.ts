@@ -6,7 +6,8 @@ import {
   CONTENT_TYPE_JSON, 
   HEADER_REAL_IP, 
   HEADER_USER_AGENT, 
-  HEADER_REFERER 
+  HEADER_REFERER,
+  HEADER_FORWARDED_HOST
 } from '../constants/http';
 import { 
   HTTPHeaders, 
@@ -156,7 +157,8 @@ export const extractTransportData: (req: IncomingMessage) => HTTPTransportData =
   return {
     ip: f(req.headers[HEADER_REAL_IP.toLowerCase()]) || req.connection.remoteAddress || '',
     ua: f(req.headers[HEADER_USER_AGENT.toLowerCase()]),
-    ref: f(req.headers[HEADER_REFERER.toLowerCase()])
+    ref: f(req.headers[HEADER_REFERER.toLowerCase()]),
+    host: f(req.headers[HEADER_FORWARDED_HOST.toLowerCase()])
   };
 }
 

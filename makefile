@@ -1,4 +1,3 @@
-
 bump-patch:
 	bumpversion patch
 
@@ -8,13 +7,19 @@ bump-minor:
 build:
 	docker build -t front .
 
+build_amd64:
+	docker buildx build --platform linux/amd64 -t front .	
+
+tag:
+	docker tag front rockstat/front:ng
+
 push-latest:
-	docker tag front rockstat/front:latest
-	docker push rockstat/front:latest
+	docker tag front rockstat/front:ng
+	docker push rockstat/front:ng
 
 push-dev:
 	docker tag front rockstat/front:dev
-	docker push rockstat/front:latest
+	docker push rockstat/front:dev
 
 to_master:
 	@echo $(BR)

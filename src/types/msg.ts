@@ -8,6 +8,7 @@ export interface HTTPTransportData {
   ua?: string;
   // Fingerprint based on ip address and browser user-agent
   fpid?: string;
+  host?: string;
   // http referer
   ref?: string;
 }

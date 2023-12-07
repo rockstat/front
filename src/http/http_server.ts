@@ -28,6 +28,7 @@ import {
   HEADER_RESPONSE_TIME,
   HEADER_CONTENT_TYPE,
   HEADER_CONTENT_LENGTH,
+  HEADER_FORWARDED_HOST,
   HEADER_LOCATION,
   HEADER_MY_NAME,
   METHOD_GET,
@@ -264,6 +265,7 @@ export class HttpServer {
     )
 
     const transportData = extractTransportData(req);
+    // const host = 
 
     // Data for routing request
     const routeOn: RouteOn = {
@@ -288,7 +290,7 @@ export class HttpServer {
       ...secureHeaders(),
       ...corsHeaders(routeOn.origin),
       ...noCacheHeaders(),
-      ...cookieHeaders([this.prepareUidCookie(uid)])
+      ...cookieHeaders([this.prepareUidCookie(uid, transportData.host)])
     )
     return routed;
 
@@ -372,15 +374,17 @@ export class HttpServer {
    * prepare UID cookie
    * @param uid
    */
-  private prepareUidCookie(uid: string) {
+  private prepareUidCookie(uid: string, host?: string) {
     return Cookie.serialize(
       this.identopts.param,
       uid,
       {
         httpOnly: true,
+        secure: true,
         expires: this.cookieExpires,
         path: this.identopts.cookiePath,
-        domain: this.cookieDomain
+        domain: host || this.cookieDomain,
+        sameSite: 'none'
       }
     )
   }
