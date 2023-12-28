@@ -160,7 +160,7 @@ export class Dispatcher {
 
 
     this.rpc.register<{}>('enrichers', async () => {
-      return this.rpcHandlers;
+      return this.rpcEnrichers;
     })
 
     // Attaching internal enrichers
