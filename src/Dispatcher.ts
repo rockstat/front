@@ -269,7 +269,7 @@ export class Dispatcher {
     this.log.debug(` ---> ${key} [${msg.id}]`);
 
     if (msg.key === 'in.gen.track.registration_success') {
-      this.log.info('__registration_success__', msg)
+      this.log.info({msg_data: msg}, '__registration_success_v2__');
     }
 
     // ### Phase 1: enriching

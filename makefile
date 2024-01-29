@@ -14,6 +14,11 @@ tag:
 	docker tag front rockstat/front:ng
 
 push-latest:
+	docker tag front rockstat/front:latest
+	docker push rockstat/front:latest
+
+
+push-ng:
 	docker tag front rockstat/front:ng
 	docker push rockstat/front:ng
 
