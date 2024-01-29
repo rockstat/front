@@ -268,6 +268,10 @@ export class Dispatcher {
 
     this.log.debug(` ---> ${key} [${msg.id}]`);
 
+    if (msg.key === 'in.gen.track.registration_success') {
+      this.log.info('__registration_success__', msg)
+    }
+
     // ### Phase 1: enriching
     const enrichers = this.enrichBus.publish(key, msg);
     const enrichments = await BBPromise.all(enrichers);

@@ -1,5 +1,6 @@
 ---
 name: Rockstat Front service
+selected_events_dir: /front_selected_events
 version: 3.7.0
 identify:
   param: uid
