@@ -1,7 +1,7 @@
 ---
 name: Rockstat Front service
 selected_events_dir: /front_selected_events
-version: 3.7.0
+version: 3.7.1
 identify:
   param: uid
   cookieMaxAge: <%= 3 * 365 * 24 * 60 * 60 %>

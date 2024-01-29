@@ -5,7 +5,7 @@ FROM $WEB_SDK_CONTAINER as web-sdk-build
 
 FROM $BASE_CONTAINER
 
-LABEL band.service.version="3.7.0"
+LABEL band.service.version="3.7.1"
 LABEL band.service.title="Front"
 LABEL band.service.def_position="3x0"
 LABEL caddy.targetport="8080"
