@@ -1,6 +1,6 @@
 {
   "name": "@rockstat/front",
-  "version": "3.8.0",
+  "version": "3.8.1",
   "description": "Rockstat Front service",
   "main": "dist/start.js",
   "scripts": {
