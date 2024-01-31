@@ -1,6 +1,4 @@
 import { Service, Inject, Container } from 'typedi';
-import * as BBPromise from 'bluebird';
-import * as net from 'net';
 import {
   AppServer
 } from '@app/AppServer';
@@ -274,7 +272,7 @@ export class Dispatcher {
 
     // ### Phase 1: enriching
     const enrichers = this.enrichBus.publish(key, msg);
-    const enrichments = await BBPromise.all(enrichers);
+    const enrichments = await Promise.all(enrichers);
     if (enrichments.length && msg.data) {
       Object.assign(msg.data, ...enrichments);
     }
@@ -286,7 +284,7 @@ export class Dispatcher {
     
     // ### Phase 3: send to listeners
     // Scheduling using Promise to avoid waiting
-    BBPromise.all(this.listenBus.publish(key, msg))
+    Promise.all(this.listenBus.publish(key, msg))
       .then(() => this.log.debug('Listeners handled'))
       .catch(error => this.log.error(error))
 

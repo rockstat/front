@@ -1,4 +1,3 @@
-import { Promise } from 'bluebird';
 import Container from 'typedi';
 import { Logger } from '@rockstat/rock-me-ts';
 // import { printTree } from "./print";

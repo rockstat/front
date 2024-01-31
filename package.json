@@ -23,9 +23,8 @@
     "url": "https://github.com/rockstat/front"
   },
   "author": "Dmitry Rodin <madiedinro@gmail.com>",
-  "homepage": "https://rockstat.ru",
+  "homepage": "https://rock.st",
   "devDependencies": {
-    "@types/bluebird": "^3.5.38",
     "@types/cookie": "^0.5.1",
     "@types/dotenv": "^8.2.0",
     "@types/get-value": "^3.0.3",
@@ -35,7 +34,6 @@
     "@types/qs": "^6.9.7",
     "@types/statsd-client": "^0.4.3",
     "@types/ws": "^8.5.4",
-    "localtunnel": "^2.0.2",
     "pino-pretty": "^9.1.1",
     "ts-node": "^10.9.1",
     "ts-node-dev": "^2.0.0",
@@ -45,7 +43,6 @@
   "dependencies": {
     "@rockstat/rock-me-ts": "^2.0.0",
     "ajv": "^8.12.0",
-    "bluebird": "^3.7.3",
     "cookie": "^0.5.0",
     "eventemitter3": "^5.0.0",
     "find-my-way": "^7.4.0",
@@ -55,7 +52,6 @@
     "qs": "^6.11.0",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^4.1.2",
-    "rpc-websockets": "^7.5.0",
     "source-map-support": "^0.5.21",
     "tsc-watch": "^6.0.0",
     "typedi": "^0.10.0",
