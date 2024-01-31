@@ -10,17 +10,19 @@ build:
 build_amd64:
 	docker buildx build --platform linux/amd64 -t front .	
 
-tag:
+tag-ng:
 	docker tag front rockstat/front:ng
+
+tag-latest:
+	docker tag front rockstat/front:latest
 
 push-latest:
-	docker tag front rockstat/front:latest
 	docker push rockstat/front:latest
 
-
 push-ng:
-	docker tag front rockstat/front:ng
 	docker push rockstat/front:ng
+
+all-ng: build_amd64 tag-ng push-ng
 
 push-dev:
 	docker tag front rockstat/front:dev
