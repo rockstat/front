@@ -134,7 +134,12 @@ export class HttpServer {
     const { host, port } = this.options;
     this.log.info('Starting HTTP transport %s:%s', host, port);
     this.log.info({ finalCookieDomain: this.cookieDomain, ...this.identopts }, 'Indentify options');
-    this.httpServer = createServer((req, res) => {
+    this.httpServer = createServer({
+      connectionsCheckingInterval: 15000,
+      keepAlive: true,
+      keepAliveTimeout: 5000,
+      requestTimeout: 5000
+    }, (req, res) => {
       const requestTime = this.metrics.timenote('http.request')
       this.metrics.tick('http.request')
       this.handle(req)
