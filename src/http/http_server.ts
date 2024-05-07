@@ -1,4 +1,4 @@
-import { IncomingMessage, ServerResponse, createServer, Server, OutgoingHttpHeaders } from 'http';
+import { IncomingMessage, ServerResponse, createServer, Server, ServerOptions, OutgoingHttpHeaders } from 'http';
 import { send as microSend, sendError, text, json, buffer } from 'micro';
 import { Service, Inject, Container } from 'typedi';
 import { parse as urlParse } from 'url';
@@ -134,12 +134,14 @@ export class HttpServer {
     const { host, port } = this.options;
     this.log.info('Starting HTTP transport %s:%s', host, port);
     this.log.info({ finalCookieDomain: this.cookieDomain, ...this.identopts }, 'Indentify options');
-    this.httpServer = createServer({
+    const httpServerOptions:ServerOptions = {
       connectionsCheckingInterval: 15000,
       keepAlive: true,
       keepAliveTimeout: 5000,
       requestTimeout: 5000
-    }, (req, res) => {
+    };
+
+    this.httpServer = createServer(httpServerOptions, (req, res) => {
       const requestTime = this.metrics.timenote('http.request')
       this.metrics.tick('http.request')
       this.handle(req)
@@ -242,6 +244,7 @@ export class HttpServer {
     const urlParts = urlParse(req.url);
     const query: Dictionary<any> = urlParts.query ? qs.parse(urlParts.query) : {};
     const urlPath = urlParts.pathname || ''
+
     const { native, ...parsedPath } = pathParts(urlPath, this.urlMark);
 
     // parse cookie
@@ -287,6 +290,8 @@ export class HttpServer {
       origin: computeOrigin(originHeader, refererHeader),
       td: transportData
     };
+
+    // Routing request (choose handler and handle)
 
     const routed = await this.route(routeOn)
     routed.native__ = native;
