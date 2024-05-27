@@ -9,14 +9,45 @@ const build_key = (uid: string): string => {
   return 's:' + uid;
 }
 
+const default_ttl = 24*60*60*30;
+
 export class UserDataEnricher implements BusBaseEnricher {
 
   redis = Container.get<RedisFactory>(RedisFactory).create();
 
   handle = async (key: string, msg: BaseIncomingMessage): Promise<Dictionary<any>> => {
+    
     if (msg.uid) {
+      const skey = build_key(msg.uid);
+
+      if (msg.service === 'userdata' && msg.name === 'update' && msg.data){
+        try {
+
+          const data = []; 
+          
+          for (let [k, v] of Object.entries(msg.data)){
+            if (k === 'uid' || k === 'ttl'){
+              continue;
+            }
+            data.push(k, JSON.stringify(v));
+          }
+          
+          const ttl = msg.data.ttl || default_ttl;
+
+          if (data.length){
+            await this.redis.hmset(skey, ...data);
+            await this.redis.expire(skey, ttl);
+          }
+
+          return {}
+
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
       try {
-        const skey = build_key(msg.uid);
+        
         const hdata = await this.redis.hgetall(skey);
         const stored: Dictionary<any> = {};
         if (Array.isArray(hdata) && hdata.length) {
@@ -25,8 +56,8 @@ export class UserDataEnricher implements BusBaseEnricher {
           }
           return { stored };
         }
-      } catch (exc) {
-        console.error(exc);
+      } catch (e) {
+        console.error(e);
       }
     }
     return {};

@@ -1,12 +1,12 @@
 {
   "name": "@rockstat/front",
-  "version": "3.9.1",
+  "version": "4.0.1",
   "description": "Rockstat Front service",
   "main": "dist/start.js",
   "scripts": {
     "start": "ts-node -r 'tsconfig-paths/register'  ./src/start.ts | pino-pretty",
     "start:prod": "TS_NODE_BASEURL=./dist node  -r 'tsconfig-paths/register' -r 'source-map-support/register' dist/start",
-    "start:dev": "ts-node-dev -r 'tsconfig-paths/register' -r 'source-map-support/register' ./src/start.ts | pino-pretty -L debug",
+    "start:dev": "LOG_LEVEL=debug ts-node-dev -r 'tsconfig-paths/register' -r 'source-map-support/register' ./src/start.ts | pino-pretty -L debug",
     "build": "rimraf dist && tsc -p tsconfig.json",
     "clean": "rimraf dist",
     "lint": "tslint -c tslint.json -t stylish -p ./tsconfig.json",
@@ -46,7 +46,7 @@
     "find-my-way": "^7.4.0",
     "get-value": "^3.0.1",
     "micro": "^10.0.1",
-    "npm": "^9.4.2",
+    "npm": "^10.7.0",
     "qs": "^6.11.0",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^4.1.2",

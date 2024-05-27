@@ -10,8 +10,11 @@ export const ENV_STAGE = 'stage';
 export const SERVICE_DIRECTOR = 'director';
 export const SERVICE_FRONTIER = 'front';
 export const SERVICE_TRACK = 'track';
+export const SERVICE_APP_TRACK_AND = 'app-track';
+export const SERVICE_APP_TRACK_IOS = 'app-track-ios';
 export const SERVICE_PIXEL = 'pixel';
 export const SERVICE_REDIR = 'redir';
+export const SERVICE_NONE = 'stub_none';
 
 
 export const BROADCAST = 'broadcast';
@@ -20,9 +23,12 @@ export const OTHER = 'other';
 export const EMPTY = '';
 
 
+
+
 // === RPC methods
 
 export const RPC_IAMALIVE = '__iamalive';
+export const METHOD_MP_SDK_EVENTS = 'events';
 
 // === TYPES
 

@@ -43,9 +43,10 @@ export interface IncomingMessageProps {
   data: IncomingMsgData;
 }
 
+
 export type BaseIncomingMessage = IncomingMessageProps & Partial<MessageIdTime>;
 export type IncomingMessage = IncomingMessageProps & MessageIdTime;
-
+export type BaseIncomingMessageWithBatch = [BaseIncomingMessage, Array<BaseIncomingMessage>];
 
 // ###### BUS
 
@@ -58,3 +59,29 @@ export interface BusBaseEnricher {
 export type BusMsgHdrResult = PromiseLike<any>
 export type BusMsgHdrsResult = PromiseLike<any[]>
 
+export interface ServiceStatusStructRegisterOptions {
+  keys: Array<string>
+  props: {[k:string]:string}
+  alias?: string
+}
+
+
+export interface ServiceStatusStructRegisterItem {
+  method: string,
+  role: string,
+  options: ServiceStatusStructRegisterOptions
+}
+
+export interface ServiceStatusStructData {
+  name: string,
+  app_started: number,
+  app_uptime: number,
+  app_state: string,
+  register: Array<ServiceStatusStructRegisterItem>
+}
+
+export interface ServiceStatusStruct {
+    type__: 'data',
+    statusCode: Number,
+    data: ServiceStatusStructData
+}

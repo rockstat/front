@@ -1,7 +1,7 @@
 ---
 name: Rockstat Front service
 selected_events_dir: /front_selected_events
-version: 3.9.1
+version: 4.0.1
 identify:
   param: uid
   cookieMaxAge: <%= 3 * 365 * 24 * 60 * 60 %>
@@ -46,7 +46,10 @@ websocket:
     # should not be compressed.
 
 rpc:
-  name: front
+  name: front_<%= env.WORKER_ID || '1' %>
+  channels:
+    - front_<%= env.WORKER_ID || '1' %>
+    - director
   listen_all: false
   listen_direct: true
 
@@ -61,18 +64,27 @@ log:
 
 client: {} # do not remove. root element should be present
 static:
-  lib.js: "node_modules/@rockstat/web_sdk/dist/lib<%= (envName === consts.ENV_PROD) ? '' : '-dev' %>.js"
+  lib.js: "node_modules/@rockstat/web_sdk/dist/lib.js"
+  lib-dev.js: "node_modules/@rockstat/web_sdk/dist/lib-dev.js"
 # env depended variables
 production: {}
 dev: {}
 bus:
   enrichers:
     FingerPrintEnricher: [<%= IN_GENERIC %>.<%= SERVICE_TRACK %>]
-    UserDataEnricher: [<%= IN_GENERIC %>.<%= SERVICE_TRACK %>]
+    UserDataEnricher: [<%= IN_GENERIC %>.<%= SERVICE_TRACK %>, <%= IN_GENERIC %>.userdata]
   handlers:
     PixelHandler: <%= IN_GENERIC %>.<%= SERVICE_PIXEL %>
     RedirectHandler: <%= IN_GENERIC %>.<%= SERVICE_REDIR %>
     TrackHandler: <%= IN_GENERIC %>.<%= SERVICE_TRACK %>
     HelloHandler: <%= IN_GENERIC %>.hello
+  transformers:
+    MPAndroidTransformer: 
+      - <%= IN_GENERIC %>.app-track.events
+      - <%= IN_GENERIC %>.mp_handler.events_betand
+      - <%= IN_GENERIC %>.mp_handler.events_mbc
+    MPIOSTransformer: 
+      - <%= IN_GENERIC %>.app-track-ios.track-ios
+      - <%= IN_GENERIC %>.mp_handler.track-ios
 
 #!!js/undefined

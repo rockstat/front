@@ -4,6 +4,9 @@ import { Service, Inject, Container } from 'typedi';
 import { parse as urlParse } from 'url';
 import * as Cookie from 'cookie';
 import * as qs from 'qs';
+import { parse as parseQs } from 'qs';
+
+
 import {
   Meter,
   Logger,
@@ -72,8 +75,8 @@ import {
   Dictionary,
 } from '@app/types';
 
-const REQUEST_PAYLOAD_LIMIT = '100kb'
-const REQUEST_PARSE_OPTIONS = { limit: REQUEST_PAYLOAD_LIMIT };
+// const REQUEST_PAYLOAD_LIMIT = '100kb'
+// const REQUEST_PARSE_OPTIONS = { limit: REQUEST_PAYLOAD_LIMIT };
 
 const extContentTypeMap: Dictionary<string> = {
   'json': CONTENT_TYPE_JSON,
@@ -134,7 +137,7 @@ export class HttpServer {
     const { host, port } = this.options;
     this.log.info('Starting HTTP transport %s:%s', host, port);
     this.log.info({ finalCookieDomain: this.cookieDomain, ...this.identopts }, 'Indentify options');
-    const httpServerOptions:ServerOptions = {
+    const httpServerOptions: ServerOptions = {
       connectionsCheckingInterval: 15000,
       keepAlive: true,
       keepAliveTimeout: 5000,
@@ -254,15 +257,14 @@ export class HttpServer {
     // Handling POST if routed right way!
     const contentType = parsedPath.ext && extContentTypeMap[parsedPath.ext] || ContentTypeHeader || '';
 
-    let body: HTTPBodyParams = {};
+    let body: HTTPBodyParams|undefined = {};
     if (req.method === METHOD_POST) {
-      const [err, pBody] = await this.parseBody(req, contentType);
-      // Bad body
-      if (err) {
-        this.log.error(err);
+      // const [err, pBody] = await this.parseBody(req, contentType);
+      body = await this.parseBody(req, contentType);
+      if (!body) {
+        this.metrics.tick('http.request_no_body')
         return response.error({ statusCode: STATUS_BAD_REQUEST })
       }
-      body = pBody || {};
     }
 
     const uid = (
@@ -404,24 +406,27 @@ export class HttpServer {
    * @param routeOn
    * @param req
    */
-  private async parseBody(req: IncomingMessage, contentType?: string): Promise<[undefined, HTTPBodyParams] | [Error, undefined]> {
-    let result: HTTPBodyParams;
+  private async parseBody(req: IncomingMessage, contentType?: string): Promise<HTTPBodyParams | undefined> {
+    let result: HTTPBodyParams = {};
+    let data = await text(req);
+    if (!data) {
+      console.log('!data');
+      return;
+    }
     try {
       if (!contentType || !contentType.includes('json')) {
-        result = parseQuery(await text(req, REQUEST_PARSE_OPTIONS));
+        result = parseQs(data);
       } else {
-        // result = await json(req, REQUEST_PARSE_OPTIONS);
-        let r = await json(req, REQUEST_PARSE_OPTIONS);
-        if (typeof r === 'object' && r !== null){
-          result = r;
-        } else {
-          result = {}
-        }
+        result = JSON.parse(data);
       }
-      return [undefined, isObject(result) ? result : {}];
-    } catch (error) {
-      return [error, undefined];
+      // console.log(result)
+    } catch (e) {
+      console.error('parse err', { e, data });
+      return result;
     }
+
+    return result;
   }
+
 
 }

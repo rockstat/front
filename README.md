@@ -30,6 +30,9 @@ Look at the scheme
 
     LOG_LEVEL=info
 
+    DATACENTER_ID=1
+    WORKER_ID=1
+
 ## Building
 
 Source maps options

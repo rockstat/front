@@ -81,6 +81,7 @@ export type ClientConfig = {
 export interface MsgBusConfig {
   enrichers: { [k: string]: Array<string> }
   handlers: { [k: string]: string }
+  transformers: { [k: string]: Array<string> }
 }
 
 
