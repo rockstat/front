@@ -78,7 +78,14 @@ export class MPIOSTransformer implements BusBaseEnricher {
           console.error('Batch is not a batch')
         }
       } catch (e) {
+        
+        // console.log('----')
         // console.error('Err during parsing batch', {bufStr, e}) 
+        console.error('Err during parsing batch') 
+        // console.log('msg.data', msg.data);
+        // console.log('msg.data', msg);
+        // console.log('----')
+
         batch_msg.data.err = String(e);
         return [batch_msg, []];
       }

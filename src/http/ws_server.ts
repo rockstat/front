@@ -1,8 +1,8 @@
 import { createServer as createHTTPSServer, Server as HTTPSServer } from 'https';
 import { IncomingMessage } from 'http';
-import { Container } from 'typedi';
+// import { Container } from 'typedi';
 import * as WebSocket from 'ws';
-import { Logger, AppConfig, response, BandResponse, STATUS_BAD_REQUEST, RESP_DATA, Meter } from "@rockstat/rock-me-ts";
+import { Logger, AppConfig, response, BandResponse, STATUS_BAD_REQUEST, RESP_DATA, Meter, getAppDeps } from "@rockstat/rock-me-ts";
 import { Dispatcher } from '@app/Dispatcher';
 import {
   WsConfig,
@@ -61,13 +61,16 @@ export class WebSocketServer {
   }
 
   constructor() {
-    this.options = Container.get<AppConfig<FrontierConfig>>(AppConfig).ws;
-    this.dispatcher = Container.get(Dispatcher);
-    this.log = Container.get(Logger).for(this);
-    this.metrics = Container.get(Meter);
+    // this.options = Container.get<AppConfig<FrontierConfig>>(AppConfig).ws;
+    this.options = getAppDeps().getDep('config').ws;
+    // this.dispatcher = Container.get(Dispatcher);
+    this.dispatcher = getAppDeps().getDep('dispatcher');
+    // this.log = Container.get(Logger).for(this);
+    this.log = getAppDeps().getDep('log').for(this);
+    // this.metrics = Container.get(Meter);
+    this.metrics = getAppDeps().getDep('meter');
   }
-
-
+  
   /**
    * Parse JSON and check is an object
    * @param raw raw data buffer or similar

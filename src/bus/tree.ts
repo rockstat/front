@@ -1,6 +1,6 @@
 
-import Container from 'typedi';
-import { Logger } from '@rockstat/rock-me-ts';
+// import Container from 'typedi';
+import { Logger, getAppDeps } from '@rockstat/rock-me-ts';
 import { LevelChildrenAsync, BusMsgHdr, BusMsgHdrResult } from './interfaces'
 
 export class TreeBus {
@@ -15,7 +15,8 @@ export class TreeBus {
   };
 
   constructor(name = 'untitled') {
-    this.log = Container.get(Logger).for(this);
+    // this.log = Container.get(Logger).for(this);
+    this.log = getAppDeps().getDep('log').for(this);
     this.name = name;
   }
 

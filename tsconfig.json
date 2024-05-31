@@ -6,29 +6,27 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "strictNullChecks": true,
+    "declaration": true,
+    "declarationMap": false,
     "sourceMap": true,
-    "pretty": true,
+    "removeComments": true,
     "allowUnreachableCode": true,
     "noFallthroughCasesInSwitch": false,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": true,
     "outDir": "./dist/",
+    "incremental": true,
     "typeRoots": [
       "node_modules/@types",
-      "node_modules/@rockstat/rock-me-ts/@types",
-      "@types"
+      "@types",
+      "node_modules/@rockstat/rock-me-ts/src/types",
+      "node_modules/@rockstat/rock-me-ts/@types"
     ],
-    "baseUrl": "./src/",
+    "baseUrl": "./",
     "paths": {
-      "@app/*": ["*"]
+      "@app/*": [ "./src/*" ]
     }
   },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules"
-  ],
   "compileOnSave": true
 }

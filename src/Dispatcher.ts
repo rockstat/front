@@ -1,7 +1,4 @@
-import { Service, Inject, Container } from 'typedi';
-import {
-  AppServer
-} from '@app/AppServer';
+// import { Service, Inject, Container } from 'typedi';
 import {
   BusMsgHdr,
   FrontierConfig,
@@ -9,7 +6,6 @@ import {
   BaseIncomingMessage,
   MsgBusConfig,
   Dictionary,
-  ServiceStatusStruct,
   ServiceStatusStructRegisterItem,
   BaseIncomingMessageWithBatch,
   ServiceStatusStructData,
@@ -20,16 +16,9 @@ import {
 } from '@app/bus';
 import {
   IN_GENERIC,
-  SERVICE_DIRECTOR,
-  SERVICE_FRONTIER,
   BROADCAST,
   ENRICH,
-  RPC_IAMALIVE,
 } from '@app/constants';
-import {
-  epglue,
-  isObject
-} from '@app/helpers';
 import {
   AppConfig,
   TheIds,
@@ -49,9 +38,7 @@ import {
   UnknownResponse,
   response,
   MethodRegistrationOptions,
-  METHOD_IAMALIVE,
-  BandResponseData,
-  RPCRegisterHandler,
+  METHOD_IAMALIVE
 } from '@rockstat/rock-me-ts';
 import * as EnrichersRepo from '@app/enrichers';
 import * as HandlersRepo from '@app/handlers';
@@ -60,7 +47,8 @@ import {
   dotPropGetter,
   getvals
 } from '@app/helpers/getprop';
-import { RequestHandler } from '@rockstat/rock-me-ts';
+
+import { getAppDeps } from '@rockstat/rock-me-ts';
 
 type TransformerRepo = typeof TransformersRepo;
 type TransformersNames = keyof TransformerRepo;
@@ -71,10 +59,9 @@ type HandlersNames = keyof HandlerRepo;
 
 const HANDLER = 'handler';
 const ENRICHER = 'enricher';
-const LISTENER = 'listener';
 
 
-@Service()
+// @Service()
 export class Dispatcher {
 
   log: Logger;
@@ -96,11 +83,15 @@ export class Dispatcher {
   regsTimers: Map<string, NodeJS.Timer>;
 
   constructor() {
-    this.log = Container.get(Logger).for(this);
+    
+    // this.log = Container.get(Logger).for(this);
+    this.log = getAppDeps().getDep('log').for(this);
     // this.status = new AppStatus();
     this.log.info('Starting');
-    this.appConfig = Container.get<AppConfig<FrontierConfig>>(AppConfig);
-    this.idGen = Container.get(TheIds);
+    // this.appConfig = Container.get<AppConfig<FrontierConfig>>(AppConfig);
+    this.appConfig = getAppDeps().getDep('config');
+    // this.idGen = Container.get(TheIds);
+    this.idGen = getAppDeps().getDep('ids');
     this.regs = new Map();
     this.regsTimers = new Map();
   }
@@ -113,9 +104,9 @@ export class Dispatcher {
     this.transformBus.subscribe('*', this.defaultTransformer);
 
     // Core deps
-    const redisFactory = Container.get(RedisFactory);
+    const redisFactory = getAppDeps().getDep('redis');
     // Stat meter
-    const meter = Container.get(Meter);
+    const meter = getAppDeps().getDep('meter');
 
     // Setup RPC
     const channels = [this.appConfig.rpc.name];

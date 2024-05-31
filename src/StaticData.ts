@@ -1,8 +1,8 @@
-import { Service, Container } from "typedi";
+// import { Service, Container } from "typedi";
 import { readFileSync } from 'fs';
 import { StaticConfig, Envs, FrontierConfig } from "@app/types";
 import { ENV_DEV } from "@app/constants";
-import { LoggerType, Logger, AppConfig } from '@rockstat/rock-me-ts';
+import { LoggerType, Logger, AppConfig, getAppDeps } from '@rockstat/rock-me-ts';
 import { readSync } from '@app/helpers'
 
 type LibParams = { [key: string]: any };
@@ -22,8 +22,12 @@ export class StaticData {
   private _paths: Array<string> = []
 
   constructor() {
-    this.log = Container.get(Logger).for(this);
-    const appConfig = Container.get<AppConfig<FrontierConfig>>(AppConfig);
+    // this.log = Container.get(Logger).for(this);
+    // const appConfig = Container.get<AppConfig<FrontierConfig>>(AppConfig);
+
+    this.log = getAppDeps().getDep('log');
+    const appConfig: AppConfig<FrontierConfig> = getAppDeps().getDep('config');
+
     this.dev = appConfig.env === ENV_DEV;
     this.options = appConfig.static;
     // warmup lib

@@ -1,5 +1,5 @@
-import Container from 'typedi';
-import { Logger } from '@rockstat/rock-me-ts';
+// import Container from 'typedi';
+import { Logger, getAppDeps } from '@rockstat/rock-me-ts';
 // import { printTree } from "./print";
 import { LevelChildrenStr } from './interfaces'
 
@@ -13,7 +13,7 @@ export class TreeNameBus {
   };
 
   constructor() {
-    this.log = Container.get(Logger).for(this);
+    this.log = getAppDeps().getDep('log').for(this);
   }
 
   handlerEvents(handler: string): Array<string> {

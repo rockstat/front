@@ -11,6 +11,8 @@ export interface HTTPTransportData {
   host?: string;
   // http referer
   ref?: string;
+  // page path
+  path?: string;
 }
 
 // ###### BASE MESSAGING

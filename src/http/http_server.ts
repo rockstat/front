@@ -1,6 +1,6 @@
 import { IncomingMessage, ServerResponse, createServer, Server, ServerOptions, OutgoingHttpHeaders } from 'http';
 import { send as microSend, sendError, text, json, buffer } from 'micro';
-import { Service, Inject, Container } from 'typedi';
+// import { Service, Inject, Container } from 'typedi';
 import { parse as urlParse } from 'url';
 import * as Cookie from 'cookie';
 import * as qs from 'qs';
@@ -78,6 +78,8 @@ import {
 // const REQUEST_PAYLOAD_LIMIT = '100kb'
 // const REQUEST_PARSE_OPTIONS = { limit: REQUEST_PAYLOAD_LIMIT };
 
+import { getAppDeps } from '@rockstat/rock-me-ts';
+
 const extContentTypeMap: Dictionary<string> = {
   'json': CONTENT_TYPE_JSON,
   'gif': CONTENT_TYPE_GIF,
@@ -87,7 +89,7 @@ const extContentTypeMap: Dictionary<string> = {
 
 const f = (i?: string | string[]) => Array.isArray(i) ? i[0] : i;
 
-@Service()
+// @Service()
 export class HttpServer {
 
   httpServer: Server;
@@ -107,21 +109,28 @@ export class HttpServer {
   cookieDomain?: string;
   servicesMap: Dictionary<string>
 
-  constructor() {
-    const config = Container.get<AppConfig<FrontierConfig>>(AppConfig);
-    const logger = Container.get<Logger>(Logger);
-    this.metrics = Container.get(Meter);
-    this.idGen = Container.get(TheIds);
-    this.dispatcher = Container.get(Dispatcher);
-    Container.set(StaticData, new StaticData());
-    this.static = Container.get<StaticData>(StaticData);
+  constructor(dispatcher: Dispatcher) {
+    // const config = Container.get<AppConfig<FrontierConfig>>(AppConfig);
+    const config:AppConfig<FrontierConfig> = getAppDeps().getDep('config')
+    // const logger = Container.get<Logger>(Logger);
+    // this.metrics = Container.get(Meter);
+    this.metrics = getAppDeps().getDep('meter');
+    // this.idGen = Container.get(TheIds);
+    this.idGen = getAppDeps().getDep('ids');
+    
+    // this.dispatcher = Container.get(Dispatcher);
+    this.dispatcher = dispatcher;
+
+    // Container.set(StaticData, );
+
+    this.static = new StaticData()
     this.options = config.http;
     this.title = config.get('name');
     this.identopts = config.identify;
     this.uidCookie = this.identopts.param;
     this.clientopts = config.client.common;
     this.urlMark = config.http.url_mark;
-    this.log = logger.for(this);
+    this.log = getAppDeps().getDep('log').for(this);
     this.servicesMap = this.options.sevices_map;
     this.cookieExpires = new Date(new Date().getTime() + this.identopts.cookieMaxAge * 1000);
     this.cookieDomain = this.identopts.cookieDomain === 'auto'

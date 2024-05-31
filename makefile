@@ -1,3 +1,8 @@
+include .env
+
+$(eval export $(shell sed -ne 's/ *#.*$$//; /./ s/=.*$$// p' .env))
+
+
 bump-patch:
 	bumpversion patch
 
@@ -5,10 +10,10 @@ bump-minor:
 	bumpversion minor
 
 build:
-	docker build -t front .
+	docker build --progress=plain  -t front .
 
 build_amd64:
-	docker buildx build --platform linux/amd64 -t front .	
+	docker build --platform linux/amd64 --progress=plain --build-arg NPM_TOKEN=$$NPM_TOKEN -t front .
 
 tag-ng:
 	docker tag front rockstat/front:ng

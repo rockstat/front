@@ -1,31 +1,36 @@
 import 'reflect-metadata';
-import { Container, Service } from 'typedi';
-import { Dispatcher } from './Dispatcher';
+// import { Container, Service } from 'typedi';
+import { Dispatcher } from '@app/Dispatcher';
 import { Logger, TheIds, Meter, RedisFactory, AppConfig, version as rockmeVersion, ENV_PROD } from '@rockstat/rock-me-ts';
 import {
-  WebSocketServer,
+  // WebSocketServer,
   HttpServer
 } from '@app/http';
 import { FrontierConfig } from '@app/types';
 import * as constants from '@app/constants';
+import { getAppDeps } from '@rockstat/rock-me-ts';
 
-
-@Service()
+// @Service()
 export class AppServer {
 
   appConfig: AppConfig<FrontierConfig>;
   httpServer: HttpServer;
-  wsServer: WebSocketServer;
+  // wsServer: WebSocketServer;
   dispatcher: Dispatcher;
   log: Logger;
   meter: Meter;
 
   setup() {
     this.appConfig = new AppConfig<FrontierConfig>({ vars: constants })
-    Container.set(AppConfig, this.appConfig);
-    const log = new Logger(this.appConfig.log)
-    Container.set(Logger, log);
-    this.log = log.for(this);
+
+    getAppDeps().setDep('config', this.appConfig);
+    // Container.set(AppConfig, this.appConfig);
+
+    const mainLog = new Logger(this.appConfig.log)
+    getAppDeps().setDep('log', mainLog);
+    // Container.set(Logger, mainLog);
+
+    this.log = mainLog.for(this);
     this.log.info(`Configuration ${AppConfig.env} ${ENV_PROD} ${String(AppConfig.env) === ENV_PROD}`);
 
     this.log.info({
@@ -33,21 +38,30 @@ export class AppServer {
       rockmeVersion
     }, 'Starting service');
 
-    Container.set(Meter, new Meter(this.appConfig.meter));
-    Container.set(TheIds, new TheIds());
+    this.meter = new Meter(this.appConfig.meter);
+    getAppDeps().setDep('meter', this.meter);
+    // Container.set(Meter, this.meter);
 
-    const meter = this.meter = Container.get(Meter);
+    const ids = new TheIds();
+    getAppDeps().setDep('ids', ids);
+    // Container.set(TheIds, getAppDeps().getDep('ids'));
 
-    Container.set(RedisFactory, new RedisFactory({ log, meter, ...this.appConfig.redis }));
-    Container.set(Dispatcher, new Dispatcher());
-    Container.set(HttpServer, new HttpServer());
-    Container.set(WebSocketServer, new WebSocketServer());
 
-    this.httpServer = Container.get(HttpServer);
-    this.wsServer = Container.get(WebSocketServer);
+    const redisFactory = new RedisFactory({ log: this.log, meter: this.meter, ...this.appConfig.redis });
+    getAppDeps().setDep('redis', redisFactory);
+    // Container.set(RedisFactory, redisFactory);
+    
+    this.dispatcher = new Dispatcher();
+    this.httpServer = new HttpServer(this.dispatcher);
+    // this.wsServer = new WebSocketServer();
+    
 
-    const dispatcher = this.dispatcher = Container.get(Dispatcher);
-    dispatcher.setup();
+    // Container.set(Dispatcher, this.dispatcher);
+    // Container.set(HttpServer, this.httpServer);
+    // Container.set(WebSocketServer, this.wsServer);
+
+    // const dispatcher = this.dispatcher = Container.get(Dispatcher);
+    this.dispatcher.setup();
   }
 
   start() {
@@ -55,7 +69,7 @@ export class AppServer {
     this.dispatcher.start();
     this.log.info('Starting transports');
     this.httpServer.start();
-    this.wsServer.start();
+    // this.wsServer.start();
   }
 
   private onStop() {
@@ -74,5 +88,5 @@ export class AppServer {
 
 }
 
-export const appServer = <AppServer>Container.get(AppServer);
+export const appServer = new AppServer();
 appServer.setup()

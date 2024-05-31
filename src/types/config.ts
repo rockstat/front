@@ -89,7 +89,6 @@ export interface MsgBusConfig {
 
 export type FrontierConfig = {
   name: string;
-  selected_events_dir: string;
   version: string;
   env: Envs;
   http: HttpConfig;
