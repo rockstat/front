@@ -177,6 +177,8 @@ export class HttpServer {
 
     if (resp.native__) {
       raw = JSON.stringify(rest);
+      headers.push([HEADER_CONTENT_TYPE, contentType])
+      headers.push([HEADER_CONTENT_LENGTH, Buffer.byteLength(raw)])
     } else {
       if (rest.type__ === RESP_DATA) {
         // overiide null values with empty string
@@ -220,6 +222,8 @@ export class HttpServer {
       headers.push([HEADER_CONTENT_TYPE, contentType])
       headers.push([HEADER_CONTENT_LENGTH, Buffer.byteLength(raw)])
     }
+
+    console.log('headers', headers, 'raw', raw)
 
     for (const [h, v] of resp.headers) {
       res.setHeader(h, v);

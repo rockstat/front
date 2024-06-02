@@ -58,7 +58,8 @@ export class MPIOSTransformer implements BusBaseEnricher {
             data['batch_timestamp'] = msg.time;
             data['batch_source_id'] = msg.id;
             data['batch_event_number'] = i;
-
+            data['source_service'] =  msg.service;
+            data['source_name'] = msg.name;
 
             let new_client_time = msg.time;
             if ('properties_time' in data) {
