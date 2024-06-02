@@ -1,8 +1,7 @@
 {
   "name": "@rockstat/front",
-  "version": "4.2.1",
+  "version": "4.2.2",
   "description": "Rockstat Front service",
-  
   "scripts": {
     "start": "ts-node ./src/start.ts",
     "start:prod": "node -r 'source-map-support/register' dist/start",
