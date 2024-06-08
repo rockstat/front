@@ -8,47 +8,24 @@ FROM $BASE_CONTAINER
 ENV PORT 8080
 ENV LOG_LEVEL debug
 
-WORKDIR /app
-RUN echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > .npmrc
+WORKDIR /app/front
+
+ARG NPM_CONFIG_REGISTRY_ARG=https://registry.npmjs.org
+ENV NPM_CONFIG_REGISTRY=$NPM_CONFIG_REGISTRY_ARG   
 
 COPY package.json .
-COPY package-lock.json .
+# COPY package-lock.json .
 
-# COPY --from=web-sdk-build /usr/share/web-sdk /web-sdk
-# RUN cd /web-sdk && yarn install --production && yarn link
-
-COPY .npmrc .
-
-COPY --from=web-sdk-build /usr/share/web-sdk ./web_sdk
-RUN cd ./web_sdk && npm link  --loglevel http
-RUN npm link @rockstat/rock-me-ts --save --loglevel http 
-RUN npm link @rockstat/web_sdk --save --loglevel http 
-
-RUN npm ci  --loglevel http && npm cache clean --force  --loglevel http
-RUN rm -f .npmrc
-
-
-# RUN yarn link @rockstat/rock-me-ts
-# RUN npm link @rockstat/web_sdk
-# COPY --from=builder /build /usr/share/web-sdk
-
-
-# RUN yarn link @rockstat/web_sdk
-# RUN ln -nsf ../dist ./node_modules/@app
+RUN npm i --loglevel http && npm cache clean --force
+RUN cp -r /usr/src/rockme /app/rockmets
+COPY --from=web-sdk-build /usr/share/web-sdk /app/web-sdk
 
 COPY . .
-RUN rm .npmrc
 
-RUN npm run build  --loglevel http
+RUN npm run build
 
 EXPOSE 8080
 ENV NODE_ENV production
 ENV REDIS_DSN redis://redis:6379
 
-
-# CMD [ "yarn", "start:prod"]
-
-# ENV TS_NODE_BASEURL "./dist"
-# CMD ["npm", "run", "start"]
-# CMD ["node", "-r", "tsconfig-paths/register", "-r", "source-map-support/register", "./dist/start.js"]
 CMD ["node", "-r", "source-map-support/register", "./dist/start.js"]

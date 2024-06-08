@@ -12,8 +12,8 @@ bump-minor:
 build:
 	docker build --progress=plain  -t front .
 
-build_amd64:
-	docker build --platform linux/amd64 --progress=plain --build-arg NPM_TOKEN=$$NPM_TOKEN -t front .
+build_macos_arm64:
+	docker build  --build-arg NPM_CONFIG_REGISTRY_ARG=http://host.docker.internal:4873/ --platform linux/amd64 --progress=plain --build-arg NPM_TOKEN=$$NPM_TOKEN -t front .
 
 tag-ng:
 	docker tag front rockstat/front:ng
@@ -27,7 +27,7 @@ push-latest:
 push-ng:
 	docker push rockstat/front:ng
 
-all-ng: build_amd64 tag-ng push-ng
+all-ng: build_macos_arm64 tag-ng push-ng
 
 push-dev:
 	docker tag front rockstat/front:dev

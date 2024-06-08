@@ -80,7 +80,7 @@ export class Dispatcher {
   propGetters: { [k: string]: (obj: any) => { [k: string]: any } } = {};
   enrichersRequirements: EnrichersRequirements = [];
   regs: Map<string, Array<ServiceStatusStructRegisterItem>>;
-  regsTimers: Map<string, NodeJS.Timer>;
+  regsTimers: Map<string, NodeJS.Timeout>;
 
   constructor() {
     
