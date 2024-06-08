@@ -1,6 +1,6 @@
 {
   "name": "@rockstat/front",
-  "version": "4.2.4",
+  "version": "4.2.5",
   "description": "Rockstat Front service",
   "scripts": {
     "start": "ts-node ./src/start.ts",
