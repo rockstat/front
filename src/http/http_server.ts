@@ -111,13 +111,13 @@ export class HttpServer {
 
   constructor(dispatcher: Dispatcher) {
     // const config = Container.get<AppConfig<FrontierConfig>>(AppConfig);
-    const config:AppConfig<FrontierConfig> = getAppDeps().getDep('config')
+    const config: AppConfig<FrontierConfig> = getAppDeps().getDep('config')
     // const logger = Container.get<Logger>(Logger);
     // this.metrics = Container.get(Meter);
     this.metrics = getAppDeps().getDep('meter');
     // this.idGen = Container.get(TheIds);
     this.idGen = getAppDeps().getDep('ids');
-    
+
     // this.dispatcher = Container.get(Dispatcher);
     this.dispatcher = dispatcher;
 
@@ -268,9 +268,11 @@ export class HttpServer {
     const [urlService, urlName, urlProjectId] = parsedPath.parts;
 
     // Handling POST if routed right way!
-    const contentType = parsedPath.ext && extContentTypeMap[parsedPath.ext] || ContentTypeHeader || '';
+    const contentType = parsedPath.ext && extContentTypeMap[parsedPath.ext]
+      || ContentTypeHeader
+      || '';
 
-    let body: HTTPBodyParams|undefined = {};
+    let body: HTTPBodyParams | undefined = {};
     if (req.method === METHOD_POST) {
       // const [err, pBody] = await this.parseBody(req, contentType);
       body = await this.parseBody(req, contentType);
