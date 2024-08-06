@@ -83,7 +83,7 @@ export class Dispatcher {
   regsTimers: Map<string, NodeJS.Timeout>;
 
   constructor() {
-    
+
     // this.log = Container.get(Logger).for(this);
     this.log = getAppDeps().getDep('log').for(this);
     // this.status = new AppStatus();
@@ -122,6 +122,7 @@ export class Dispatcher {
     // }, 5 * 1000)
     // Registering status handler / payload receiver
 
+    
     const regFunc = async () => {
       // if (data.register && data.state_hash) {
       // if (data.state_hash == this.registrationsHash) {
@@ -221,7 +222,7 @@ export class Dispatcher {
             this.regs.delete(service_status.name);
             this.regsTimers.delete(service_status.name);
             // console.log('removing service', service_status.name)
-            regFunc();
+            regFunc().then(() => { });
           }, 15000));
           // }
         }
@@ -229,7 +230,7 @@ export class Dispatcher {
     });
 
     setInterval(() => {
-      regFunc()
+      regFunc().then(() => { })
     }, 5000)
 
 

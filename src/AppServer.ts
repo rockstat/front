@@ -31,12 +31,14 @@ export class AppServer {
     // Container.set(Logger, mainLog);
 
     this.log = mainLog.for(this);
-    this.log.info(`Configuration ${AppConfig.env} ${ENV_PROD} ${String(AppConfig.env) === ENV_PROD}`);
-
+    this.log.info({}, `ENV ${AppConfig.env} ${ENV_PROD} ${String(AppConfig.env) === ENV_PROD}`);
+    // this.log.info(this.appConfig.config, 'Config');
+    
     this.log.info({
       version: this.appConfig.config.version,
       rockmeVersion
     }, 'Starting service');
+
 
     this.meter = new Meter(this.appConfig.meter);
     getAppDeps().setDep('meter', this.meter);

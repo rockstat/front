@@ -1,3 +1,4 @@
+import { ParsedQs } from "qs";
 
 const objectToString = Object.prototype.toString;
 const objectAsString = '[object Object]';
@@ -12,8 +13,10 @@ export function isValidUid(uid?: string): boolean {
 /**
  * return valid uid or undefined
  */
-export function cleanUid(uid?: string): string | undefined {
-  return isValidUid(uid) ? uid : undefined;
+export function cleanUid(uid: any): string | undefined {
+  if (typeof uid === 'string' && isValidUid(uid)) {
+    return uid;
+  }
 }
 
 

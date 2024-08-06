@@ -1,0 +1,12 @@
+# ---
+# client:
+#   common:
+#     trackClicks: true
+#     trackForms: true
+#     pixelSyncEnabled: true
+#     trackActivity: true
+#     allowHTTP: true
+#     cookieDomain: 'auto'
+#     # allowSendBeacon: false
+#     # allowXHR: false
+#     activateWs: true

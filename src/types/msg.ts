@@ -39,10 +39,13 @@ export interface IncomingMessageProps {
   projectId?: number;
   // user identifier
   uid?: string;
+  // uid param
+  uid_param?: string;
   // Transport-specific data
   td?: HTTPTransportData;
   // message payload
   data: IncomingMsgData;
+  pancake?: IncomingMsgData;
 }
 
 
@@ -63,7 +66,7 @@ export type BusMsgHdrsResult = PromiseLike<any[]>
 
 export interface ServiceStatusStructRegisterOptions {
   keys: Array<string>
-  props: {[k:string]:string}
+  props: { [k: string]: string }
   alias?: string
 }
 
@@ -83,7 +86,7 @@ export interface ServiceStatusStructData {
 }
 
 export interface ServiceStatusStruct {
-    type__: 'data',
-    statusCode: Number,
-    data: ServiceStatusStructData
+  type__: 'data',
+  statusCode: Number,
+  data: ServiceStatusStructData
 }

@@ -18,12 +18,18 @@ export interface HTTPServiceMapParams {
   [k: string]: string
 }
 
+export interface HTTPServiceParams {
+  alias_for: string;
+  uid_param?: string;
+  collect_cookies?: Array<string>;
+}
 
 export interface HttpConfig {
   host: string;
   port: number;
   url_mark: string;
-  sevices_map: HTTPServiceMapParams
+  sevices_map: HTTPServiceMapParams;
+  services_params: { [k:string]: HTTPServiceParams }
 }
 
 // ##### WEBSOCKET #####

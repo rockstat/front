@@ -1,7 +1,6 @@
 /.vscode
 /node_modules
 /yarn-error.log
-/config/custom
 /deploy
 /certs
 /static/lib*

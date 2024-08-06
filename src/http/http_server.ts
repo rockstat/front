@@ -73,6 +73,7 @@ import {
   BaseIncomingMessage,
   HTTPTransportData,
   Dictionary,
+  HTTPServiceParams,
 } from '@app/types';
 
 // const REQUEST_PAYLOAD_LIMIT = '100kb'
@@ -88,6 +89,10 @@ const extContentTypeMap: Dictionary<string> = {
 }
 
 const f = (i?: string | string[]) => Array.isArray(i) ? i[0] : i;
+
+
+type Query = qs.ParsedQs;
+type Cookie = Dictionary<string>;
 
 // @Service()
 export class HttpServer {
@@ -107,7 +112,8 @@ export class HttpServer {
   urlMark: string;
   cookieExpires: Date;
   cookieDomain?: string;
-  servicesMap: Dictionary<string>
+  // servicesMap: Dictionary<string>
+  servicesParams: { [k: string]: HTTPServiceParams }
 
   constructor(dispatcher: Dispatcher) {
     // const config = Container.get<AppConfig<FrontierConfig>>(AppConfig);
@@ -131,7 +137,16 @@ export class HttpServer {
     this.clientopts = config.client.common;
     this.urlMark = config.http.url_mark;
     this.log = getAppDeps().getDep('log').for(this);
-    this.servicesMap = this.options.sevices_map;
+
+    this.servicesParams = this.options.services_params || [];
+
+    for (let [k, v] of Object.entries(this.options.sevices_map)) {
+      this.servicesParams[k] = {
+        alias_for: v
+      }
+    }
+    // this.servicesMap = this.options.sevices_map;
+
     this.cookieExpires = new Date(new Date().getTime() + this.identopts.cookieMaxAge * 1000);
     this.cookieDomain = this.identopts.cookieDomain === 'auto'
       ? (this.identopts.domain ? '.' + autoDomain(this.identopts.domain) : undefined)
@@ -154,15 +169,15 @@ export class HttpServer {
     };
 
     this.httpServer = createServer(httpServerOptions, (req, res) => {
-      const requestTime = this.metrics.timenote('http.request')
-      this.metrics.tick('http.request')
+      const requestTime = this.metrics.timenote('http.request');
+      this.metrics.tick('http.request');
       this.handle(req)
         .then((result: BandResponse) => {
           const reqTime = requestTime();
-          this.send(res, result, reqTime)
+          this.send(res, result, reqTime);
         })
         .catch(exc => {
-          console.error('exception caused >> ', exc);
+          this.log.error('exception caused >> ', exc);
         })
     });
     this.httpServer.listen(this.options.port, this.options.host);
@@ -222,15 +237,14 @@ export class HttpServer {
       headers.push([HEADER_CONTENT_TYPE, contentType])
       headers.push([HEADER_CONTENT_LENGTH, Buffer.byteLength(raw)])
     }
-
-    console.log('headers', headers, 'raw', raw)
-
+    
     for (const [h, v] of resp.headers) {
       res.setHeader(h, v);
     }
     res.statusCode = resp.statusCode;
     res.end(raw);
   }
+
 
   /**
    * Main request handler
@@ -258,13 +272,12 @@ export class HttpServer {
 
     // parsing url
     const urlParts = urlParse(req.url);
-    const query: Dictionary<any> = urlParts.query ? qs.parse(urlParts.query) : {};
+    const query: Query = urlParts.query ? qs.parse(urlParts.query) : {};
     const urlPath = urlParts.pathname || ''
 
     const { native, ...parsedPath } = pathParts(urlPath, this.urlMark);
 
-    // parse cookie
-    const cookie: Dictionary<string> = Cookie.parse(f(req.headers.cookie) || '');
+    // getting service/action from url path
     const [urlService, urlName, urlProjectId] = parsedPath.parts;
 
     // Handling POST if routed right way!
@@ -272,6 +285,10 @@ export class HttpServer {
       || ContentTypeHeader
       || '';
 
+    // parse cookie
+    const cookie: Cookie = Cookie.parse(f(req.headers.cookie) || '');
+
+    // Preparing post data
     let body: HTTPBodyParams | undefined = {};
     if (req.method === METHOD_POST) {
       // const [err, pBody] = await this.parseBody(req, contentType);
@@ -282,10 +299,33 @@ export class HttpServer {
       }
     }
 
+    // pancake
+
+    const pancake: { [k: string]: any } = {};
+
+    // Prerouting 
+    const urlServiceParams = this.servicesParams[urlService || 'no_fcuking_way'];
+    const service = query.service || body.service || (urlServiceParams && urlServiceParams.alias_for) || urlService;
+    const name = urlName || query.name || body.name;
+    const uidParam = urlServiceParams && urlServiceParams.uid_param || this.uidParam;
+    const projectId = Number(urlProjectId || query.projectId || body.projectId || 0);
+
+    // pancake
+
+    if (urlServiceParams && urlServiceParams.collect_cookies) {
+      for (const k of urlServiceParams.collect_cookies) {
+        if (cookie[k]) {
+          pancake[k] = cookie[k];
+        }
+      }
+    }
+
+    // uid
+
     const uid = (
-      cleanUid(query[this.uidParam]) ||
-      cleanUid(body && body[this.uidParam]) ||
-      cleanUid(cookie[this.uidCookie]) ||
+      cleanUid(query[uidParam]) ||
+      cleanUid(body && body[uidParam]) ||
+      cleanUid(cookie[uidParam]) ||
       this.idGen.flake()
     )
 
@@ -298,12 +338,14 @@ export class HttpServer {
       contentType,
       query,
       cookie,
+      pancake,
       body,
       uid,
+      uidParam,
       path: urlPath,
-      service: query.service || body.service || (urlService && this.servicesMap[urlService]) || urlService,
-      name: urlName || query.name || body.name,
-      projectId: Number(urlProjectId || query.projectId || body.projectId || 0),
+      service,
+      name,
+      projectId,
       origin: computeOrigin(originHeader, refererHeader),
       td: transportData
     };
@@ -317,7 +359,7 @@ export class HttpServer {
       ...secureHeaders(),
       ...corsHeaders(routeOn.origin),
       ...noCacheHeaders(),
-      ...cookieHeaders([this.prepareUidCookie(uid, transportData.host)])
+      ...cookieHeaders([this.prepareUidCookie(routeOn)])
     )
     return routed;
 
@@ -384,9 +426,11 @@ export class HttpServer {
         service: routeOn.service,
         name: routeOn.name,
         projectId: routeOn.projectId,
+        uid_param: routeOn.uidParam,
         uid: routeOn.uid,
         td: routeOn.td,
-        data: { ...routeOn.body, ...routeOn.query }
+        data: { ...routeOn.body, ...routeOn.query },
+        pancake: routeOn.pancake
       }
       return await this.dispatcher.dispatch(key, msg);
     }
@@ -401,16 +445,16 @@ export class HttpServer {
    * prepare UID cookie
    * @param uid
    */
-  private prepareUidCookie(uid: string, host?: string) {
+  private prepareUidCookie(ro: RouteOn) {
     return Cookie.serialize(
-      this.identopts.param,
-      uid,
+      ro.uidParam,
+      ro.uid || '0',
       {
         httpOnly: true,
         secure: true,
         expires: this.cookieExpires,
         path: this.identopts.cookiePath,
-        domain: host || this.cookieDomain,
+        domain: ro.td.host || this.cookieDomain,
         sameSite: 'none'
       }
     )
@@ -425,7 +469,7 @@ export class HttpServer {
     let result: HTTPBodyParams = {};
     let data = await text(req);
     if (!data) {
-      console.log('!data');
+      this.log.warn('!data');
       return;
     }
     try {
@@ -436,7 +480,7 @@ export class HttpServer {
       }
       // console.log(result)
     } catch (e) {
-      console.error('parse err', { e, data });
+      this.log.error('parse err', { e, data });
       return result;
     }
 

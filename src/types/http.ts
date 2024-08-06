@@ -9,10 +9,12 @@ export interface RouteOn {
   contentType: string;
   query: { [key: string]: any };
   cookie: { [key: string]: any };
+  pancake: { [key: string]: any };
   body: { [key: string]: any };
   path: string;
   origin: string;
-  uid: string;
+  uid?: string;
+  uidParam: string;
   service: string;
   name: string;
   projectId?: number;

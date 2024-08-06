@@ -3,12 +3,14 @@ name: Rockstat Front service
 selected_events_dir: /front_selected_events
 version: "<%= pkg.version %>"
 identify:
-  param: uid
+  param: uid # cookie param name
   cookieMaxAge: <%= 3 * 365 * 24 * 60 * 60 %>
   cookieDomain: auto
   cookiePath: /
-  # whould be prefixed with "."
+  # have to prefixed with "."
   domain: <%= env.DOMAIN %>
+  fallback_domain: <%= env.DOMAIN %>
+
 
 http:
   host: <%= env.HOST || '0.0.0.0' %>
@@ -20,8 +22,24 @@ http:
     # service: channel
     # channels details look at src/constants/common.ts
     away: redir
+    go: redir
     gif: pixel
-    t4k: track
+    # gif: pixel
+    # gifz: pixel
+    # t4k: track
+  # service_identify_map:
+    # gifz: 'z'
+    # gifn: 'n'
+  services_params:
+    gifq:
+      alias_for: pixel
+      uid_param: uidq
+      collect_cookies: ['uid']
+    t4k:
+      alias_for: track
+    
+
+
 
 websocket:
   http:
@@ -64,6 +82,7 @@ log:
 
 client: {} # do not remove. root element should be present
 static:
+  # lib.js: "node_modules/@rockstat/web_sdk/dist/lib.js"
   lib.js: "node_modules/@rockstat/web_sdk/dist/lib.js"
   lib-dev.js: "node_modules/@rockstat/web_sdk/dist/lib-dev.js"
 # env depended variables
@@ -71,7 +90,7 @@ production: {}
 dev: {}
 bus:
   enrichers:
-    FingerPrintEnricher: [<%= IN_GENERIC %>.<%= SERVICE_TRACK %>]
+    # FingerPrintEnricher: [<%= IN_GENERIC %>.<%= SERVICE_TRACK %>]
     UserDataEnricher: [<%= IN_GENERIC %>.<%= SERVICE_TRACK %>, <%= IN_GENERIC %>.userdata]
   handlers:
     PixelHandler: <%= IN_GENERIC %>.<%= SERVICE_PIXEL %>
@@ -89,3 +108,10 @@ bus:
       - <%= IN_GENERIC %>.mp_handler.track-ios
 
 #!!js/undefined
+
+metrics:
+  statsd:
+    host: <%= env.STATSD_HOST || '127.0.0.1' %>
+    port: 8125
+    debug: false
+    prefix: krn
