@@ -18,10 +18,22 @@ export interface HTTPServiceMapParams {
   [k: string]: string
 }
 
+
+
+export interface HTTPActionParams {
+  collect_all_cookies: boolean;
+  jwt_decode: { [k:string]: {[k: string]: boolean} | boolean }
+  remove_cookies: { [k:string]: boolean }
+
+}
+
 export interface HTTPServiceParams {
   alias_for: string;
   uid_param?: string;
-  collect_cookies?: Array<string>;
+  collect_cookies?: Array<string>
+  dig?: boolean
+  url_check_websdk?: boolean
+  action_params?: { [k:string]: HTTPActionParams }
 }
 
 export interface HttpConfig {

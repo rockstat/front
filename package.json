@@ -1,11 +1,11 @@
 {
   "name": "@rockstat/front",
-  "version": "4.2.6",
+  "version": "4.3.1",
   "description": "Rockstat Front service",
   "scripts": {
     "start": "ts-node ./src/start.ts",
     "start:prod": "node -r 'source-map-support/register' dist/start",
-    "start:dev": "LOG_LEVEL=debug ts-node-dev -r 'source-map-support/register' --watch ../web-sdk ./src/start.ts | pino-pretty -L debug",
+    "start:dev": "LOG_LEVEL=debug  TS_NODE_BASEURL=./src ts-node-dev  --watch ../web-sdk ./src/start.ts | pino-pretty -L debug",
     "build": "rimraf dist && tsc -p tsconfig.json",
     "clean": "rimraf dist",
     "lint": "tslint -c tslint.json -t stylish -p ./tsconfig.json",
@@ -22,14 +22,16 @@
     "url": "https://github.com/rockstat/front"
   },
   "_moduleAliases": {
-    "@app": "./dist"
+    "@app": "./src"
   },
   "author": "Dmitry Rodin <madiedinro@gmail.com>",
   "homepage": "https://rock.st",
   "devDependencies": {
+    "@types/content-type": "^1.1.8",
     "@types/cookie": "^0.5.1",
     "@types/dotenv": "^8.2.0",
     "@types/get-value": "^3.0.3",
+    "@types/jsonwebtoken": "^9.0.7",
     "@types/micro": "^7.3.7",
     "@types/module-alias": "^2.0.4",
     "@types/node": "^18.13.0",
@@ -46,10 +48,13 @@
   "dependencies": {
     "@rockstat/rock-me-ts": "file:../rockmets",
     "@rockstat/web_sdk": "file:../web-sdk",
+    "content-type": "^1.0.5",
     "cookie": "^0.5.0",
     "eventemitter3": "^5.0.0",
+    "fflate": "^0.8.2",
     "find-my-way": "^7.4.0",
     "get-value": "^3.0.1",
+    "jsonwebtoken": "^9.0.2",
     "micro": "^10.0.1",
     "npm": "^10.7.0",
     "qs": "^6.11.0",

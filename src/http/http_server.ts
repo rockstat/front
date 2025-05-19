@@ -1,10 +1,12 @@
 import { IncomingMessage, ServerResponse, createServer, Server, ServerOptions, OutgoingHttpHeaders } from 'http';
-import { send as microSend, sendError, text, json, buffer } from 'micro';
-// import { Service, Inject, Container } from 'typedi';
 import { parse as urlParse } from 'url';
 import * as Cookie from 'cookie';
 import * as qs from 'qs';
 import { parse as parseQs } from 'qs';
+import * as jwt from 'jsonwebtoken';
+
+import * as zlib from 'zlib';
+import * as getRawBody from 'raw-body';
 
 
 import {
@@ -45,6 +47,7 @@ import {
   CONTENT_TYPE_PLAIN,
   CONTENT_TYPE_OCTET,
   CHANNEL_HTTP_PIXEL,
+  METHOD_PING38,
 } from '@app/constants';
 import {
   computeOrigin,
@@ -80,6 +83,7 @@ import {
 // const REQUEST_PARSE_OPTIONS = { limit: REQUEST_PAYLOAD_LIMIT };
 
 import { getAppDeps } from '@rockstat/rock-me-ts';
+import { cyrb53 } from '@app/helpers/cybr53';
 
 const extContentTypeMap: Dictionary<string> = {
   'json': CONTENT_TYPE_JSON,
@@ -90,6 +94,7 @@ const extContentTypeMap: Dictionary<string> = {
 
 const f = (i?: string | string[]) => Array.isArray(i) ? i[0] : i;
 
+const re_naming = new RegExp('^([a-zA-Z0-9\._-]{1,50})$');
 
 type Query = qs.ParsedQs;
 type Cookie = Dictionary<string>;
@@ -177,7 +182,9 @@ export class HttpServer {
           this.send(res, result, reqTime);
         })
         .catch(exc => {
-          this.log.error('exception caused >> ', exc);
+          this.log.error(exc, 'exception caused | handle exec at start');
+          const reqTime = requestTime();
+          this.send(res, response.error({ statusCode: STATUS_INT_ERROR }), reqTime);
         })
     });
     this.httpServer.listen(this.options.port, this.options.host);
@@ -237,7 +244,7 @@ export class HttpServer {
       headers.push([HEADER_CONTENT_TYPE, contentType])
       headers.push([HEADER_CONTENT_LENGTH, Buffer.byteLength(raw)])
     }
-    
+
     for (const [h, v] of resp.headers) {
       res.setHeader(h, v);
     }
@@ -263,65 +270,145 @@ export class HttpServer {
       return response.error({ statusCode: STATUS_INT_ERROR })
     }
 
+    // parsing url
+    const urlParts = urlParse(req.url);
+    let query: Query = urlParts.query ? qs.parse(urlParts.query) : {};
+    const urlPath = urlParts.pathname || ''
+    const { native, ...parsedPath } = pathParts(urlPath, this.urlMark);
+    const [urlService, urlName, urlProjectId] = parsedPath.parts;
+
+
+    if (re_naming.exec(urlService) === null || re_naming.exec(urlName) === null) {
+      this.metrics.tick('http.handle_illegal_names');
+      return response.error({ statusCode: STATUS_BAD_REQUEST });
+    }
+
+    // parse cookie
+    const cookie: Cookie = Cookie.parse(f(req.headers.cookie) || '');
+    // pancake
+    const pancake: { [k: string]: any } = {};
+
+
+    // Prerouting 
+    const urlServiceParams = this.servicesParams[urlService || 'no_fcuking_way'];
+
     // extracting useful headers
     const {
       'content-type': ContentTypeHeader,
+      'content-encoding': ContentEncoding,
       'origin': originHeader,
       'referer': refererHeader
     } = req.headers;
+    let dig = undefined;
 
-    // parsing url
-    const urlParts = urlParse(req.url);
-    const query: Query = urlParts.query ? qs.parse(urlParts.query) : {};
-    const urlPath = urlParts.pathname || ''
+    // custom url settings
 
-    const { native, ...parsedPath } = pathParts(urlPath, this.urlMark);
+    if (urlServiceParams) {
+      if (urlServiceParams.dig) {
 
+        if (!query.dig) {
+          this.metrics.tick('http.request_no_dig_required')
+          return response.error({ statusCode: STATUS_BAD_REQUEST })
+        }
+
+        if (urlServiceParams.url_check_websdk) {
+          let draft_query_dig = Math.floor(Number(query.dig));
+          if (!(draft_query_dig !== Infinity && String(draft_query_dig) === query.dig && draft_query_dig >= 0)) {
+            this.metrics.tick('http.request_hueviy_dig')
+            return response.error({ statusCode: STATUS_BAD_REQUEST })
+          }
+        }
+
+        dig = Number(query.dig)
+
+      }
+
+
+    }
     // getting service/action from url path
-    const [urlService, urlName, urlProjectId] = parsedPath.parts;
+
 
     // Handling POST if routed right way!
     const contentType = parsedPath.ext && extContentTypeMap[parsedPath.ext]
       || ContentTypeHeader
       || '';
 
-    // parse cookie
-    const cookie: Cookie = Cookie.parse(f(req.headers.cookie) || '');
+
+
 
     // Preparing post data
     let body: HTTPBodyParams | undefined = {};
     if (req.method === METHOD_POST) {
       // const [err, pBody] = await this.parseBody(req, contentType);
-      body = await this.parseBody(req, contentType);
+      body = await this.parseBody(req, contentType, ContentEncoding, dig);
       if (!body) {
         this.metrics.tick('http.request_no_body')
         return response.error({ statusCode: STATUS_BAD_REQUEST })
       }
     }
 
-    // pancake
-
-    const pancake: { [k: string]: any } = {};
 
     // Prerouting 
-    const urlServiceParams = this.servicesParams[urlService || 'no_fcuking_way'];
     const service = query.service || body.service || (urlServiceParams && urlServiceParams.alias_for) || urlService;
     const name = urlName || query.name || body.name;
     const uidParam = urlServiceParams && urlServiceParams.uid_param || this.uidParam;
     const projectId = Number(urlProjectId || query.projectId || body.projectId || 0);
 
-    // pancake
 
-    if (urlServiceParams && urlServiceParams.collect_cookies) {
-      for (const k of urlServiceParams.collect_cookies) {
-        if (cookie[k]) {
-          pancake[k] = cookie[k];
+    // pancakes
+
+    if (urlServiceParams) {
+
+      if (urlServiceParams.collect_cookies) {
+        for (const k of urlServiceParams.collect_cookies) {
+          if (cookie[k]) {
+            pancake[k] = cookie[k];
+          }
         }
+      }
+
+      if (urlServiceParams.action_params && urlServiceParams.action_params[name]) {
+        const nameParams = urlServiceParams.action_params[name];
+        // console.log(nameParams);
+        if (nameParams.collect_all_cookies) {
+          for (const [k, v] of Object.entries(cookie)) {
+            if (nameParams.remove_cookies[k]) {
+              continue;
+            }
+            if (nameParams.jwt_decode && nameParams.jwt_decode[k]) {
+              try {
+                const token = jwt.decode(String(v));
+                pancake[k] = token;
+
+              } catch (e) {
+                this.log.error(e, 'jwt decode error');
+              }
+            } else {
+              pancake[k] = v;
+            }
+          }
+
+        }
+
+        // if(nameParams.jwt_decode){
+        //   for (const [k, v] of Object.entries(nameParams.jwt_decode)){
+        //     console.log(k, v);
+        //     console.log(cookie[k])
+        //     if(cookie[k]){
+        //       const token = jwt.decode(String(cookie[k]));
+        //       pancake[k] = token;
+        //       console.log(token)
+        //     }
+
+        //   }
+        // }
+
+
       }
     }
 
-    // uid
 
+    // uid
     const uid = (
       cleanUid(query[uidParam]) ||
       cleanUid(body && body[uidParam]) ||
@@ -330,7 +417,6 @@ export class HttpServer {
     )
 
     const transportData = extractTransportData(req);
-    // const host = 
 
     // Data for routing request
     const routeOn: RouteOn = {
@@ -420,6 +506,14 @@ export class HttpServer {
     // ### Send request to BUS
     if (routeOn.service && routeOn.name) {
       const key = epglue(IN_GENERIC, routeOn.service, routeOn.name);
+      let additional_data = {};
+
+      // // Dirty hack | cookie collection
+      // if (routeOn.name === METHOD_PING38) {
+      //   this.log.info('ping38');
+      //   additional_data = { data: { ...routeOn.cookie } };
+      // }
+
       const msg: BaseIncomingMessage = {
         key,
         channel: routeOn.contentType.includes('image') ? CHANNEL_HTTP_PIXEL : CHANNEL_HTTP,
@@ -429,14 +523,14 @@ export class HttpServer {
         uid_param: routeOn.uidParam,
         uid: routeOn.uid,
         td: routeOn.td,
-        data: { ...routeOn.body, ...routeOn.query },
+        data: { ...routeOn.body, ...routeOn.query, ...additional_data },
         pancake: routeOn.pancake
       }
       return await this.dispatcher.dispatch(key, msg);
     }
 
     // ### 404
-    this.log.debug('404 request');
+    this.log.debug(routeOn, '404 request');
     return response.error({ statusCode: STATUS_NOT_FOUND })
 
   }
@@ -460,23 +554,64 @@ export class HttpServer {
     )
   }
 
+
+
   /**
    * Helper for parse body when not GET request
    * @param routeOn
    * @param req
    */
-  private async parseBody(req: IncomingMessage, contentType?: string): Promise<HTTPBodyParams | undefined> {
+  private async parseBody(req: IncomingMessage, contentType?: string, contentEncoding?: string, dig?: number): Promise<HTTPBodyParams | undefined> {
     let result: HTTPBodyParams = {};
-    let data = await text(req);
+
+    // let data = await text(req);
+
+    // let data_buf = await handle_buffer(req);
+    let stream;
+    let data;
+
+    if (contentEncoding === 'gzip') {
+      stream = req.pipe(zlib.createGunzip());
+    } else {
+      stream = req;
+    }
+
+    try {
+      // length: !stream && req.headers['content-length'],
+      // https://github.com/expressjs/body-parser/blob/master/index.js#L80
+      // https://github.com/expressjs/body-parser/tree/master
+      
+      data = await getRawBody(stream, { limit: '1mb', encoding: 'utf-8' })
+    } catch (e) {
+      console.error(e)
+    }
+
+    // console.log(data);
+
     if (!data) {
       this.log.warn('!data');
       return;
     }
+
+    if (dig) {
+      const dig2 = cyrb53(data);
+      if (dig !== dig2) {
+        this.log.warn('!data');
+        this.log.info({ dig, dig2 }, 'DIGS not eq');
+        return;
+      }
+    }
+
     try {
       if (!contentType || !contentType.includes('json')) {
         result = parseQs(data);
       } else {
         result = JSON.parse(data);
+        if (Array.isArray(result)) {
+          result = {
+            data: result
+          }
+        }
       }
       // console.log(result)
     } catch (e) {
@@ -489,3 +624,4 @@ export class HttpServer {
 
 
 }
+

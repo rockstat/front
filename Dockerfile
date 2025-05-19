@@ -28,4 +28,5 @@ EXPOSE 8080
 ENV NODE_ENV production
 ENV REDIS_DSN redis://redis:6379
 
-CMD ["node", "-r", "source-map-support/register", "./dist/start.js"]
+CMD ["npm", "run", "start"]
+# CMD ["node", "-r", "source-map-support/register", "./dist/start.js"]

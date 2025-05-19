@@ -27,6 +27,7 @@
     "paths": {
       "@app/*": [ "./src/*" ]
     }
+
   },
   "compileOnSave": true
 }

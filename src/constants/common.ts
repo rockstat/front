@@ -29,6 +29,7 @@ export const EMPTY = '';
 
 export const RPC_IAMALIVE = '__iamalive';
 export const METHOD_MP_SDK_EVENTS = 'events';
+export const METHOD_PING38 = 'ping38';
 
 // === TYPES
 

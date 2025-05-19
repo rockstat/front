@@ -362,7 +362,8 @@ export class Dispatcher {
     return response.data({
       data: {
         key: key,
-        id: msg.id
+        id: msg.id,
+        uid: msg.uid
       }
     })
   }

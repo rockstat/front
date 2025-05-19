@@ -37,7 +37,18 @@ http:
       collect_cookies: ['uid']
     t4k:
       alias_for: track
-    
+      dig: yes
+      url_check_websdk: yes
+      action_params:
+        ping38:
+          collect_all_cookies: true
+          remove_cookies: 
+            REMEMBERME: true
+            PHPSESSID: true
+          jwt_decode:
+            jwt_bridge: true
+            user_token: true
+
 
 
 
@@ -106,6 +117,10 @@ bus:
       - <%= IN_GENERIC %>.app-track-ios.track-ios
       - <%= IN_GENERIC %>.app-track-ios.events
       - <%= IN_GENERIC %>.mp_handler.track-ios
+    MPIOSNativeTransformer: 
+      - <%= IN_GENERIC %>.ios.track
+    PHNativeTransformer: 
+      - <%= IN_GENERIC %>.posthog.batch
 
 #!!js/undefined
 
