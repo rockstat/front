@@ -33,6 +33,8 @@ export interface IncomingMessageProps {
   service: string;
   // service event name identifier
   name: string;
+  // extension
+  ext?: string;
   // channel name
   channel: string;
   // hz

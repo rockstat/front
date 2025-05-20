@@ -5,3 +5,5 @@ Dockerfile
 .dockerignore
 .env
 .env.local
+dist
+/public

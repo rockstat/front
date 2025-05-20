@@ -12,6 +12,7 @@ export interface RouteOn {
   pancake: { [key: string]: any };
   body: { [key: string]: any };
   path: string;
+  ext?: string;
   origin: string;
   uid?: string;
   uidParam: string;

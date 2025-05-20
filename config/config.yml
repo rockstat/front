@@ -108,6 +108,7 @@ bus:
     RedirectHandler: <%= IN_GENERIC %>.<%= SERVICE_REDIR %>
     TrackHandler: <%= IN_GENERIC %>.<%= SERVICE_TRACK %>
     HelloHandler: <%= IN_GENERIC %>.hello
+    StaticHandler: <%= IN_GENERIC %>.static
   transformers:
     MPAndroidTransformer: 
       - <%= IN_GENERIC %>.app-track.events

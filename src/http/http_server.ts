@@ -8,7 +8,6 @@ import * as jwt from 'jsonwebtoken';
 import * as zlib from 'zlib';
 import * as getRawBody from 'raw-body';
 
-
 import {
   Meter,
   Logger,
@@ -33,7 +32,6 @@ import {
   HEADER_RESPONSE_TIME,
   HEADER_CONTENT_TYPE,
   HEADER_CONTENT_LENGTH,
-  HEADER_FORWARDED_HOST,
   HEADER_LOCATION,
   HEADER_MY_NAME,
   METHOD_GET,
@@ -44,10 +42,8 @@ import {
   CONTENT_TYPE_JSON,
   CONTENT_TYPE_JS,
   CONTENT_TYPE_HTML,
-  CONTENT_TYPE_PLAIN,
   CONTENT_TYPE_OCTET,
   CHANNEL_HTTP_PIXEL,
-  METHOD_PING38,
 } from '@app/constants';
 import {
   computeOrigin,
@@ -55,11 +51,9 @@ import {
   corsAnswerHeaders,
   secureHeaders,
   noCacheHeaders,
-  parseQuery,
   emptyGif,
   cookieHeaders,
   corsAdditionalHeaders,
-  isObject,
   autoDomain,
   epglue,
   cleanUid,
@@ -74,13 +68,9 @@ import {
   HTTPBodyParams,
   RouteOn,
   BaseIncomingMessage,
-  HTTPTransportData,
   Dictionary,
   HTTPServiceParams,
 } from '@app/types';
-
-// const REQUEST_PAYLOAD_LIMIT = '100kb'
-// const REQUEST_PARSE_OPTIONS = { limit: REQUEST_PAYLOAD_LIMIT };
 
 import { getAppDeps } from '@rockstat/rock-me-ts';
 import { cyrb53 } from '@app/helpers/cybr53';
@@ -99,7 +89,6 @@ const re_naming = new RegExp('^([a-zA-Z0-9\._-]{1,50})$');
 type Query = qs.ParsedQs;
 type Cookie = Dictionary<string>;
 
-// @Service()
 export class HttpServer {
 
   httpServer: Server;
@@ -117,23 +106,13 @@ export class HttpServer {
   urlMark: string;
   cookieExpires: Date;
   cookieDomain?: string;
-  // servicesMap: Dictionary<string>
   servicesParams: { [k: string]: HTTPServiceParams }
 
   constructor(dispatcher: Dispatcher) {
-    // const config = Container.get<AppConfig<FrontierConfig>>(AppConfig);
     const config: AppConfig<FrontierConfig> = getAppDeps().getDep('config')
-    // const logger = Container.get<Logger>(Logger);
-    // this.metrics = Container.get(Meter);
     this.metrics = getAppDeps().getDep('meter');
-    // this.idGen = Container.get(TheIds);
     this.idGen = getAppDeps().getDep('ids');
-
-    // this.dispatcher = Container.get(Dispatcher);
     this.dispatcher = dispatcher;
-
-    // Container.set(StaticData, );
-
     this.static = new StaticData()
     this.options = config.http;
     this.title = config.get('name');
@@ -143,6 +122,7 @@ export class HttpServer {
     this.urlMark = config.http.url_mark;
     this.log = getAppDeps().getDep('log').for(this);
 
+    // Preparing services params
     this.servicesParams = this.options.services_params || [];
 
     for (let [k, v] of Object.entries(this.options.sevices_map)) {
@@ -150,7 +130,6 @@ export class HttpServer {
         alias_for: v
       }
     }
-    // this.servicesMap = this.options.sevices_map;
 
     this.cookieExpires = new Date(new Date().getTime() + this.identopts.cookieMaxAge * 1000);
     this.cookieDomain = this.identopts.cookieDomain === 'auto'
@@ -191,22 +170,31 @@ export class HttpServer {
   }
 
 
+  /**
+   * Send a response to the client
+   * @param res 
+   * @param resp 
+   * @param reqTime 
+   */
   private send(res: ServerResponse, resp: BandResponse, reqTime: number) {
+
     resp.headers.push([HEADER_RESPONSE_TIME, reqTime])
-    let raw: string | Buffer = '';
+    let raw: Buffer | string = '';
     let contentType: string = CONTENT_TYPE_JSON;
     const { headers, ...rest } = resp;
 
+
     if (resp.native__) {
       raw = JSON.stringify(rest);
-      headers.push([HEADER_CONTENT_TYPE, contentType])
-      headers.push([HEADER_CONTENT_LENGTH, Buffer.byteLength(raw)])
-    } else {
+    }
+    else {
+
       if (rest.type__ === RESP_DATA) {
-        // overiide null values with empty string
+        // override null values with empty string
         if (rest.data === null) {
           rest.data = '';
         }
+
         // Object or Buffer or Array...
         else if (typeof rest.data === 'object') {
           // buffer -> raw data
@@ -227,7 +215,6 @@ export class HttpServer {
       }
 
       if (rest.type__ === RESP_REDIRECT) {
-        raw = '';
         contentType = CONTENT_TYPE_HTML;
         headers.push([HEADER_LOCATION, rest.location]);
       }
@@ -241,10 +228,11 @@ export class HttpServer {
         raw = JSON.stringify({ message: rest.errorMessage });
         contentType = CONTENT_TYPE_JSON;
       }
-      headers.push([HEADER_CONTENT_TYPE, contentType])
-      headers.push([HEADER_CONTENT_LENGTH, Buffer.byteLength(raw)])
     }
 
+    headers.push([HEADER_CONTENT_TYPE, contentType])
+    headers.push([HEADER_CONTENT_LENGTH, Buffer.isBuffer(raw) ? raw.byteLength : Buffer.byteLength(raw)])
+    
     for (const [h, v] of resp.headers) {
       res.setHeader(h, v);
     }
@@ -322,24 +310,16 @@ export class HttpServer {
         dig = Number(query.dig)
 
       }
-
-
     }
-    // getting service/action from url path
 
-
-    // Handling POST if routed right way!
+    // Content-type based on file extension. Used for correct POST request parsing
     const contentType = parsedPath.ext && extContentTypeMap[parsedPath.ext]
       || ContentTypeHeader
       || '';
 
-
-
-
     // Preparing post data
     let body: HTTPBodyParams | undefined = {};
     if (req.method === METHOD_POST) {
-      // const [err, pBody] = await this.parseBody(req, contentType);
       body = await this.parseBody(req, contentType, ContentEncoding, dig);
       if (!body) {
         this.metrics.tick('http.request_no_body')
@@ -347,18 +327,14 @@ export class HttpServer {
       }
     }
 
-
     // Prerouting 
     const service = query.service || body.service || (urlServiceParams && urlServiceParams.alias_for) || urlService;
     const name = urlName || query.name || body.name;
     const uidParam = urlServiceParams && urlServiceParams.uid_param || this.uidParam;
     const projectId = Number(urlProjectId || query.projectId || body.projectId || 0);
 
-
     // pancakes
-
     if (urlServiceParams) {
-
       if (urlServiceParams.collect_cookies) {
         for (const k of urlServiceParams.collect_cookies) {
           if (cookie[k]) {
@@ -387,23 +363,7 @@ export class HttpServer {
               pancake[k] = v;
             }
           }
-
         }
-
-        // if(nameParams.jwt_decode){
-        //   for (const [k, v] of Object.entries(nameParams.jwt_decode)){
-        //     console.log(k, v);
-        //     console.log(cookie[k])
-        //     if(cookie[k]){
-        //       const token = jwt.decode(String(cookie[k]));
-        //       pancake[k] = token;
-        //       console.log(token)
-        //     }
-
-        //   }
-        // }
-
-
       }
     }
 
@@ -429,6 +389,7 @@ export class HttpServer {
       uid,
       uidParam,
       path: urlPath,
+      ext: parsedPath.ext,
       service,
       name,
       projectId,
@@ -508,17 +469,12 @@ export class HttpServer {
       const key = epglue(IN_GENERIC, routeOn.service, routeOn.name);
       let additional_data = {};
 
-      // // Dirty hack | cookie collection
-      // if (routeOn.name === METHOD_PING38) {
-      //   this.log.info('ping38');
-      //   additional_data = { data: { ...routeOn.cookie } };
-      // }
-
       const msg: BaseIncomingMessage = {
         key,
         channel: routeOn.contentType.includes('image') ? CHANNEL_HTTP_PIXEL : CHANNEL_HTTP,
         service: routeOn.service,
         name: routeOn.name,
+        ext: routeOn.ext,
         projectId: routeOn.projectId,
         uid_param: routeOn.uidParam,
         uid: routeOn.uid,
@@ -555,18 +511,14 @@ export class HttpServer {
   }
 
 
-
   /**
    * Helper for parse body when not GET request
    * @param routeOn
    * @param req
    */
   private async parseBody(req: IncomingMessage, contentType?: string, contentEncoding?: string, dig?: number): Promise<HTTPBodyParams | undefined> {
+
     let result: HTTPBodyParams = {};
-
-    // let data = await text(req);
-
-    // let data_buf = await handle_buffer(req);
     let stream;
     let data;
 
@@ -580,13 +532,11 @@ export class HttpServer {
       // length: !stream && req.headers['content-length'],
       // https://github.com/expressjs/body-parser/blob/master/index.js#L80
       // https://github.com/expressjs/body-parser/tree/master
-      
+
       data = await getRawBody(stream, { limit: '1mb', encoding: 'utf-8' })
     } catch (e) {
       console.error(e)
     }
-
-    // console.log(data);
 
     if (!data) {
       this.log.warn('!data');
