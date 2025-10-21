@@ -13,6 +13,8 @@ export interface HTTPTransportData {
   ref?: string;
   // page path
   path?: string;
+  xforw?: string;
+  xrealip?: string;
 }
 
 // ###### BASE MESSAGING

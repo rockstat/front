@@ -7,7 +7,8 @@ import {
   HEADER_REAL_IP, 
   HEADER_USER_AGENT, 
   HEADER_REFERER,
-  HEADER_FORWARDED_HOST
+  HEADER_FORWARDED_HOST,
+  HEADER_FORWARDED_FOR
 } from '../constants/http';
 import { 
   HTTPHeaders, 
@@ -158,7 +159,9 @@ export const extractTransportData: (req: IncomingMessage) => HTTPTransportData =
     ip: f(req.headers[HEADER_REAL_IP.toLowerCase()]) || req.connection.remoteAddress || '',
     ua: f(req.headers[HEADER_USER_AGENT.toLowerCase()]),
     ref: f(req.headers[HEADER_REFERER.toLowerCase()]),
-    host: f(req.headers[HEADER_FORWARDED_HOST.toLowerCase()])
+    host: f(req.headers[HEADER_FORWARDED_HOST.toLowerCase()]),
+    xforw: f(req.headers[HEADER_FORWARDED_FOR.toLowerCase()]),
+    xrealip: f(req.headers[HEADER_REAL_IP.toLowerCase()]),
   };
 }
 

@@ -42,7 +42,7 @@ export class StaticData {
   }
 
   getItem(key: string, libParams?: LibParams) {
-    return this.content[key];
+    return Buffer.concat([this.content[key]]);
   }
 
   rtConfig(params: LibParams): string {
