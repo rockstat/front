@@ -148,8 +148,14 @@ export class HttpServer {
     const httpServerOptions: ServerOptions = {
       connectionsCheckingInterval: 15000,
       keepAlive: true,
-      keepAliveTimeout: 5000,
-      requestTimeout: 5000
+      // keepAliveTimeout: 5000,
+      // requestTimeout: 5000
+
+      // must be longer than nginx upstream keepalive_timeout (60s default),
+      // otherwise nginx reuses a connection Node already closed -> 502
+      keepAliveTimeout: 75000,
+      // headersTimeout: 76000,
+      requestTimeout: 10000
     };
 
     this.httpServer = createServer(httpServerOptions, (req, res) => {
