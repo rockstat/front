@@ -120,6 +120,10 @@ bus:
       - <%= IN_GENERIC %>.mp_handler.track-ios
     MPIOSNativeTransformer: 
       - <%= IN_GENERIC %>.ios.track
+    # mixpanel_flutter (android / ios / web), sdk serverURL: https://<host>/flutter
+    MPFlutterTransformer:
+      - <%= IN_GENERIC %>.flutter.track
+      - <%= IN_GENERIC %>.mp_handler.track-flutter
     PHNativeTransformer: 
       - <%= IN_GENERIC %>.posthog.batch
 

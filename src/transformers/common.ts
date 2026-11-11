@@ -14,3 +14,28 @@ export const flatten_dict = function(d:{ [k: string]: { [k: string]: string } | 
     }
     return res;
   }
+
+/**
+ * Extracts mixpanel records from request payload.
+ *
+ * mixpanel_flutter has no own transport: it wraps platform SDKs, so one server url
+ * receives different payload formats depending on platform:
+ *  - android (mixpanel-android): form-urlencoded `data=<base64 json array>`
+ *  - ios / macos (Mixpanel-swift): json array in request body (http server wraps it to `{data: [...]}`)
+ *  - web (mixpanel-js): form-urlencoded `data=<base64 json>` or `data=<json>`, array or single event
+ * Gzipped bodies are unpacked by http server using Content-Encoding header.
+ */
+export const decodeMPPayload = (payload: any): Array<any> | undefined => {
+  let recs = payload;
+  if (typeof recs === 'string') {
+    const str = recs.trim();
+    const isJson = str.startsWith('[') || str.startsWith('{');
+    recs = JSON.parse(isJson ? str : Buffer.from(str, 'base64').toString());
+  }
+  if (Array.isArray(recs)) {
+    return recs;
+  }
+  if (recs && typeof recs === 'object') {
+    return [recs];
+  }
+}
