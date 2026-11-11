@@ -1,7 +1,4 @@
-ARG WEB_SDK_CONTAINER=rockstat/web-sdk:ng
 ARG BASE_CONTAINER=rockstat/band-base-ts:ng
-
-FROM $WEB_SDK_CONTAINER as web-sdk-build
 
 FROM $BASE_CONTAINER
 
@@ -16,9 +13,11 @@ ENV NPM_CONFIG_REGISTRY=$NPM_CONFIG_REGISTRY_ARG
 COPY package.json .
 # COPY package-lock.json .
 
+# @rockstat/web_sdk is a git dependency (github:rockstat/web-sdk) — npm needs git
+# to resolve the semver range and build it via the package's `prepare` script
+RUN command -v git >/dev/null || (apk add --no-cache git 2>/dev/null || (apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*))
 RUN npm i --loglevel http && npm cache clean --force
 RUN cp -r /usr/src/rockme /app/rockmets
-COPY --from=web-sdk-build /usr/share/web-sdk /app/web-sdk
 
 COPY . .
 
